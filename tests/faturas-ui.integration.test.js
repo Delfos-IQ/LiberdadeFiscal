@@ -1,11 +1,13 @@
-// Liberdade Fiscal — Teste de integração do módulo de UI de Faturas
+// Liberdade Fiscal — Teste de integração do módulo de UI de "Gastos"
 // Executar: node --test tests/
 //
-// Cobre o fluxo completo (spec §6.3): onboarding de região (se ainda
-// não definida) → seleção de item do catálogo → introdução do valor
-// total → confirmação → persistência via saveInvoice (confirmed_by_user
-// obrigatório) → listagem atualizada. Usa jsdom para o DOM e
-// fake-indexeddb para uma IndexedDB real em Node.
+// Redesenho de agosto de 2026 (spec §6.3): captura por categoria
+// mensal autorreportada em vez de fatura individual. Cobre: onboarding
+// de região (se ainda não definida) → preenchimento de categorias →
+// desglose educativo de IVA em tempo real → "Guardar e avançar"
+// persiste no Período acumulado (data/db.js) e navega para Taxas.
+// Usa jsdom para o DOM e fake-indexeddb para uma IndexedDB real em
+// Node.
 
 import "fake-indexeddb/auto";
 import { test, describe, before, beforeEach } from "node:test";
@@ -15,9 +17,9 @@ import { JSDOM } from "jsdom";
 // Import estático (sem cache-busting): modules/faturas.js e
 // modules/onboarding.js importam "../data/db.js" pelo mesmo
 // especificador estático, por isso têm de partilhar a mesma entrada no
-// registo de módulos do Node para que dbClear/setSetting aqui afetem a
-// ligação IndexedDB que o módulo de UI realmente usa.
-import { dbClear, setSetting, getSetting } from "../data/db.js";
+// registo de módulos do Node para que dbClear/setSetting/getPeriodoAtual
+// aqui afetem a ligação IndexedDB que o módulo de UI realmente usa.
+import { dbClear, setSetting, getSetting, getPeriodoAtual } from "../data/db.js";
 import { render } from "../modules/faturas.js";
 
 before(async () => {
@@ -25,16 +27,15 @@ before(async () => {
   global.window = dom.window;
   global.document = dom.window.document;
   global.HTMLElement = dom.window.HTMLElement;
-  // Nota: global.crypto não é redefinido aqui de propósito — no Node
-  // 20+, globalThis.crypto é um getter só de leitura (lançaria
-  // TypeError). O crypto.randomUUID nativo do Node já está disponível
-  // e é suficiente para o generateId() do módulo de faturas.
+  // Nota: global.crypto não é redefinido aqui de propósito — ver
+  // taximetro-ui.integration.test.js para a justificação completa.
   global.Intl = Intl;
 });
 
 beforeEach(async () => {
   await dbClear("invoices");
   await dbClear("userSettings");
+  window.location.hash = "";
 });
 
 function getContainer() {
@@ -43,13 +44,6 @@ function getContainer() {
   return container;
 }
 
-// Vários passos do módulo (dbGetAll, saveInvoice) envolvem transações
-// reais de IndexedDB, cujos callbacks disparam via eventos — podem
-// exigir mais do que um único "tick" de macrotask para resolver,
-// especialmente quando vários ficheiros de teste correm em paralelo.
-// Em vez de um único setTimeout(0) (frágil, causava falhas
-// intermitentes só quando corrido a par de outras suites), fazemos
-// polling até a condição pretendida se verificar ou expirar o tempo.
 async function waitFor(predicate, { timeout = 1000, interval = 5 } = {}) {
   const inicio = Date.now();
   while (Date.now() - inicio < timeout) {
@@ -59,7 +53,7 @@ async function waitFor(predicate, { timeout = 1000, interval = 5 } = {}) {
   return predicate();
 }
 
-describe("Faturas — onboarding de região", () => {
+describe("Gastos — onboarding de região", () => {
   test("mostra o ecrã de onboarding quando não há região guardada", async () => {
     const container = getContainer();
     render(container);
@@ -68,7 +62,7 @@ describe("Faturas — onboarding de região", () => {
     assert.ok(container.querySelector(".disclaimer"), "onboarding deve incluir o disclaimer legal (spec §9)");
   });
 
-  test("depois de escolher região, avança para a lista de faturas", async () => {
+  test("depois de escolher região, avança para o ecrã de Gastos", async () => {
     const container = getContainer();
     render(container);
     await waitFor(() => container.querySelector("#onboarding-heading"));
@@ -77,171 +71,116 @@ describe("Faturas — onboarding de região", () => {
     radioAcores.checked = true;
     const form = container.querySelector("form");
     form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-    await waitFor(() => container.querySelector("#faturas-heading"));
+    await waitFor(() => container.querySelector("#gastos-heading"));
 
-    assert.ok(container.querySelector("#faturas-heading"), "devia mostrar o ecrã de lista de faturas");
+    assert.ok(container.querySelector("#gastos-heading"), "devia mostrar o ecrã de Gastos");
     const regiaoGuardada = await getSetting("region");
     assert.equal(regiaoGuardada, "acores");
   });
 });
 
-describe("Faturas — fluxo manual", () => {
+describe("Gastos — captura mensal por categoria", () => {
   beforeEach(async () => {
     await setSetting("region", "continente");
   });
 
-  test("mostra diretamente a lista de faturas quando a região já está definida", async () => {
+  test("mostra o ecrã de Gastos diretamente quando a região já está definida", async () => {
     const container = getContainer();
     render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
-    assert.ok(container.querySelector("#faturas-heading"));
-    assert.ok(container.querySelector('button[type="button"]'));
+    await waitFor(() => container.querySelector("#gastos-heading"));
+    assert.ok(container.querySelector("#gastos-heading"));
   });
 
-  test("fluxo completo: escolher item, calcular, confirmar e persistir", async () => {
+  test("mostra todas as categorias com os seus exemplos", async () => {
     const container = getContainer();
     render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
+    await waitFor(() => container.querySelector("#gastos-heading"));
+    assert.ok(container.querySelector("#gasto-alimentacao"), "categoria Alimentação deve existir");
+    assert.ok(container.querySelector("#gasto-combustivel"), "categoria Combustível deve existir");
+    assert.match(container.textContent, /Ex\.:/);
+  });
 
-    const novaBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Registar despesa"));
-    novaBtn.click();
-    await waitFor(() => container.querySelector("#nova-fatura-heading"));
+  test("introduzir um valor numa categoria mostra o desglose de IVA e a fonte", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#gastos-heading"));
 
-    assert.ok(container.querySelector("#nova-fatura-heading"));
+    const input = container.querySelector("#gasto-alimentacao");
+    input.value = "200";
+    input.dispatchEvent(new window.Event("input", { bubbles: true }));
 
-    const select = container.querySelector("#item-catalogo");
-    select.value = "pao";
-    select.dispatchEvent(new window.Event("change", { bubbles: true }));
+    assert.match(container.textContent, /IVA \(estimado\)/);
+    assert.match(container.textContent, /Fonte: Código do IVA/);
+  });
 
-    const valorInput = container.querySelector("#valor-total");
-    valorInput.value = "10";
-    valorInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+  test("categoria de combustível mostra a nota sobre o ISP", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#gastos-heading"));
 
-    const form = container.querySelector("form");
-    form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-    await waitFor(() => container.querySelector("#confirmar-heading"));
+    const input = container.querySelector("#gasto-combustivel");
+    input.value = "60";
+    input.dispatchEvent(new window.Event("input", { bubbles: true }));
 
-    assert.ok(container.querySelector("#confirmar-heading"), "devia mostrar o ecrã de confirmação");
-    // Pão tem IVA reduzida (6% no Continente): base = 10 / 1.06 ≈ 9.43€
-    const texto = container.textContent;
-    assert.match(texto, /9,43\s?€|9\.43/);
+    assert.match(container.textContent, /ISP/);
+  });
 
-    const confirmBtn = [...container.querySelectorAll("button")].find((b) =>
-      b.textContent.includes("Confirmar e guardar")
+  test("o total mensal atualiza ao preencher categorias", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#gastos-heading"));
+
+    const input = container.querySelector("#gasto-alimentacao");
+    input.value = "150";
+    input.dispatchEvent(new window.Event("input", { bubbles: true }));
+
+    const hero = container.querySelector(".stat-hero");
+    assert.match(hero.textContent, /150,00\s?€|150\.00/);
+  });
+
+  test('"Guardar e avançar" persiste no Período acumulado e navega para Taxas', async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#gastos-heading"));
+
+    const inputAlimentacao = container.querySelector("#gasto-alimentacao");
+    inputAlimentacao.value = "100";
+    inputAlimentacao.dispatchEvent(new window.Event("input", { bubbles: true }));
+
+    const avancarBtn = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Guardar e avançar")
     );
-    confirmBtn.click();
-    await waitFor(() => container.querySelector("#faturas-heading") && container.textContent.includes("Últimos registos"));
+    avancarBtn.click();
+    await waitFor(() => window.location.hash === "#impostos-anuais");
 
-    assert.ok(container.querySelector("#faturas-heading"), "devia voltar à lista após guardar");
-    assert.match(container.textContent, /Últimos registos/);
-  });
-
-  test("mostra erro de validação se nenhum item for escolhido", async () => {
-    const container = getContainer();
-    render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
-
-    const novaBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Registar despesa"));
-    novaBtn.click();
-    await waitFor(() => container.querySelector("#nova-fatura-heading"));
-
-    const valorInput = container.querySelector("#valor-total");
-    valorInput.value = "10";
-    valorInput.dispatchEvent(new window.Event("input", { bubbles: true }));
-
-    const form = container.querySelector("form");
-    form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-    await waitFor(() => container.querySelector('[role="alert"]'));
-
-    const alerta = container.querySelector('[role="alert"]');
-    assert.ok(alerta, "devia mostrar uma mensagem de erro acessível (role=alert)");
-    assert.match(alerta.textContent, /Escolhe um item/);
-  });
-
-  test("mostra erro de validação se o valor for zero ou inválido", async () => {
-    const container = getContainer();
-    render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
-
-    const novaBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Registar despesa"));
-    novaBtn.click();
-    await waitFor(() => container.querySelector("#nova-fatura-heading"));
-
-    const select = container.querySelector("#item-catalogo");
-    select.value = "pao";
-    select.dispatchEvent(new window.Event("change", { bubbles: true }));
-
-    const form = container.querySelector("form");
-    form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-    await waitFor(() => container.querySelector('[role="alert"]'));
-
-    const alerta = container.querySelector('[role="alert"]');
-    assert.ok(alerta);
-    assert.match(alerta.textContent, /valor total válido/);
-  });
-
-  test("item com imposto especial (combustível) mostra nota educativa ESTIMATE", async () => {
-    const container = getContainer();
-    render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
-
-    const novaBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Registar despesa"));
-    novaBtn.click();
-    await waitFor(() => container.querySelector("#nova-fatura-heading"));
-
-    const select = container.querySelector("#item-catalogo");
-    select.value = "combustivel-gasolina";
-    select.dispatchEvent(new window.Event("change", { bubbles: true }));
-
-    const valorInput = container.querySelector("#valor-total");
-    valorInput.value = "50";
-    valorInput.dispatchEvent(new window.Event("input", { bubbles: true }));
-
-    const form = container.querySelector("form");
-    form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-    await waitFor(() => container.querySelector("#confirmar-heading"));
-
-    assert.ok(container.querySelector(".disclaimer"), "devia mostrar a nota educativa sobre ISP");
-  });
-
-  test("cancelar a partir do formulário volta à lista sem guardar nada", async () => {
-    const container = getContainer();
-    render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
-
-    const novaBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Registar despesa"));
-    novaBtn.click();
-    await waitFor(() => container.querySelector("#nova-fatura-heading"));
-
-    const cancelBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Cancelar"));
-    cancelBtn.click();
-    await waitFor(() => container.querySelector("#faturas-heading"));
-
-    assert.ok(container.querySelector("#faturas-heading"));
+    assert.equal(window.location.hash, "#impostos-anuais");
+    const periodo = await getPeriodoAtual();
+    assert.ok(periodo.gastosMensal, "devia ter guardado gastosMensal no período");
+    assert.equal(periodo.gastosMensal.totalMensal, 100);
+    const alimentacao = periodo.gastosMensal.categorias.find((c) => c.id === "alimentacao");
+    assert.equal(alimentacao.valorMensal, 100);
+    assert.ok(alimentacao.ivaMensal > 0, "devia ter calculado o IVA estimado da categoria");
   });
 });
 
-describe("Faturas — acessibilidade básica", () => {
+describe("Gastos — acessibilidade básica", () => {
   beforeEach(async () => {
     await setSetting("region", "continente");
   });
 
-  test("cada ecrã tem exatamente um h1 com foco programático", async () => {
+  test("existe exatamente um h1 com foco programático", async () => {
     const container = getContainer();
     render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
+    await waitFor(() => container.querySelector("#gastos-heading"));
     const headings = container.querySelectorAll("h1");
     assert.equal(headings.length, 1);
     assert.equal(headings[0].tabIndex, -1);
   });
 
-  test("o formulário de nova despesa tem labels associados por htmlFor/id", async () => {
+  test("cada input de categoria tem um label associado por htmlFor/id", async () => {
     const container = getContainer();
     render(container);
-    await waitFor(() => container.querySelector("#faturas-heading"));
-    const novaBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Registar despesa"));
-    novaBtn.click();
-    await waitFor(() => container.querySelector("#nova-fatura-heading"));
+    await waitFor(() => container.querySelector("#gastos-heading"));
 
     container.querySelectorAll("label[for]").forEach((label) => {
       const target = container.querySelector(`#${label.htmlFor}`);

@@ -11,7 +11,10 @@
 // tocam em IndexedDB diretamente.
 
 const DB_NAME = "liberdade-fiscal";
-const DB_VERSION = 1;
+// v2: adiciona o store periodosFechados (histórico de "Períodos" — ver
+// getPeriodoAtual/fecharPeriodoAtual) para o fluxo acumulativo
+// Rendimentos → Gastos → Taxas → Dia da Liberdade Fiscal.
+const DB_VERSION = 2;
 
 /** @type {Record<string, string>} nome lógico -> keyPath */
 export const STORES = {
@@ -20,6 +23,7 @@ export const STORES = {
   quizResults: "id", // { id, date, score, answers[] }
   userSettings: "key", // { key, value } — região, onboarding concluído, etc.
   taxParameterCache: "id", // TaxParameter[] cache local do ano ativo, opcional
+  periodosFechados: "id", // Período[] — histórico de períodos fechados (ver getPeriodoAtual/fecharPeriodoAtual)
 };
 
 let dbPromise = null;
@@ -226,4 +230,76 @@ export async function savePeriodicTax(periodicTax) {
   }
 
   return dbPut("periodicTaxes", periodicTax);
+}
+
+/**
+ * "Período" — o acumulador do fluxo Rendimentos → Gastos → Taxas →
+ * Dia da Liberdade Fiscal (redesenho de agosto de 2026, a pedido do
+ * autor). Não substitui `invoices`/`periodicTaxes` — é uma camada
+ * fina por cima, guardada em userSettings sob a chave "periodoAtual",
+ * que o ecrã do Dia da Liberdade lê para decidir o que já foi
+ * preenchido e o que falta (nunca calcula em silêncio com dados em
+ * falta — ver módulo dia-liberdade.js).
+ *
+ * Forma do período atual:
+ * {
+ *   criadoEm: string (ISO),
+ *   rendimentos: null | { salarioLiquidoMensal, custoTotalEmpregadorMensal, ... } (resultado de calcularCadeiaSalarial)
+ *   gastosMensal: null | { categorias: [{ id, valorMensal }], totalMensal }
+ *   taxasAnuais: null | { total, items: [{ tipo, valor }] }
+ * }
+ */
+const PERIODO_ATUAL_KEY = "periodoAtual";
+
+function periodoVazio() {
+  return {
+    criadoEm: new Date().toISOString(),
+    rendimentos: null,
+    gastosMensal: null,
+    taxasAnuais: null,
+  };
+}
+
+/** @returns {Promise<object>} o período atual, criando um vazio se ainda não existir */
+export async function getPeriodoAtual() {
+  const existente = await getSetting(PERIODO_ATUAL_KEY);
+  return existente ?? periodoVazio();
+}
+
+/**
+ * Mistura `patch` no período atual e persiste. Uso típico:
+ * `atualizarPeriodoAtual({ rendimentos: resultado })` a partir do
+ * botão "Guardar e avançar" de cada módulo.
+ * @param {Partial<{rendimentos: object, gastosMensal: object, taxasAnuais: object}>} patch
+ */
+export async function atualizarPeriodoAtual(patch) {
+  const atual = await getPeriodoAtual();
+  const atualizado = { ...atual, ...patch };
+  await setSetting(PERIODO_ATUAL_KEY, atualizado);
+  return atualizado;
+}
+
+/**
+ * Fecha o período atual: guarda uma cópia no histórico
+ * (`periodosFechados`, com o resultado final do Dia da Liberdade
+ * Fiscal anexado) e reinicia o período atual para um novo, vazio.
+ * @param {object} resultadoDiaLiberdade
+ */
+export async function fecharPeriodoAtual(resultadoDiaLiberdade) {
+  const atual = await getPeriodoAtual();
+  const fechado = {
+    id: `periodo-${Date.now()}`,
+    ...atual,
+    fechadoEm: new Date().toISOString(),
+    resultadoDiaLiberdade,
+  };
+  await dbPut("periodosFechados", fechado);
+  await setSetting(PERIODO_ATUAL_KEY, periodoVazio());
+  return fechado;
+}
+
+/** @returns {Promise<object[]>} histórico de períodos fechados, mais recente primeiro */
+export async function getHistoricoPeriodos() {
+  const todos = await dbGetAll("periodosFechados");
+  return todos.sort((a, b) => (b.fechadoEm ?? "").localeCompare(a.fechadoEm ?? ""));
 }

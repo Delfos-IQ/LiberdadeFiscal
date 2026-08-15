@@ -1,13 +1,21 @@
 // Liberdade Fiscal — Teste de integração do módulo de UI do Dia da
-// Liberdade Fiscal (Fase 7)
+// Liberdade Fiscal (Fase 7, redesenhado em agosto de 2026)
 // Executar: node --test tests/
+//
+// Redesenho de agosto de 2026: este ecrã deixou de pedir
+// salário/tipo de trabalhador — lê o Período acumulado (data/db.js,
+// preenchido pelos ecrãs Rendimentos → Gastos → Taxas) e só mostra um
+// botão "Calcular". Testa os três estados (falta rendimento / pronto a
+// calcular / resultado), o aviso de dados em falta, e o fecho de
+// período.
 
 import "fake-indexeddb/auto";
 import { test, describe, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-import { dbClear, saveInvoice, savePeriodicTax } from "../data/db.js";
+import { dbClear, atualizarPeriodoAtual, getPeriodoAtual } from "../data/db.js";
+import { calcularCadeiaSalarial } from "../data/tax-engine.js";
 import { render } from "../modules/dia-liberdade.js";
 
 before(async () => {
@@ -21,6 +29,9 @@ before(async () => {
 beforeEach(async () => {
   await dbClear("invoices");
   await dbClear("periodicTaxes");
+  await dbClear("userSettings");
+  await dbClear("periodosFechados");
+  window.location.hash = "";
 });
 
 function getContainer() {
@@ -38,89 +49,104 @@ async function waitFor(predicate, { timeout = 1000, interval = 5 } = {}) {
   return predicate();
 }
 
-function setInput(container, id, value) {
-  const input = container.querySelector(`#${id}`);
-  input.value = String(value);
-  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+function clickByText(container, text) {
+  const btn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes(text));
+  assert.ok(btn, `devia existir um botão com o texto "${text}"`);
+  btn.click();
+  return btn;
 }
 
-function submitForm(container) {
-  const form = container.querySelector("form");
-  form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-}
-
-describe("Dia da Liberdade Fiscal — formulário", () => {
-  test("mostra os campos principais e o disclaimer legal (spec §9)", async () => {
-    const container = getContainer();
-    render(container);
-    assert.ok(container.querySelector("#dl-salario-bruto"));
-    assert.ok(container.querySelector("#dl-tipo-trabalhador"));
-    assert.ok(container.querySelector("#dl-estado-civil"));
-    assert.ok(container.querySelector("#dl-regiao"));
-    assert.ok(container.querySelector("#dl-dependentes"));
-    assert.ok(container.querySelector(".disclaimer"));
+async function preencherRendimentos(salario = 2000) {
+  const r = calcularCadeiaSalarial(salario, {
+    tipoTrabalhador: "dependente",
+    estadoCivil: "individual",
+    dependentes: [],
+    regiao: "continente",
   });
+  await atualizarPeriodoAtual({ rendimentos: r });
+}
 
-  test("rejeita salário inválido com mensagem acessível", async () => {
+describe("Dia da Liberdade Fiscal — sem rendimento registado", () => {
+  test("mostra mensagem a pedir para preencher Rendimentos primeiro, com link", async () => {
     const container = getContainer();
     render(container);
-    submitForm(container);
-    await waitFor(() => container.querySelector('[role="alert"]'));
-    const alerta = container.querySelector('[role="alert"]');
-    assert.ok(alerta);
-    assert.match(alerta.textContent, /salário bruto mensal válido/);
+    await waitFor(() => container.querySelector("#dia-liberdade-heading"));
+
+    assert.match(container.textContent, /Ainda não há rendimento registado/);
+    const link = container.querySelector('a[href="#taximetro"]');
+    assert.ok(link, "devia existir um link para o ecrã de Rendimentos");
   });
 });
 
-describe("Dia da Liberdade Fiscal — resultado", () => {
-  test("calcula e mostra o resultado só com rendimento (sem faturas nem impostos registados)", async () => {
+describe("Dia da Liberdade Fiscal — pronto a calcular", () => {
+  test("com rendimento preenchido mostra o resumo do período e o botão Calcular", async () => {
+    await preencherRendimentos();
     const container = getContainer();
     render(container);
-    setInput(container, "dl-salario-bruto", 2000);
-    submitForm(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+
+    assert.match(container.textContent, /Rendimentos/);
+    assert.match(container.textContent, /por preencher \(opcional\)/);
+  });
+
+  test("clicar em Calcular mostra o resultado", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
     await waitFor(() => container.querySelector("#resultado-dia-heading"));
 
     assert.ok(container.querySelector("#resultado-dia-heading"));
     assert.ok(container.querySelector(".stat-hero"));
-    assert.match(container.textContent, /Baseado em 0 registo\(s\) de faturas e 0 registo\(s\)/);
+  });
+});
+
+describe("Dia da Liberdade Fiscal — resultado", () => {
+  test("com só rendimento preenchido, o resultado avisa que Gastos e Taxas não foram incluídos", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    assert.match(container.textContent, /NÃO inclui/);
+    assert.match(container.textContent, /Gastos/);
+    assert.match(container.textContent, /Taxas/);
   });
 
-  test("inclui os totais de faturas e impostos anuais já registados no cálculo", async () => {
-    await saveInvoice({
-      id: "inv-1",
-      date: "2026-06-01",
-      source: "manual",
-      goodServiceId: "pao",
-      region: "continente",
-      amount_total: 10,
-      amount_base: 9.43,
-      amount_tax: 0.57,
-      confirmed_by_user: true,
+  test("inclui os totais de Gastos e Taxas já guardados no período, sem aviso de dados em falta", async () => {
+    await preencherRendimentos();
+    await atualizarPeriodoAtual({
+      gastosMensal: {
+        regiao: "continente",
+        categorias: [{ id: "alimentacao", label: "Alimentação", valorMensal: 100, ivaMensal: 5.66 }],
+        totalMensal: 100,
+        totalIvaMensal: 5.66,
+      },
     });
-    await savePeriodicTax({
-      id: "tax-1",
-      type: "IMI",
-      amount: 300,
-      date: "2026-04-01",
-      recurrence: "annual",
+    await atualizarPeriodoAtual({
+      taxasAnuais: { total: 300, items: [{ tipo: "IMI", valor: 300 }] },
     });
 
     const container = getContainer();
     render(container);
-    setInput(container, "dl-salario-bruto", 2000);
-    submitForm(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
     await waitFor(() => container.querySelector("#resultado-dia-heading"));
 
-    assert.match(container.textContent, /0,57\s?€|0\.57/);
+    assert.doesNotMatch(container.textContent, /NÃO inclui/);
     assert.match(container.textContent, /300,00\s?€|300\.00/);
-    assert.match(container.textContent, /Baseado em 1 registo\(s\) de faturas e 1 registo\(s\)/);
   });
 
   test("o ecrã de resultado nunca afirma que se deixa de pagar impostos a partir dessa data", async () => {
+    await preencherRendimentos();
     const container = getContainer();
     render(container);
-    setInput(container, "dl-salario-bruto", 2000);
-    submitForm(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
     await waitFor(() => container.querySelector("#resultado-dia-heading"));
 
     assert.doesNotMatch(container.textContent.toLowerCase(), /deixas de pagar impostos a partir de hoje\./);
@@ -128,20 +154,22 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
   });
 
   test("inclui o disclaimer legal no ecrã de resultado", async () => {
+    await preencherRendimentos();
     const container = getContainer();
     render(container);
-    setInput(container, "dl-salario-bruto", 2000);
-    submitForm(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
     await waitFor(() => container.querySelector("#resultado-dia-heading"));
 
     assert.ok(container.querySelector(".disclaimer"));
   });
 
   test("mostra o link 'Comparar com a OCDE' e o botão 'Partilhar resultado'", async () => {
+    await preencherRendimentos();
     const container = getContainer();
     render(container);
-    setInput(container, "dl-salario-bruto", 2000);
-    submitForm(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
     await waitFor(() => container.querySelector("#resultado-dia-heading"));
 
     const compararLink = container.querySelector('a[href="#benchmark-ocde"]');
@@ -151,40 +179,59 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
       b.textContent.includes("Partilhar resultado")
     );
     assert.ok(partilharBtn, "devia existir um botão de partilha");
-    // Clicar não deve lançar exceção síncrona mesmo sem Canvas/Web Share API reais (ambiente jsdom).
     assert.doesNotThrow(() => partilharBtn.click());
   });
 
-  test("Recalcular volta ao formulário", async () => {
+  test("Recalcular volta ao ecrã de resumo/Calcular (não pede dados outra vez)", async () => {
+    await preencherRendimentos();
     const container = getContainer();
     render(container);
-    setInput(container, "dl-salario-bruto", 2000);
-    submitForm(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
     await waitFor(() => container.querySelector("#resultado-dia-heading"));
 
-    const recalcularBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Recalcular"));
-    recalcularBtn.click();
-    await waitFor(() => container.querySelector("#dia-liberdade-heading"));
+    clickByText(container, "Recalcular");
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
 
     assert.ok(container.querySelector("#dia-liberdade-heading"));
+  });
+
+  test("'Fechar este período e começar um novo' guarda no histórico e reinicia o período", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    clickByText(container, "Fechar este período e começar um novo");
+    await waitFor(() => container.textContent.includes("Ainda não há rendimento registado"));
+
+    const periodo = await getPeriodoAtual();
+    assert.equal(periodo.rendimentos, null, "o período atual deve ter reiniciado");
   });
 });
 
 describe("Dia da Liberdade Fiscal — acessibilidade básica", () => {
-  test("cada ecrã tem exatamente um h1 com foco programático", async () => {
+  test("cada ecrã tem exatamente um h1 com foco programático (sem rendimento registado)", async () => {
     const container = getContainer();
     render(container);
+    await waitFor(() => container.querySelector("#dia-liberdade-heading"));
     const headings = container.querySelectorAll("h1");
     assert.equal(headings.length, 1);
     assert.equal(headings[0].tabIndex, -1);
   });
 
-  test("todos os campos do formulário têm label associado por htmlFor/id", async () => {
+  test("cada ecrã tem exatamente um h1 com foco programático (ecrã de resultado)", async () => {
+    await preencherRendimentos();
     const container = getContainer();
     render(container);
-    container.querySelectorAll("label[for]").forEach((label) => {
-      const target = container.querySelector(`#${label.htmlFor}`);
-      assert.ok(target, `label "for=${label.htmlFor}" deve apontar para um campo existente`);
-    });
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    const headings = container.querySelectorAll("h1");
+    assert.equal(headings.length, 1);
+    assert.equal(headings[0].tabIndex, -1);
   });
 });

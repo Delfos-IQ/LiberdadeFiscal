@@ -1,17 +1,24 @@
-// Liberdade Fiscal — Módulo de UI do Dia da Liberdade Fiscal (Fase 7)
+// Liberdade Fiscal — Módulo de UI do Dia da Liberdade Fiscal (Fase 7,
+// redesenhado em agosto de 2026 — ver CLAUDE.md §6.5)
 //
 // Spec §6.5: consolida IRS + Segurança Social (trabalhador) + IVA e
-// impostos especiais (registados em Faturas) + impostos
-// patrimoniais/anuais (registados em Impostos Anuais) num único
-// resultado explicável — nunca "a partir de hoje deixas de pagar
-// impostos", sempre framed como proporção anual segundo hipóteses
-// explícitas.
+// impostos especiais (registados em Gastos) + impostos
+// patrimoniais/anuais (registados em Taxas) num único resultado
+// explicável — nunca "a partir de hoje deixas de pagar impostos",
+// sempre framed como proporção anual segundo hipóteses explícitas.
+//
+// Redesenho de agosto de 2026: este ecrã deixou de pedir salário/tipo
+// de trabalhador outra vez — lê o "Período" acumulado (data/db.js,
+// preenchido pelos ecrãs Rendimentos → Gastos → Taxas via "Guardar e
+// avançar") e só mostra um botão "Calcular". Se algum passo não foi
+// preenchido, o resultado diz explicitamente o que ficou de fora do
+// cálculo — nunca calcula em silêncio com dados em falta.
 //
 // Esta é também a terceira e última presença obrigatória do disclaimer
 // legal exigida pelo spec (secção 9): onboarding, footer, e este ecrã.
 
-import { calcularCadeiaSalarial, calculateFiscalFreedomDay } from "../data/tax-engine.js";
-import { dbGetAll } from "../data/db.js";
+import { calculateFiscalFreedomDay } from "../data/tax-engine.js";
+import { getPeriodoAtual, fecharPeriodoAtual } from "../data/db.js";
 import { buildShareText, desenharCartaoCanvas } from "../data/share-card.js";
 
 // Ano fiscal ativo — tem de acompanhar data/tax-rules/2026/*.js. Não
@@ -19,57 +26,127 @@ import { buildShareText, desenharCartaoCanvas } from "../data/share-card.js";
 // da v1, spec §5: "parâmetros fiscais versionados por ano").
 const ANO_FISCAL = 2026;
 
-const REGIOES = [
-  { value: "continente", label: "Continente" },
-  { value: "acores", label: "Açores" },
-  { value: "madeira", label: "Madeira" },
-];
-
 export function render(container) {
   let state = {
-    phase: "form",
-    salarioBruto: "",
-    estadoCivil: "individual",
-    tipoTrabalhador: "dependente",
-    regiao: "continente",
-    numDependentes: 0,
+    phase: "loading", // "loading" | "falta-rendimentos" | "pronto" | "resultado"
+    periodo: null,
     erro: null,
     resultado: null,
   };
 
-  function draw() {
-    container.innerHTML = "";
-    if (state.phase === "form") drawForm();
-    else drawResult();
+  async function iniciar() {
+    state.periodo = await getPeriodoAtual();
+    state.phase = state.periodo.rendimentos ? "pronto" : "falta-rendimentos";
+    draw();
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  function draw() {
+    container.innerHTML = "";
+    if (state.phase === "loading") {
+      drawLoading();
+    } else if (state.phase === "falta-rendimentos") {
+      drawFaltaRendimentos();
+    } else if (state.phase === "resultado") {
+      drawResult();
+    } else {
+      drawPronto();
+    }
+  }
 
-    const salario = Number(state.salarioBruto);
-    if (!Number.isFinite(salario) || salario <= 0) {
-      state.erro = "Introduz um salário bruto mensal válido, maior que zero.";
-      draw();
-      return;
+  function drawLoading() {
+    const card = el("section", "card");
+    card.append(el("p", null, "A carregar o teu período…"));
+    container.append(card);
+  }
+
+  function drawFaltaRendimentos() {
+    const card = el("section", "card");
+    card.setAttribute("aria-labelledby", "dia-liberdade-heading");
+
+    const heading = el("h1", null, "Dia da Liberdade Fiscal");
+    heading.id = "dia-liberdade-heading";
+    heading.tabIndex = -1;
+
+    const desc = el(
+      "p",
+      null,
+      "Ainda não há rendimento registado neste período. O Dia da Liberdade Fiscal precisa de um rendimento de referência para calcular a proporção do ano — sem isso não há denominador para a percentagem."
+    );
+
+    const irBtn = document.createElement("a");
+    irBtn.href = "#taximetro";
+    irBtn.className = "btn btn--primary";
+    irBtn.textContent = "Ir a Rendimentos →";
+
+    card.append(heading, desc, irBtn);
+    container.append(card);
+    heading.focus({ preventScroll: false });
+  }
+
+  function drawPronto() {
+    const p = state.periodo;
+    const card = el("section", "card");
+    card.setAttribute("aria-labelledby", "dia-liberdade-heading");
+
+    const heading = el("h1", null, "Dia da Liberdade Fiscal");
+    heading.id = "dia-liberdade-heading";
+    heading.tabIndex = -1;
+
+    const desc = el(
+      "p",
+      null,
+      "Junta o que já preencheste em Rendimentos, Gastos e Taxas para descobrir a que dia do ano corresponde a proporção do teu ano dedicada a impostos e contribuições."
+    );
+
+    const resumo = el("dl", "taximetro-cadeia");
+    appendItem(resumo, "Rendimentos", p.rendimentos ? "✅ preenchido" : "— por preencher");
+    appendItem(resumo, "Gastos mensais", p.gastosMensal ? "✅ preenchido" : "— por preencher (opcional)");
+    appendItem(resumo, "Taxas anuais", p.taxasAnuais ? "✅ preenchido" : "— por preencher (opcional)");
+
+    const avisoIncompleto =
+      !p.gastosMensal || !p.taxasAnuais
+        ? el(
+            "p",
+            "disclaimer",
+            "Podes calcular já — o resultado vai indicar claramente o que ficou de fora. Para um número mais completo, volta a Gastos e/ou Taxas antes de calcular."
+          )
+        : null;
+
+    const calcularBtn = el("button", "btn btn--primary", "Calcular o meu Dia da Liberdade Fiscal");
+    calcularBtn.type = "button";
+    calcularBtn.addEventListener("click", () => calcular());
+
+    if (state.erro) {
+      const erroEl = el("p", null, state.erro);
+      erroEl.setAttribute("role", "alert");
+      erroEl.style.color = "var(--color-danger)";
+      card.append(erroEl);
     }
 
-    const dependentes = Array.from({ length: state.numDependentes }, () => ({ idade: 10 }));
+    const disclaimer = el(
+      "p",
+      "disclaimer",
+      "Esta aplicação fornece estimativas para fins informativos e educativos. Não constitui aconselhamento fiscal, financeiro ou jurídico e não substitui o cálculo oficial da Autoridade Tributária."
+    );
+
+    card.append(heading, desc, resumo);
+    if (avisoIncompleto) card.append(avisoIncompleto);
+    card.append(calcularBtn, disclaimer);
+    container.append(card);
+    heading.focus({ preventScroll: false });
+  }
+
+  function calcular() {
+    const p = state.periodo;
+    const r = p.rendimentos;
 
     try {
-      const cadeia = calcularCadeiaSalarial(salario, {
-        tipoTrabalhador: state.tipoTrabalhador,
-        estadoCivil: state.estadoCivil,
-        dependentes,
-        regiao: state.regiao,
-      });
+      const irsAnual = round2(Math.max(0, r.irsAnualAntesDeDeducoes - r.deducaoAnualPorDependentes));
+      const ssTrabalhadorAnual = round2(r.descontoSSMensal * 12);
+      const rendimentoBrutoAnual = r.detalheAnual.rendimentoBrutoAnual;
 
-      const irsAnual = Math.max(0, cadeia.irsAnualAntesDeDeducoes - cadeia.deducaoAnualPorDependentes);
-      const ssTrabalhadorAnual = round2(cadeia.descontoSSMensal * 12);
-      const rendimentoBrutoAnual = cadeia.detalheAnual.rendimentoBrutoAnual;
-
-      const [invoices, periodicTaxes] = await Promise.all([dbGetAll("invoices"), dbGetAll("periodicTaxes")]);
-      const ivaEEspeciaisRegistado = round2(invoices.reduce((sum, inv) => sum + (inv.amount_tax || 0), 0));
-      const patrimoniaisRegistado = round2(periodicTaxes.reduce((sum, t) => sum + (t.amount || 0), 0));
+      const ivaEEspeciaisRegistado = p.gastosMensal ? round2((p.gastosMensal.totalIvaMensal || 0) * 12) : 0;
+      const patrimoniaisRegistado = p.taxasAnuais ? round2(p.taxasAnuais.total || 0) : 0;
 
       const resultado = calculateFiscalFreedomDay({
         ano: ANO_FISCAL,
@@ -82,150 +159,16 @@ export function render(container) {
 
       state.erro = null;
       state.resultado = resultado;
-      state.numRegistosConsumo = invoices.length;
-      state.numRegistosPatrimoniais = periodicTaxes.length;
-      state.phase = "result";
+      state.phase = "resultado";
     } catch (err) {
       state.erro = `Não foi possível calcular: ${err.message}`;
     }
     draw();
   }
 
-  function voltarAoFormulario() {
-    state.phase = "form";
-    draw();
-  }
-
-  function drawForm() {
-    const card = el("section", "card");
-    card.setAttribute("aria-labelledby", "dia-liberdade-heading");
-
-    const heading = el("h1", null, "Dia da Liberdade Fiscal");
-    heading.id = "dia-liberdade-heading";
-    heading.tabIndex = -1;
-
-    const desc = el(
-      "p",
-      null,
-      "Junta o teu rendimento de trabalho aos consumos e impostos patrimoniais que já registaste, e descobre a que dia do ano corresponde a proporção do teu ano dedicada a impostos e contribuições."
-    );
-
-    const form = el("form");
-    form.noValidate = true;
-
-    const salarioField = el("div", "taximetro-field");
-    const salarioLabel = document.createElement("label");
-    salarioLabel.htmlFor = "dl-salario-bruto";
-    salarioLabel.textContent = "Salário bruto mensal (€)";
-    const salarioInput = document.createElement("input");
-    salarioInput.type = "number";
-    salarioInput.id = "dl-salario-bruto";
-    salarioInput.min = "0";
-    salarioInput.step = "0.01";
-    salarioInput.value = state.salarioBruto;
-    salarioInput.addEventListener("input", (e) => (state.salarioBruto = e.target.value));
-    salarioField.append(salarioLabel, salarioInput);
-
-    const tipoField = el("div", "taximetro-field");
-    const tipoLabel = document.createElement("label");
-    tipoLabel.htmlFor = "dl-tipo-trabalhador";
-    tipoLabel.textContent = "Tipo de trabalhador";
-    const tipoSelect = document.createElement("select");
-    tipoSelect.id = "dl-tipo-trabalhador";
-    [
-      { value: "dependente", label: "Trabalhador por conta de outrem" },
-      { value: "independente", label: "Trabalhador independente" },
-    ].forEach((o) => {
-      const opt = document.createElement("option");
-      opt.value = o.value;
-      opt.textContent = o.label;
-      tipoSelect.append(opt);
-    });
-    tipoSelect.value = state.tipoTrabalhador;
-    tipoSelect.addEventListener("change", (e) => (state.tipoTrabalhador = e.target.value));
-    tipoField.append(tipoLabel, tipoSelect);
-
-    const estadoField = el("div", "taximetro-field");
-    const estadoLabel = document.createElement("label");
-    estadoLabel.htmlFor = "dl-estado-civil";
-    estadoLabel.textContent = "Estado civil (para efeitos de IRS)";
-    const estadoSelect = document.createElement("select");
-    estadoSelect.id = "dl-estado-civil";
-    [
-      { value: "individual", label: "Declaração individual" },
-      { value: "conjunta", label: "Declaração conjunta (casado/união de facto)" },
-    ].forEach((o) => {
-      const opt = document.createElement("option");
-      opt.value = o.value;
-      opt.textContent = o.label;
-      estadoSelect.append(opt);
-    });
-    estadoSelect.value = state.estadoCivil;
-    estadoSelect.addEventListener("change", (e) => (state.estadoCivil = e.target.value));
-    estadoField.append(estadoLabel, estadoSelect);
-
-    const regiaoField = el("div", "taximetro-field");
-    const regiaoLabel = document.createElement("label");
-    regiaoLabel.htmlFor = "dl-regiao";
-    regiaoLabel.textContent = "Região";
-    const regiaoSelect = document.createElement("select");
-    regiaoSelect.id = "dl-regiao";
-    REGIOES.forEach((r) => {
-      const opt = document.createElement("option");
-      opt.value = r.value;
-      opt.textContent = r.label;
-      regiaoSelect.append(opt);
-    });
-    regiaoSelect.value = state.regiao;
-    regiaoSelect.addEventListener("change", (e) => (state.regiao = e.target.value));
-    regiaoField.append(regiaoLabel, regiaoSelect);
-
-    const depField = el("div", "taximetro-field");
-    const depLabel = document.createElement("label");
-    depLabel.htmlFor = "dl-dependentes";
-    depLabel.textContent = "Número de dependentes";
-    const depInput = document.createElement("input");
-    depInput.type = "number";
-    depInput.id = "dl-dependentes";
-    depInput.min = "0";
-    depInput.step = "1";
-    depInput.value = String(state.numDependentes);
-    depInput.addEventListener("input", (e) => (state.numDependentes = Math.max(0, Number(e.target.value) || 0)));
-    depField.append(depLabel, depInput);
-
-    const notaConsumo = el(
-      "p",
-      "disclaimer",
-      "O IVA/impostos especiais e os impostos patrimoniais usados neste cálculo são os que já registaste nas secções Faturas e Impostos Anuais — não uma estimativa automática do teu consumo total. Regista mais despesas para um resultado mais preciso."
-    );
-
-    form.append(salarioField, tipoField, estadoField, regiaoField, depField, notaConsumo);
-
-    if (state.erro) {
-      const erroEl = el("p", null, state.erro);
-      erroEl.setAttribute("role", "alert");
-      erroEl.style.color = "var(--color-danger)";
-      form.append(erroEl);
-    }
-
-    const submitBtn = el("button", "btn btn--primary", "Calcular o meu Dia da Liberdade Fiscal");
-    submitBtn.type = "submit";
-    form.addEventListener("submit", handleSubmit);
-    form.append(submitBtn);
-
-    const disclaimer = el(
-      "p",
-      "disclaimer",
-      "Esta aplicação fornece estimativas para fins informativos e educativos. Não constitui aconselhamento fiscal, financeiro ou jurídico e não substitui o cálculo oficial da Autoridade Tributária."
-    );
-
-    card.append(heading, desc, form, disclaimer);
-    container.append(card);
-    heading.focus({ preventScroll: false });
-  }
-
   function drawResult() {
     const r = state.resultado;
+    const p = state.periodo;
 
     const card = el("section", "card");
     card.setAttribute("aria-labelledby", "resultado-dia-heading");
@@ -233,6 +176,8 @@ export function render(container) {
     const heading = el("h1", null, "O teu Dia da Liberdade Fiscal");
     heading.id = "resultado-dia-heading";
     heading.tabIndex = -1;
+
+    card.append(desenharIlustracao());
 
     const dataFormatada = formatarDataPT(r.date);
     const dataHero = el("p", "stat-hero", dataFormatada);
@@ -248,24 +193,58 @@ export function render(container) {
       "Esta é a data correspondente à proporção anual do valor destinado a impostos e contribuições, segundo as hipóteses usadas nesta simulação — não significa que deixes de pagar impostos a partir de hoje."
     );
 
+    const pensarCritico = el(
+      "p",
+      null,
+      "Um número como este só ganha sentido quando percebes a fórmula por trás dele — e é exatamente por isso que este resultado vem sempre acompanhado da sua metodologia, nunca sozinho. Quanto mais claro o método, mais informada é a tua opinião sobre ele."
+    );
+    pensarCritico.className = "disclaimer";
+
     const breakdown = el("dl", "taximetro-cadeia");
     appendItem(breakdown, "IRS anual", formatEUR(r.breakdown.irs));
     appendItem(breakdown, "Segurança Social (trabalhador)", formatEUR(r.breakdown.segurancaSocial));
-    appendItem(breakdown, "IVA e impostos especiais registados", formatEUR(r.breakdown.ivaEEspeciais));
-    appendItem(breakdown, "Impostos patrimoniais/anuais registados", formatEUR(r.breakdown.patrimoniais));
+    appendItem(
+      breakdown,
+      p.gastosMensal ? "IVA e impostos especiais (estimado a partir de Gastos)" : "IVA e impostos especiais — NÃO incluído",
+      formatEUR(r.breakdown.ivaEEspeciais)
+    );
+    appendItem(
+      breakdown,
+      p.taxasAnuais ? "Impostos patrimoniais/anuais (registados em Taxas)" : "Impostos patrimoniais/anuais — NÃO incluído",
+      formatEUR(r.breakdown.patrimoniais)
+    );
     appendItem(breakdown, "Total de impostos e contribuições", formatEUR(r.totalImpostos));
     appendItem(breakdown, "Rendimento bruto anual de referência", formatEUR(r.rendimentoBase));
+
+    const faltantes = [];
+    if (!p.gastosMensal) faltantes.push("Gastos (IVA e impostos especiais de consumo)");
+    if (!p.taxasAnuais) faltantes.push("Taxas (IMI, IUC, ISV, IMT, Imposto de Selo)");
+
+    let avisoFaltantes = null;
+    if (faltantes.length > 0) {
+      avisoFaltantes = el(
+        "p",
+        "disclaimer",
+        `⚠️ Este resultado NÃO inclui: ${faltantes.join("; ")} — porque ainda não preencheste essa secção neste período. O teu Dia da Liberdade Fiscal real é, com estes dados incluídos, mais tarde no ano do que o mostrado aqui.`
+      );
+    }
 
     const detalhes = document.createElement("details");
     const summary = document.createElement("summary");
     summary.textContent = "Como chegámos a este número?";
     const metodologiaTexto = el("p", null, r.methodology);
-    const registosInfo = el(
+    const fonteRendimentos = el(
+      "p",
+      "disclaimer",
+      "Fonte do IRS e Segurança Social: CIRS (Código do IRS) e taxas de TSU da Segurança Social, 2026 — ver TAX-METHODOLOGY.md para os parâmetros exatos usados."
+    );
+    detalhes.append(summary, metodologiaTexto, fonteRendimentos);
+
+    const privacidade = el(
       "p",
       "stat-label",
-      `Baseado em ${state.numRegistosConsumo} registo(s) de faturas e ${state.numRegistosPatrimoniais} registo(s) de impostos anuais/patrimoniais.`
+      "🔒 Todo este cálculo aconteceu só neste dispositivo — nada foi enviado para nenhum servidor."
     );
-    detalhes.append(summary, metodologiaTexto, registosInfo);
 
     const disclaimer = el(
       "p",
@@ -277,7 +256,10 @@ export function render(container) {
 
     const voltarBtn = el("button", "btn btn--secondary", "Recalcular");
     voltarBtn.type = "button";
-    voltarBtn.addEventListener("click", voltarAoFormulario);
+    voltarBtn.addEventListener("click", () => {
+      state.phase = "pronto";
+      draw();
+    });
     acoes.append(voltarBtn);
 
     if (typeof document !== "undefined" && "createElement" in document) {
@@ -293,9 +275,42 @@ export function render(container) {
     compararLink.textContent = "Comparar com a OCDE →";
     acoes.append(compararLink);
 
-    card.append(heading, dataHero, percentagemLabel, framing, breakdown, detalhes, acoes, disclaimer);
+    const fecharBtn = el("button", "btn btn--secondary", "Fechar este período e começar um novo");
+    fecharBtn.type = "button";
+    fecharBtn.addEventListener("click", async () => {
+      await fecharPeriodoAtual(r);
+      state.periodo = await getPeriodoAtual();
+      state.phase = "falta-rendimentos";
+      draw();
+    });
+
+    card.append(heading, dataHero, percentagemLabel, framing, pensarCritico, breakdown);
+    if (avisoFaltantes) card.append(avisoFaltantes);
+    card.append(detalhes, privacidade, acoes, fecharBtn, disclaimer);
     container.append(card);
     heading.focus({ preventScroll: false });
+  }
+
+  function desenharIlustracao() {
+    // Ilustração simples em SVG inline (sem dependências externas, sem
+    // pedir ficheiros de logo ao autor) para o resultado "não ser tão
+    // seco" — pedido explícito do autor. Um calendário estilizado com
+    // a paleta da marca.
+    const wrap = el("div", "dia-liberdade-ilustracao");
+    wrap.innerHTML = `
+      <svg viewBox="0 0 200 140" role="img" aria-label="Ilustração de um calendário" width="160" height="112">
+        <rect x="20" y="24" width="160" height="106" rx="12" fill="#FFFFFF" stroke="#0D1321" stroke-width="4"/>
+        <rect x="20" y="24" width="160" height="34" rx="12" fill="#22C55E"/>
+        <rect x="20" y="46" width="160" height="12" fill="#22C55E"/>
+        <circle cx="55" cy="16" r="8" fill="#0D1321"/>
+        <circle cx="145" cy="16" r="8" fill="#0D1321"/>
+        <rect x="51" y="8" width="8" height="24" rx="4" fill="#0D1321"/>
+        <rect x="141" y="8" width="8" height="24" rx="4" fill="#0D1321"/>
+        <circle cx="100" cy="96" r="26" fill="#F6C453"/>
+        <path d="M90 96 l7 7 l14 -16" stroke="#0D1321" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+    return wrap;
   }
 
   async function partilharResultado(resultado) {
@@ -317,6 +332,10 @@ export function render(container) {
       blob = null;
     }
 
+    // navigator.share({files}) (Web Share API Level 2) já entrega a
+    // imagem à folha de partilha nativa do sistema operativo — que
+    // inclui o WhatsApp automaticamente quando está instalado, sem
+    // precisar de nenhuma integração específica do WhatsApp aqui.
     const podePartilharFicheiro =
       blob && typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [ficheiroDe(blob)] });
 
@@ -350,7 +369,7 @@ export function render(container) {
     return new File([blob], "liberdade-fiscal.png", { type: "image/png" });
   }
 
-  draw();
+  iniciar();
 
   return {
     destroy() {

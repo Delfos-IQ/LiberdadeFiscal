@@ -125,8 +125,22 @@ describe("calcularImpostoSelo", () => {
     assert.equal(r.verba, "1.1");
   });
 
-  test("transmissão gratuita / herança (verba 1.2, 10%)", () => {
+  test("transmissão gratuita / herança (verba 1.2, 10%) sem parentesco indicado", () => {
     const r = calcularImpostoSelo("transmissaoGratuita", 50000);
+    assert.equal(r.imposto, 5000);
+    assert.ok(r.notes.includes("isenta"));
+  });
+
+  test("transmissão gratuita a cônjuge/descendente/ascendente está isenta (Art. 6.º, al. e) CIS)", () => {
+    for (const parentesco of ["conjugeOuUniaoFacto", "descendente", "ascendente"]) {
+      const r = calcularImpostoSelo("transmissaoGratuita", 50000, { parentesco });
+      assert.equal(r.imposto, 0, `deveria ser isento para ${parentesco}`);
+      assert.equal(r.isentoPorParentesco, true);
+    }
+  });
+
+  test("transmissão gratuita a outro parentesco (ex.: irmão, sobrinho) continua tributada a 10%", () => {
+    const r = calcularImpostoSelo("transmissaoGratuita", 50000, { parentesco: "outro" });
     assert.equal(r.imposto, 5000);
   });
 

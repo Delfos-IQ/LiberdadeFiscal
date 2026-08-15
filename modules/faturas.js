@@ -1,17 +1,24 @@
-// Liberdade Fiscal — Módulo de UI de Faturas (Fase 5)
+// Liberdade Fiscal — Módulo de UI de "Gastos" (Fase 5, redesenhado em
+// agosto de 2026 — ver CLAUDE.md §6.3)
 //
-// Fluxo primário: manual (spec §6.3). O utilizador escolhe um item do
-// catálogo (IVA já resolvido) e introduz o total pago; a app calcula
-// o desglose. Atajo QR está em faturas-qr.js (importado aqui). Foto+IA
-// é um fallback que depende de um Cloudflare Worker não desplegado
-// nesta fase — ver tasks pendentes.
+// Redesenho de agosto de 2026, a pedido do autor: substitui a captura
+// por fatura individual (item a item) por uma estimativa mensal
+// autorreportada por categoria (data/categorias-gastos-pt.js) — menos
+// precisa, muito menos fricção. Para cada categoria o utilizador
+// introduz quanto gasta em média por mês; a app decompõe esse valor em
+// base + IVA (e ISP quando aplicável) e mostra a fonte de cada taxa.
+//
+// O fluxo de fatura individual + QR (faturas-qr.js) e o fallback de
+// foto+IA continuam no código, mas ficam FORA da navegação ativa desta
+// versão — o autor pediu para os manter disponíveis como possível
+// "modo avançado" futuro, sem os apagar. Não importar faturas-qr.js
+// aqui evita que fique morto silenciosamente sem ninguém notar: ficará
+// por reativar explicitamente quando/se esse modo avançado avançar.
 
-import { getSetting } from "../data/db.js";
-import { saveInvoice, dbGetAll } from "../data/db.js";
-import { GOODS_SERVICES_PT } from "../data/goods-services-pt.js";
-import { decomporIVADeTotal, decomporCombustivel, decomporIABA } from "../data/tax-engine.js";
+import { getSetting, atualizarPeriodoAtual } from "../data/db.js";
+import { CATEGORIAS_GASTOS_PT } from "../data/categorias-gastos-pt.js";
+import { decomporIVADeTotal, decomporCombustivel } from "../data/tax-engine.js";
 import { render as renderOnboarding } from "./onboarding.js";
-import { render as renderQrAtalho } from "./faturas-qr.js";
 
 export function render(container) {
   let destroyed = false;
@@ -30,7 +37,7 @@ export function render(container) {
       return;
     }
 
-    subInstance = renderFaturaApp(container, regiao);
+    subInstance = renderGastosApp(container, regiao);
   }
 
   start();
@@ -44,310 +51,176 @@ export function render(container) {
   };
 }
 
-function renderFaturaApp(container, regiaoInicial) {
-  let state = {
-    regiao: regiaoInicial,
-    view: "lista", // "lista" | "nova" | "qr"
-    itemSelecionado: null,
-    valorTotal: "",
-    erro: null,
-    ultimoResultado: null,
-  };
+function renderGastosApp(container, regiao) {
+  // valores[categoriaId] = string do <input> (mantém-se como string
+  // para não perder "0," a meio de escrever, etc.)
+  const valores = {};
+  CATEGORIAS_GASTOS_PT.forEach((c) => {
+    valores[c.id] = "";
+  });
 
-  async function draw() {
+  function draw() {
     container.innerHTML = "";
-    if (state.view === "qr") {
-      const qrInstance = renderQrAtalho(container, {
-        regiao: state.regiao,
-        onDadosLidos: (dadosPreenchidos) => {
-          state.view = "nova";
-          state.dadosQr = dadosPreenchidos;
-          if (dadosPreenchidos.valorTotal !== null && dadosPreenchidos.valorTotal !== undefined) {
-            state.valorTotal = String(dadosPreenchidos.valorTotal);
-          }
-          state.itemSelecionado = null;
-          state.erro = null;
-          draw();
-        },
-        onCancelar: () => {
-          state.view = "lista";
-          draw();
-        },
-      });
-      currentSubInstance = qrInstance;
-      return;
-    }
-
-    currentSubInstance = null;
-
-    if (state.view === "nova") {
-      await drawNovaFatura();
-    } else {
-      await drawLista();
-    }
-  }
-
-  let currentSubInstance = null;
-
-  async function drawLista() {
-    const invoices = (await dbGetAll("invoices")).sort((a, b) => (a.date < b.date ? 1 : -1));
 
     const card = el("section", "card");
-    card.setAttribute("aria-labelledby", "faturas-heading");
+    card.setAttribute("aria-labelledby", "gastos-heading");
 
-    const heading = el("h1", null, "Faturas");
-    heading.id = "faturas-heading";
+    const heading = el("h1", null, "Gastos");
+    heading.id = "gastos-heading";
     heading.tabIndex = -1;
 
-    const regiaoInfo = el("p", "stat-label", `Região: ${labelRegiao(state.regiao)}`);
-
-    const totalGasto = invoices.reduce((sum, inv) => sum + inv.amount_total, 0);
-    const totalIva = invoices.reduce((sum, inv) => sum + (inv.amount_tax || 0), 0);
-
-    const resumo = el("div");
-    resumo.append(
-      el("p", "stat-hero", formatEUR(totalGasto)),
-      el("p", "stat-label", `Total registado · ${formatEUR(totalIva)} em IVA estimado`)
+    const desc = el(
+      "p",
+      null,
+      `Estima quanto gastas por mês em cada categoria (região: ${labelRegiao(regiao)}). Não precisas de guardar faturas — é uma estimativa tua, arredondada é suficiente. Cada categoria mostra depois quanto disso é, em média, IVA.`
     );
 
-    const actions = el("div", "faturas-actions");
-    const novaBtn = el("button", "btn btn--primary", "+ Registar despesa");
-    novaBtn.type = "button";
-    novaBtn.addEventListener("click", () => {
-      state.view = "nova";
-      state.itemSelecionado = null;
-      state.valorTotal = "";
-      state.erro = null;
-      state.dadosQr = null;
-      draw();
-    });
-    const qrBtn = el("button", "btn btn--secondary", "Ler código QR");
-    qrBtn.type = "button";
-    qrBtn.addEventListener("click", () => {
-      state.view = "qr";
-      draw();
-    });
-    actions.append(novaBtn, qrBtn);
+    const privacidade = el(
+      "p",
+      "stat-label",
+      "🔒 Estes valores ficam só neste dispositivo. Nada é enviado para nenhum servidor."
+    );
 
-    card.append(heading, regiaoInfo, resumo, actions);
+    card.append(heading, desc, privacidade);
     container.append(card);
 
-    if (invoices.length > 0) {
-      const listCard = el("section", "card");
-      const listHeading = el("h2", null, "Últimos registos");
-      const list = el("ul", "faturas-list");
-      invoices.slice(0, 20).forEach((inv) => {
-        const item = GOODS_SERVICES_PT.find((g) => g.id === inv.goodServiceId);
-        const li = el("li", "faturas-list-item");
-        li.append(
-          el("span", null, item ? item.name_pt : inv.goodServiceId),
-          el("span", "stat-label", `${inv.date} · ${formatEUR(inv.amount_total)}`)
-        );
-        list.append(li);
-      });
-      listCard.append(listHeading, list);
-      container.append(listCard);
-    }
+    const totalCard = el("section", "card");
+    const totalHero = el("p", "stat-hero", formatEUR(totalMensal()));
+    const totalLabel = el("p", "stat-label", "Total estimado de gastos por mês");
+    totalCard.append(totalHero, totalLabel);
+    container.append(totalCard);
+
+    CATEGORIAS_GASTOS_PT.forEach((cat) => {
+      container.append(drawCategoria(cat));
+    });
+
+    const avancarCard = el("section", "card");
+    const avancarBtn = el("button", "btn btn--primary", "Guardar e avançar →");
+    avancarBtn.type = "button";
+    avancarBtn.addEventListener("click", async () => {
+      await guardarEAvancar();
+    });
+    avancarCard.append(avancarBtn);
+    container.append(avancarCard);
 
     focusHeading(heading);
   }
 
-  async function drawNovaFatura() {
+  function totalMensal() {
+    return CATEGORIAS_GASTOS_PT.reduce((sum, c) => sum + (Number(valores[c.id]) || 0), 0);
+  }
+
+  function drawCategoria(cat) {
     const card = el("section", "card");
-    card.setAttribute("aria-labelledby", "nova-fatura-heading");
 
-    const heading = el("h1", null, "Registar despesa");
-    heading.id = "nova-fatura-heading";
-    heading.tabIndex = -1;
+    const heading = el("h2", null, cat.label);
+    const exemplos = el("p", "stat-label", `Ex.: ${cat.exemplos.join(", ")}`);
 
-    const form = el("form");
-    form.noValidate = true;
+    const field = el("div", "taximetro-field");
+    const label = document.createElement("label");
+    const inputId = `gasto-${cat.id}`;
+    label.htmlFor = inputId;
+    label.textContent = "Quanto gastas por mês (€)?";
+    const input = document.createElement("input");
+    input.type = "number";
+    input.id = inputId;
+    input.min = "0";
+    input.step = "0.01";
+    input.value = valores[cat.id];
+    input.addEventListener("input", (e) => {
+      valores[cat.id] = e.target.value;
+      // Só atualiza o total e o desglose desta categoria, sem redesenhar
+      // tudo (evita perder o foco do input a cada tecla).
+      totalHeroLive();
+      atualizarDesgloseCategoria(cat, desgloseWrap);
+    });
+    field.append(label, input);
 
-    if (state.dadosQr) {
-      const qrNota = el(
-        "p",
-        "disclaimer",
-        "Valor preenchido a partir do código QR. O QR não indica a que categoria pertence a despesa — escolhe o item mais próximo do catálogo para calcularmos o IVA correto."
-      );
-      form.append(qrNota);
+    card.append(heading, exemplos, field);
+
+    if (cat.notes) {
+      card.append(el("p", "disclaimer", cat.notes));
     }
 
-    const itemField = el("div", "taximetro-field");
-    const itemLabel = document.createElement("label");
-    itemLabel.htmlFor = "item-catalogo";
-    itemLabel.textContent = "O que compraste?";
-    const itemSelect = document.createElement("select");
-    itemSelect.id = "item-catalogo";
-    const placeholderOpt = document.createElement("option");
-    placeholderOpt.value = "";
-    placeholderOpt.textContent = "— Seleciona um item —";
-    itemSelect.append(placeholderOpt);
+    const desgloseWrap = el("div");
+    atualizarDesgloseCategoria(cat, desgloseWrap);
+    card.append(desgloseWrap);
 
-    const categorias = [...new Set(GOODS_SERVICES_PT.map((i) => i.category))];
-    categorias.forEach((cat) => {
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = cat;
-      GOODS_SERVICES_PT.filter((i) => i.category === cat).forEach((item) => {
-        const opt = document.createElement("option");
-        opt.value = item.id;
-        opt.textContent = item.name_pt;
-        opt.selected = state.itemSelecionado === item.id;
-        optgroup.append(opt);
-      });
-      itemSelect.append(optgroup);
-    });
-    itemSelect.addEventListener("change", (e) => {
-      state.itemSelecionado = e.target.value || null;
-    });
-    itemField.append(itemLabel, itemSelect);
-
-    const valorField = el("div", "taximetro-field");
-    const valorLabel = document.createElement("label");
-    valorLabel.htmlFor = "valor-total";
-    valorLabel.textContent = "Quanto pagaste, no total (€)?";
-    const valorInput = document.createElement("input");
-    valorInput.type = "number";
-    valorInput.id = "valor-total";
-    valorInput.min = "0";
-    valorInput.step = "0.01";
-    valorInput.value = state.valorTotal;
-    valorInput.addEventListener("input", (e) => {
-      state.valorTotal = e.target.value;
-    });
-    valorField.append(valorLabel, valorInput);
-
-    form.append(itemField, valorField);
-
-    if (state.erro) {
-      const erroEl = el("p", null, state.erro);
-      erroEl.setAttribute("role", "alert");
-      erroEl.style.color = "var(--color-danger)";
-      form.append(erroEl);
-    }
-
-    const submitBtn = el("button", "btn btn--primary", "Calcular e confirmar");
-    submitBtn.type = "submit";
-
-    const cancelBtn = el("button", "btn btn--secondary", "Cancelar");
-    cancelBtn.type = "button";
-    cancelBtn.addEventListener("click", () => {
-      state.view = "lista";
-      draw();
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      handleCalcular();
-    });
-
-    form.append(submitBtn, cancelBtn);
-    card.append(heading, form);
-    container.append(card);
-    focusHeading(heading);
+    return card;
   }
 
-  function handleCalcular() {
-    const item = GOODS_SERVICES_PT.find((i) => i.id === state.itemSelecionado);
-    const valor = Number(state.valorTotal);
+  function totalHeroLive() {
+    const hero = container.querySelector(".stat-hero");
+    if (hero) hero.textContent = formatEUR(totalMensal());
+  }
 
-    if (!item) {
-      state.erro = "Escolhe um item do catálogo.";
-      draw();
-      return;
-    }
-    if (!Number.isFinite(valor) || valor <= 0) {
-      state.erro = "Introduz um valor total válido, maior que zero.";
-      draw();
-      return;
-    }
+  function atualizarDesgloseCategoria(cat, wrap) {
+    wrap.innerHTML = "";
+    const valor = Number(valores[cat.id]);
+    if (!Number.isFinite(valor) || valor <= 0) return;
 
-    state.erro = null;
-    const desglose = decomporIVADeTotal(valor, state.regiao, item.iva_level);
-
+    let desglose;
     let notaEspecial = null;
-    if (item.special_tax) {
-      if (item.special_tax.type === "ISP") {
-        const tipoCombustivel = item.id === "combustivel-gasolina" ? "gasolina" : "gasoleoRodoviario";
-        notaEspecial = decomporCombustivel(valor, tipoCombustivel, state.regiao);
-      } else if (item.special_tax.type === "IABA") {
-        notaEspecial = decomporIABA();
-      } else {
-        notaEspecial = { status: "info", notes: item.special_tax.note };
-      }
+
+    if (cat.tipo === "combustivel") {
+      const especial = decomporCombustivel(valor, "gasolina", regiao);
+      desglose = { baseTributavel: null, imposto: especial.ivaEstimado };
+      notaEspecial = especial;
+    } else {
+      desglose = decomporIVADeTotal(valor, regiao, cat.tipo);
     }
 
-    state.ultimoResultado = { item, valor, desglose, notaEspecial };
-    drawConfirmacao();
+    const dl = el("dl", "taximetro-cadeia");
+    if (desglose.baseTributavel !== null) {
+      appendItem(dl, "Base sem IVA (estimada)", formatEUR(desglose.baseTributavel));
+    }
+    appendItem(dl, "IVA (estimado)", formatEUR(desglose.imposto));
+    wrap.append(dl);
+
+    const fonte = el(
+      "p",
+      "disclaimer",
+      `Fonte: Código do IVA (CIVA), Art. 18.º e Listas I/II anexas — taxa ${labelNivel(cat.tipo)} aplicada em ${labelRegiao(regiao)}.`
+    );
+    wrap.append(fonte);
+
+    if (notaEspecial && notaEspecial.notes) {
+      wrap.append(el("p", "disclaimer", notaEspecial.notes));
+    }
   }
 
-  function drawConfirmacao() {
-    container.innerHTML = "";
-    const { item, valor, desglose, notaEspecial } = state.ultimoResultado;
-
-    const card = el("section", "card");
-    card.setAttribute("aria-labelledby", "confirmar-heading");
-
-    const heading = el("h1", null, "Confirma o registo");
-    heading.id = "confirmar-heading";
-    heading.tabIndex = -1;
-
-    const resumo = el("dl", "taximetro-cadeia");
-    appendItem(resumo, "Item", item.name_pt);
-    appendItem(resumo, "Valor pago", formatEUR(valor));
-    appendItem(resumo, "Base tributável (estimada)", formatEUR(desglose.baseTributavel));
-    appendItem(resumo, "IVA (estimado)", formatEUR(desglose.imposto));
-
-    card.append(heading, resumo);
-
-    if (notaEspecial) {
-      const nota = el(
-        "p",
-        "disclaimer",
-        notaEspecial.status === "UNKNOWN" || notaEspecial.status === "ESTIMATE"
-          ? notaEspecial.notes || notaEspecial.reason
-          : notaEspecial.notes
-      );
-      card.append(nota);
-    }
-
-    const confirmBtn = el("button", "btn btn--primary", "Confirmar e guardar");
-    confirmBtn.type = "button";
-    confirmBtn.addEventListener("click", async () => {
-      const invoice = {
-        id: generateId(),
-        date: new Date().toISOString().slice(0, 10),
-        source: "manual",
-        goodServiceId: item.id,
-        region: state.regiao,
-        amount_total: round2(valor),
-        amount_base: round2(desglose.baseTributavel),
-        amount_tax: round2(desglose.imposto),
-        confirmed_by_user: true,
-      };
-      await saveInvoice(invoice);
-      state.view = "lista";
-      draw();
+  async function guardarEAvancar() {
+    const categorias = CATEGORIAS_GASTOS_PT.map((c) => {
+      const valorMensal = round2(Number(valores[c.id]) || 0);
+      let ivaMensal = 0;
+      if (valorMensal > 0) {
+        if (c.tipo === "combustivel") {
+          const especial = decomporCombustivel(valorMensal, "gasolina", regiao);
+          ivaMensal = especial.ivaEstimado || 0;
+        } else {
+          ivaMensal = decomporIVADeTotal(valorMensal, regiao, c.tipo).imposto;
+        }
+      }
+      return { id: c.id, label: c.label, valorMensal, ivaMensal: round2(ivaMensal) };
     });
+    const totalMensalArredondado = round2(totalMensal());
+    const totalIvaMensal = round2(categorias.reduce((sum, c) => sum + c.ivaMensal, 0));
 
-    const backBtn = el("button", "btn btn--secondary", "Voltar e corrigir");
-    backBtn.type = "button";
-    backBtn.addEventListener("click", () => {
-      state.view = "nova";
-      draw();
+    await atualizarPeriodoAtual({
+      gastosMensal: {
+        regiao,
+        categorias,
+        totalMensal: totalMensalArredondado,
+        totalIvaMensal,
+      },
     });
-
-    card.append(confirmBtn, backBtn);
-    container.append(card);
-    focusHeading(heading);
+    window.location.hash = "impostos-anuais";
   }
 
   draw();
 
   return {
     destroy() {
-      if (currentSubInstance && typeof currentSubInstance.destroy === "function") {
-        currentSubInstance.destroy();
-      }
       container.innerHTML = "";
     },
   };
@@ -372,17 +245,16 @@ function labelRegiao(regiao) {
   return { continente: "Continente", acores: "Açores", madeira: "Madeira" }[regiao] || regiao;
 }
 
+function labelNivel(nivel) {
+  return { reduzida: "reduzida", intermedia: "intermédia", normal: "normal" }[nivel] || nivel;
+}
+
 function formatEUR(value) {
   return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
 }
 
 function round2(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-function generateId() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return `inv-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function focusHeading(headingEl) {

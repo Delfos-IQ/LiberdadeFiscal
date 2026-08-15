@@ -96,14 +96,23 @@ export const IRS_2026 = {
    */
   diferencialRegional: {
     status: "ESTIMATE",
-    acores: { reducaoSobreTaxaMarginal: 0.3 },
+    acores: {
+      reducaoSobreTaxaMarginal: 0.3,
+      status: "ESTIMATE",
+      notes:
+        "Não reconfirmado nesta ronda (15/08/2026). A fonte encontrada (Despacho n.º 1179/2026, DR) descreve coeficientes de retenção na fonte mensal específicos dos Açores, não uma redução percentual direta sobre a taxa marginal anual — os escalões de IRS aplicados nos Açores são, segundo essa fonte, os mesmos do Código do IRS nacional, com a diferença nos coeficientes de retenção. Mantém-se o valor de 0,3 herdado de uma ronda anterior como estimativa de trabalho, mas não está confirmado para 2026 e pode não refletir corretamente o imposto anual devido (só a retenção mensal).",
+    },
     madeira: {
       reducaoSobreTaxaMarginal: 0.3,
-      notes: "Redução adicional para rendimentos próximos do salário mínimo regional não quantificada — não modelada.",
+      status: "verified",
+      source: "Autoridade Tributária e Aduaneira da RAM — Agenda Fiscal, janeiro de 2026",
+      sourceUrl: "https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf",
+      notes:
+        "Confirmado (15/08/2026): em 2026 a Madeira aplica o diferencial fiscal máximo de 30% face às taxas de IRS do continente a todos os nove escalões (antes só se aplicava aos escalões mais baixos). NÃO modelado: os limites dos escalões estão também atualizados em +3,51% face a 2025 na RAM (patamares de rendimento diferentes dos do continente) — este motor aplica a redução de 30% sobre os escalões nacionais sem ajustar os seus limites, o que subestima ligeiramente o benefício fiscal real para a Madeira. Também não modelado: reforço do mínimo de existência para isenção total a quem aufere o salário mínimo regional.",
     },
     continente: { reducaoSobreTaxaMarginal: 0 },
     notes:
-      "Mecanismo exato não confirmado contra fonte primária. Ver TAX-METHODOLOGY.md.",
+      "Mecanismo exato não confirmado contra fonte primária para Açores. Madeira confirmado contra fonte oficial da AT-RAM em 15/08/2026 (ver acima), mas com uma simplificação conhecida (limites de escalão não ajustados). Ver TAX-METHODOLOGY.md.",
   },
 
   /**

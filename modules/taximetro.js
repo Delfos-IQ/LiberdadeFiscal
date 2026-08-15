@@ -16,6 +16,7 @@
 // registado aqui para não parecer um esquecimento.
 
 import { calcularCadeiaSalarial } from "../data/tax-engine.js";
+import { atualizarPeriodoAtual } from "../data/db.js";
 
 const REGIOES = [
   { value: "continente", label: "Continente" },
@@ -87,7 +88,7 @@ export function render(container) {
     const card = el("section", "card");
     card.setAttribute("aria-labelledby", "taximetro-heading");
 
-    const heading = el("h1", null, "Taxímetro");
+    const heading = el("h1", null, "Rendimentos");
     heading.id = "taximetro-heading";
     heading.tabIndex = -1;
 
@@ -229,7 +230,7 @@ export function render(container) {
     const card = el("section", "card");
     card.setAttribute("aria-labelledby", "taximetro-result-heading");
 
-    const heading = el("h1", null, "O teu Taxímetro");
+    const heading = el("h1", null, "O teu Rendimento");
     heading.id = "taximetro-result-heading";
     heading.tabIndex = -1;
 
@@ -245,6 +246,11 @@ export function render(container) {
     appendCadeiaItem(cadeia, "IRS estimado", -r.irsEstimadoMensal);
     appendCadeiaItem(cadeia, "Salário líquido", r.salarioLiquidoMensal, false, true);
 
+    let perguntasCusto = null;
+    if (r.tipoTrabalhador !== "independente") {
+      perguntasCusto = drawPerguntasCustoEmpregador(r);
+    }
+
     const detalhes = el("details");
     const summary = document.createElement("summary");
     summary.textContent = "Como chegámos a este número?";
@@ -259,6 +265,11 @@ export function render(container) {
         "p",
         null,
         `Rendimento coletável anual: ${formatEUR(r.detalheAnual.rendimentoColetavelAnual)} · Taxa efetiva de IRS: ${(r.detalheAnual.irs.taxaEfetiva * 100).toFixed(2)}%`
+      ),
+      el(
+        "p",
+        "disclaimer",
+        "Fonte: Lei n.º 73-A/2025 (Orçamento do Estado 2026), Art. 68.º e 68.º-A do CIRS (escalões de IRS) e taxas de TSU da Segurança Social 2026. Ver TAX-METHODOLOGY.md para os parâmetros completos e as suas fontes individuais."
       )
     );
 
@@ -288,9 +299,72 @@ export function render(container) {
     backBtn.type = "button";
     backBtn.addEventListener("click", voltarAoFormulario);
 
-    card.append(heading, liquido, liquidoLabel, cadeia, detalhes, backBtn);
+    const avancarBtn = el("button", "btn btn--primary", "Guardar e avançar →");
+    avancarBtn.type = "button";
+    avancarBtn.addEventListener("click", async () => {
+      await atualizarPeriodoAtual({ rendimentos: r });
+      window.location.hash = "faturas";
+    });
+
+    const botoes = el("div", "taximetro-botoes");
+    botoes.append(avancarBtn, backBtn);
+
+    const privacidade = el(
+      "p",
+      "stat-label",
+      "🔒 Este cálculo acontece só neste dispositivo. Nada do que introduzires é enviado para nenhum servidor."
+    );
+
+    card.append(heading, liquido, liquidoLabel, cadeia);
+    if (perguntasCusto) card.append(perguntasCusto);
+    card.append(detalhes, privacidade, botoes);
     container.append(card);
     focusHeading(heading);
+  }
+
+  /**
+   * Bloco educativo em formato pergunta/resposta sobre o "custo total
+   * para o empregador" — pedido explícito do autor (agosto de 2026): o
+   * trabalhador só vê o salário bruto e o líquido, mas contratar
+   * alguém custa mais do que o bruto por causa da TSU patronal (23,75%
+   * dos 34,75% de TSU total são pagos pela entidade patronal, não
+   * descontados ao trabalhador — ver TAX-METHODOLOGY.md secção 2).
+   *
+   * NOTA IMPORTANTE (verificado 15/08/2026): o utilizador presumiu que
+   * o FGCT (0,075%) e o FCT (0,925%) também fariam parte deste custo.
+   * Investigação contra fontes primárias mostra o contrário para 2026:
+   * o FCT terminou definitivamente a 1/1/2024 (DL 115/2023) e o FGCT
+   * está suspenso desde 1/5/2023 até final de 2026 (Lei 13/2023, Art.
+   * 32.º) — o custo real destes dois fundos é €0 este ano. Por isso
+   * NÃO entram na conta abaixo; ficam mencionados para não desaparecer
+   * silenciosamente do raciocínio, com uma nota para reconfirmar em
+   * janeiro de 2027.
+   */
+  function drawPerguntasCustoEmpregador(r) {
+    const wrap = el("div", "taximetro-perguntas");
+    const heading = el("h2", null, "O que é o \"custo total para o empregador\"?");
+
+    const tsuPatronalMensal = round2(r.salarioBrutoMensal * 0.2375);
+    const tsuTrabalhadorMensal = round2(r.salarioBrutoMensal * 0.11);
+
+    const p1 = el(
+      "p",
+      null,
+      "Contratar-te custa mais à empresa do que o teu salário bruto. A Segurança Social (TSU) tem uma taxa total de 34,75% sobre o teu salário bruto, mas repartida: 11% descontados a ti (já contado acima, em \"Segurança Social\") e 23,75% pagos pela empresa, por cima do teu bruto — um custo que nunca aparece no teu recibo de vencimento."
+    );
+
+    const dl = el("dl", "taximetro-cadeia");
+    appendCadeiaItem(dl, "TSU paga por ti (11%, já descontada)", -tsuTrabalhadorMensal);
+    appendCadeiaItem(dl, "TSU paga pela empresa (23,75%, por cima do bruto)", tsuPatronalMensal);
+
+    const p2 = el(
+      "p",
+      null,
+      "Existem também dois fundos que, em anos normais, a empresa paga por cima disto — o Fundo de Compensação do Trabalho (FCT, 0,925%) e o Fundo de Garantia de Compensação do Trabalho (FGCT, 0,075%). Em 2026 o seu custo real é €0: o FCT terminou em 2024 e o FGCT está suspenso até ao final de 2026 — por isso não entram na conta acima. Fonte: Decreto-Lei 115/2023 e Lei 13/2023, Art. 32.º. Este é o tipo de detalhe que pode mudar de um ano para o outro sem que ninguém avise o trabalhador — vale a pena voltar a olhar para isto de vez em quando."
+    );
+
+    wrap.append(heading, p1, dl, p2);
+    return wrap;
   }
 
   draw();
@@ -360,6 +434,10 @@ function appendCadeiaItem(dl, label, value, oculto = false, destaque = false) {
 
 function formatEUR(value) {
   return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
+}
+
+function round2(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 function focusHeading(headingEl) {

@@ -121,25 +121,39 @@ dedução específica). Valores 2026:
 Implementado em `calcularDeducaoDependentes()`. Nunca deixa o IRS
 final ficar negativo — a dedução aplica-se com `Math.max(0, ...)`.
 
-### Diferencial regional de IRS — Açores e Madeira — 🟡 ESTIMATE (Fase 4)
+### Diferencial regional de IRS — Açores e Madeira
 
-**Achado importante da Fase 4:** ao contrário do que se assumia
-inicialmente, o diferencial regional das Regiões Autónomas não se
-limita ao IVA — o IRS também tem uma redução regional. Fonte
-secundária (imprensa económica) descreve um "diferencial de 30% que
-abrange a totalidade da estrutura de escalões", em vigor desde
-fevereiro de 2026 com efeitos a 1 de janeiro.
+**Madeira — ✅ Verificado (atualizado 15/08/2026).** Confirmado
+diretamente contra fonte oficial da Autoridade Tributária e Aduaneira
+da RAM (Agenda Fiscal, janeiro de 2026): em 2026 a Madeira aplica um
+diferencial de 30% face às taxas de IRS do Continente a **todos os
+nove escalões** (antes limitado aos escalões mais baixos). O motor
+aplica esta redução de 30% à taxa marginal de cada escalão nacional —
+`status: "verified"` em `irs.js` para a Madeira. **Simplificação
+conhecida, não corrigida nesta ronda:** os limites dos próprios
+escalões estão também atualizados em +3,51% face a 2025 na RAM (a
+Madeira usa patamares de rendimento diferentes dos do Continente, não
+só taxas diferentes) — este motor aplica a redução de taxa sobre os
+limites nacionais, o que subestima ligeiramente o benefício real.
+Também não modelado: o reforço do mínimo de existência que isenta
+totalmente quem aufere o salário mínimo regional. Fonte:
+[at.madeira.gov.pt, Agenda Fiscal Janeiro 2026](https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf).
 
-**A nossa implementação é uma interpretação, não uma leitura direta da
-lei primária:** aplicamos uma redução de 30% a cada taxa marginal dos
-escalões do Continente, para Açores e Madeira. Isto está marcado
-`status: "ESTIMATE"` em `irs.js` e o motor de cálculo devolve
-`diferencialRegionalAplicado: true` sempre que este ajuste é usado —
-a UI do Taxímetro mostra um aviso explícito nesse caso. **Antes de
-publicar em produção, confirmar o mecanismo exato contra o Decreto
-Legislativo Regional correspondente** (não apenas contra imprensa).
-A Madeira tem ainda uma redução adicional não quantificada para
-rendimentos próximos do salário mínimo regional — não modelada.
+**Açores — 🟡 ESTIMATE, não reconfirmado.** A fonte encontrada em
+15/08/2026 (Despacho n.º 1179/2026, que aprova as tabelas de retenção
+na fonte para os Açores) descreve algo estruturalmente diferente do
+caso da Madeira: os escalões de IRS aplicados nos Açores são,
+segundo essa fonte, **os mesmos do Código do IRS nacional**, com a
+diferença nos *coeficientes de retenção na fonte mensal* — não
+necessariamente numa redução de 30% sobre o imposto anual devido.
+Mantém-se o valor de 0,3 herdado de uma ronda de pesquisa anterior
+como estimativa de trabalho (`status: "ESTIMATE"` em `irs.js`), mas
+**não está confirmado para 2026** e pode estar a modelar o mecanismo
+errado (retenção mensal em vez de imposto anual). A UI do Rendimentos
+mostra um aviso explícito sempre que `diferencialRegionalAplicado` é
+`true`. Antes de publicar em produção, confirmar contra o Decreto
+Legislativo Regional dos Açores correspondente, não apenas contra
+imprensa ou despachos de retenção na fonte.
 
 ### Coeficiente do regime simplificado (trabalhadores independentes) — 🟡 ESTIMATE
 
@@ -178,6 +192,31 @@ empregador, sobre o salário bruto. O Taxímetro tem de mostrar a cadeia
 completa (custo total empregador → salário bruto → SS trabalhador →
 IRS → líquido) sem nunca somar a TSU patronal ao que "desconta" ao
 trabalhador — isso duplicaria e confundiria o número.
+
+### FCT / FGCT (fundos de compensação) — ✅ Verificado: custo é €0 em 2026
+
+Investigado em 15/08/2026 a pedido do autor, que apontou corretamente
+que estes dois fundos (FCT 0,925% + FGCT 0,075% sobre a retribuição
+base, historicamente parte do custo real do empregador) não estavam
+considerados em lado nenhum do motor. Verificação contra fonte
+primária (Lei n.º 13/2023, Art. 32.º; Decreto-Lei n.º 115/2023) revela
+que **não devem ser somados ao custo do empregador em 2026**:
+
+- **FCT**: a obrigação de contribuir terminou em definitivo a partir
+  de 1 de janeiro de 2024 (Decreto-Lei 115/2023). O fundo está fechado
+  a novas entradas.
+- **FGCT**: as entregas estão suspensas desde 1 de maio de 2023 (Lei
+  13/2023, Art. 32.º) e a suspensão dura enquanto vigorar o Acordo de
+  Médio Prazo de 2022, isto é, **até final de 2026**. Retomam em 2027
+  salvo nova alteração legal.
+
+**Decisão de produto:** não adicionar estes 1% ao "custo total para o
+empregador" do Rendimentos, porque isso sobrestimaria o custo real
+atual. Documentado aqui para revisão em janeiro de 2027, altura em que
+convém confirmar se o FGCT foi mesmo retomado.
+
+Fonte: [Lei n.º 13/2023, Art. 32.º (DRE)](https://diariodarepublica.pt/dr/detalhe/lei/13-2023-211340863),
+[Decreto-Lei n.º 115/2023 (DRE)](https://diariodarepublica.pt/dr/detalhe/decreto-lei/115-2023-261867080).
 
 ### Trabalhadores independentes — 🟡 ESTIMATE
 
@@ -330,9 +369,21 @@ transmissão gratuita/herança (verba 1.2, 10%), arrendamento (verba 2,
 (verba 17.2, 0,141%/mês a <1 ano, 1,76% a partir de 1 ano), e seguros
 por ramo (verba 22, 3% a 9% consoante o ramo). As restantes verbas da
 Tabela Geral ficam transcritas em `data/tax-rules/2026/patrimoniais.js`
-para referência, mas sem função de cálculo dedicada. **Nota editorial
-obrigatória do spec (§6.3):** Imposto de Selo e IVA são mutuamente
-exclusivos — nunca se acumulam sobre o mesmo ato. Relevante sobretudo
+para referência, mas sem função de cálculo dedicada.
+
+**Isenção familiar na verba 1.2 — investigado e implementado em
+15/08/2026.** O Art. 6.º, al. e) do Código do Imposto do Selo isenta
+desta verba (transmissões gratuitas — heranças e doações) as
+transmissões a favor de cônjuge/unido de facto, descendentes ou
+ascendentes. `calcularImpostoSelo("transmissaoGratuita", valor, {
+parentesco })` devolve `imposto: 0` para estes três casos; sem o
+parâmetro `parentesco`, aplica a taxa de 10% e devolve uma nota a
+avisar que pode haver isenção aplicável. Esta isenção é exclusiva da
+verba 1.2 — nunca se aplica à verba 1.1 (aquisição onerosa de
+imóveis).
+
+**Nota editorial obrigatória do spec (§6.3):** Imposto de Selo e IVA
+são mutuamente exclusivos — nunca se acumulam sobre o mesmo ato. Relevante sobretudo
 em transmissões de imóveis (onde acresce ao IMT, não ao IVA) e
 operações financeiras/de crédito. Implementado em
 `calcularImpostoSelo(verba, valor, opcoes)`.

@@ -40,11 +40,11 @@ Ver o roadmap completo em `CLAUDE.md` (secção 11). Resumo:
 - [x] Fase 1 — Foundation
 - [x] Fase 2 — Motor fiscal (tabelas Portugal 2026) — ISV/IUC (🟡 ESTIMATE) e Imposto de Selo (✅ Verified) já implementados após ronda de investigação adicional; ver `TAX-METHODOLOGY.md` para o que ainda está por verificar (IABA para cerveja/espirituosas/intermédios, tabela de concelhos do IMI)
 - [x] Fase 3 — Quiz (36 perguntas, seleção aleatória de 10, router real)
-- [x] Fase 4 — Ingressos e Taxímetro (Modo Rápido + Avançado, cadeia bruto→líquido, quociente familiar, dependentes, diferencial regional ESTIMATE)
-- [x] Fase 5 — Faturas (onboarding de região, catálogo de 28 bens/serviços, fluxo manual, atajo QR por colagem de texto, persistência com `confirmed_by_user` obrigatório, worker de foto+IA escrito mas **não desplegado**)
-- [x] Fase 6 — Impostos anuais/patrimoniais (registo manual de IMI/IUC/ISV/IMT/Imposto de Selo; motor de cálculo `calcularISV()`/`calcularIUC()`/`calcularImpostoSelo()` já implementado em `data/tax-engine.js` com dados de `data/tax-rules/2026/patrimoniais.js` — IMI continua sem tabela de concelhos)
-- [x] Fase 7 — Dia da Liberdade Fiscal (consolida IRS + SS trabalhador + IVA/especiais registados + patrimoniais registados; ver metodologia em `TAX-METHODOLOGY.md` secção 6b)
-- [x] Fase 8 — Benchmark OCDE (tax wedge, Taxing Wages 2026, PT/ES/FR/DE/IE/NL/CH) + cartão para partilhar (Web Share API com fallback de download/clipboard)
+- [x] Fase 4 — Rendimentos (ex-Taxímetro: Modo Rápido + Avançado, cadeia bruto→líquido, quociente familiar, dependentes, diferencial regional Madeira ✅/Açores 🟡 ESTIMATE, conteúdo educativo sobre o custo total para o empregador)
+- [x] Fase 5 — Gastos (ex-Faturas, redesenhado em agosto de 2026: estimativa mensal autorreportada por categoria com desglose de IVA/ISP em tempo real, em vez de fatura a fatura; o fluxo antigo item-a-item + atajo QR + worker de foto+IA continuam no código, fora da navegação ativa, como possível "modo avançado" futuro)
+- [x] Fase 6 — Taxas (ex-Impostos anuais/patrimoniais, formulário simplificado a tipo + valor: IMI/IUC/ISV/IMT/Imposto de Selo; motor de cálculo `calcularISV()`/`calcularIUC()`/`calcularImpostoSelo()` já implementado em `data/tax-engine.js` com dados de `data/tax-rules/2026/patrimoniais.js` — IMI continua sem tabela de concelhos)
+- [x] Fase 7 — Dia da Liberdade Fiscal (redesenhado em agosto de 2026: consome o "Período" acumulado por Rendimentos → Gastos → Taxas via `data/db.js`, sem voltar a pedir dados; assinala explicitamente o que ficou de fora quando algum passo não foi preenchido; permite fechar o período e começar um novo, guardando histórico; ver metodologia em `TAX-METHODOLOGY.md` secção 6b)
+- [x] Fase 8 — Benchmark OCDE (tax wedge, Taxing Wages 2026, PT/ES/FR/DE/IE/NL/CH) + cartão para partilhar (Web Share API com fallback de download/clipboard — inclui partilha nativa para WhatsApp quando `navigator.share({files})` está disponível)
 - [x] Fase 9 — QA final (verificações estáticas scriptadas, ver `QA-FASE-9.md` para o relatório completo e as limitações conhecidas)
 
 ## Testes
@@ -54,7 +54,7 @@ npm install   # só a primeira vez — instala o jsdom, usado apenas para os tes
 npm test
 ```
 
-Cobertura atual: 175 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas, persistência IndexedDB, integração de UI do quiz/taxímetro/faturas/impostos anuais via jsdom + fake-indexeddb).
+Cobertura atual: 212 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas [dormant], persistência IndexedDB incluindo o acumulador de "Período", integração de UI do quiz/Rendimentos/Gastos/Taxas/Dia da Liberdade via jsdom + fake-indexeddb).
 
 ## Desenvolvimento local
 

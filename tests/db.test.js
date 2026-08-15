@@ -149,3 +149,56 @@ describe("data/db.js — savePeriodicTax", () => {
     await assert.rejects(() => savePeriodicTax(null), TypeError);
   });
 });
+
+describe("data/db.js — Período acumulativo (getPeriodoAtual/atualizarPeriodoAtual/fecharPeriodoAtual)", () => {
+  let getPeriodoAtual, atualizarPeriodoAtual, fecharPeriodoAtual, getHistoricoPeriodos, dbClear;
+
+  beforeEach(async () => {
+    const mod = await import(`../data/db.js?t=${Date.now()}-${Math.random()}`);
+    getPeriodoAtual = mod.getPeriodoAtual;
+    atualizarPeriodoAtual = mod.atualizarPeriodoAtual;
+    fecharPeriodoAtual = mod.fecharPeriodoAtual;
+    getHistoricoPeriodos = mod.getHistoricoPeriodos;
+    dbClear = mod.dbClear;
+    await dbClear("userSettings");
+    await dbClear("periodosFechados");
+  });
+
+  test("período atual começa vazio (rendimentos/gastosMensal/taxasAnuais a null)", async () => {
+    const p = await getPeriodoAtual();
+    assert.equal(p.rendimentos, null);
+    assert.equal(p.gastosMensal, null);
+    assert.equal(p.taxasAnuais, null);
+  });
+
+  test("atualizarPeriodoAtual acumula sem apagar os outros campos já guardados", async () => {
+    await atualizarPeriodoAtual({ rendimentos: { salarioLiquidoMensal: 1500 } });
+    await atualizarPeriodoAtual({ gastosMensal: { totalMensal: 800 } });
+    const p = await getPeriodoAtual();
+    assert.equal(p.rendimentos.salarioLiquidoMensal, 1500);
+    assert.equal(p.gastosMensal.totalMensal, 800);
+  });
+
+  test("fecharPeriodoAtual guarda no histórico e reinicia o período atual", async () => {
+    await atualizarPeriodoAtual({ rendimentos: { salarioLiquidoMensal: 1500 } });
+    const fechado = await fecharPeriodoAtual({ dayOfYear: 162, percentage: 0.444 });
+    assert.equal(fechado.rendimentos.salarioLiquidoMensal, 1500);
+    assert.equal(fechado.resultadoDiaLiberdade.dayOfYear, 162);
+
+    const historico = await getHistoricoPeriodos();
+    assert.equal(historico.length, 1);
+    assert.equal(historico[0].id, fechado.id);
+
+    const novoAtual = await getPeriodoAtual();
+    assert.equal(novoAtual.rendimentos, null, "o período atual deve reiniciar vazio após fechar");
+  });
+
+  test("histórico devolve os períodos mais recentes primeiro", async () => {
+    await fecharPeriodoAtual({ dayOfYear: 100 });
+    await new Promise((r) => setTimeout(r, 5));
+    await fecharPeriodoAtual({ dayOfYear: 200 });
+    const historico = await getHistoricoPeriodos();
+    assert.equal(historico.length, 2);
+    assert.equal(historico[0].resultadoDiaLiberdade.dayOfYear, 200);
+  });
+});

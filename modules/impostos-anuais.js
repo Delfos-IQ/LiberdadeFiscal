@@ -1,42 +1,54 @@
-// Liberdade Fiscal — Módulo de UI de Impostos Anuais/Patrimoniais (Fase 6)
+// Liberdade Fiscal — Módulo de UI de "Taxas" (impostos anuais/patrimoniais)
+// (Fase 6, redesenhado em agosto de 2026 — ver CLAUDE.md §6.4)
 //
 // Spec §6.4: IMI, IUC, ISV, IMT, Imposto de Selo não encaixam no fluxo
-// de "fatura de consumo diário" (Fase 5) — são eventos anuais ou
-// pontuais. Ao contrário das faturas, a app NÃO calcula estes valores
-// (as tabelas completas de ISV/IUC/Imposto de Selo estão marcadas
-// UNKNOWN/ESTIMATE em data/tax-rules/2026/patrimoniais.js — ver
-// TAX-METHODOLOGY.md): o utilizador regista o valor que já sabe que
-// pagou, tipicamente lido da própria nota de liquidação (ex.: carta do
-// IMI, aviso do IUC). Estes valores somam-se diretamente ao acumulado
-// anual do Dia da Liberdade Fiscal (Fase 7).
+// de "gasto mensal" — são eventos anuais ou pontuais. Ao contrário dos
+// gastos, a app NÃO calcula estes valores (as tabelas completas de
+// ISV/IUC/Imposto de Selo estão marcadas UNKNOWN/ESTIMATE em
+// data/tax-rules/2026/patrimoniais.js — ver TAX-METHODOLOGY.md): o
+// utilizador regista o valor que já sabe que pagou, tipicamente lido da
+// própria nota de liquidação (ex.: carta do IMI, aviso do IUC).
+//
+// Redesenho de agosto de 2026: formulário simplificado a apenas
+// tipo + valor (a data, a recorrência e a nota deixaram de se pedir —
+// a data/recorrência são inferidas silenciosamente a partir do tipo,
+// já que data/db.js ainda as exige na validação de savePeriodicTax).
+// Este ecrã é o terceiro passo do fluxo acumulativo Rendimentos →
+// Gastos → Taxas → Dia da Liberdade Fiscal — "Guardar e avançar" grava
+// o total no Período atual (data/db.js) e navega para o resultado.
 
-import { savePeriodicTax, dbGetAll, dbDelete } from "../data/db.js";
+import { savePeriodicTax, dbGetAll, dbDelete, atualizarPeriodoAtual } from "../data/db.js";
 
 const TIPOS_IMPOSTO = [
   {
     value: "IMI",
     label: "IMI — Imposto Municipal sobre Imóveis",
     ajuda: "Valor da nota de liquidação anual do teu imóvel.",
+    recorrencia: "annual",
   },
   {
     value: "IUC",
     label: "IUC — Imposto Único de Circulação",
     ajuda: "Valor pago anualmente pelo teu veículo.",
+    recorrencia: "annual",
   },
   {
     value: "ISV",
     label: "ISV — Imposto sobre Veículos",
     ajuda: "Pago uma única vez, na compra/matrícula do veículo.",
+    recorrencia: "one_time",
   },
   {
     value: "IMT",
     label: "IMT — Imposto Municipal sobre Transmissões Onerosas",
     ajuda: "Pago uma única vez, na compra de um imóvel.",
+    recorrencia: "one_time",
   },
   {
     value: "Imposto_Selo",
     label: "Imposto de Selo",
     ajuda: "Ex.: contratos de crédito, transmissões. Nunca acumulado com IVA sobre o mesmo ato.",
+    recorrencia: "one_time",
   },
 ];
 
@@ -59,16 +71,22 @@ export function render(container) {
     const registos = (await dbGetAll("periodicTaxes")).sort((a, b) => (a.date < b.date ? 1 : -1));
 
     const card = el("section", "card");
-    card.setAttribute("aria-labelledby", "impostos-anuais-heading");
+    card.setAttribute("aria-labelledby", "taxas-heading");
 
-    const heading = el("h1", null, "Impostos anuais e patrimoniais");
-    heading.id = "impostos-anuais-heading";
+    const heading = el("h1", null, "Taxas");
+    heading.id = "taxas-heading";
     heading.tabIndex = -1;
 
     const desc = el(
       "p",
       null,
       "Regista aqui o IMI, IUC, ISV, IMT ou Imposto de Selo que já pagaste — não são calculados pela app, porque dependem de dados que só tu tens (concelho, valor patrimonial, cilindrada, etc.). Introduz o valor da tua nota de liquidação."
+    );
+
+    const privacidade = el(
+      "p",
+      "stat-label",
+      "🔒 Estes valores ficam guardados só neste dispositivo — nunca saem daqui."
     );
 
     const totalAno = registos.reduce((sum, r) => sum + r.amount, 0);
@@ -78,7 +96,7 @@ export function render(container) {
       el("p", "stat-label", "Total registado nesta categoria")
     );
 
-    const novoBtn = el("button", "btn btn--primary", "+ Registar imposto");
+    const novoBtn = el("button", "btn btn--primary", "+ Registar taxa");
     novoBtn.type = "button";
     novoBtn.addEventListener("click", () => {
       state.view = "novo";
@@ -86,7 +104,22 @@ export function render(container) {
       draw();
     });
 
-    card.append(heading, desc, resumo, novoBtn);
+    const avancarBtn = el("button", "btn btn--secondary", "Guardar e avançar →");
+    avancarBtn.type = "button";
+    avancarBtn.addEventListener("click", async () => {
+      await atualizarPeriodoAtual({
+        taxasAnuais: {
+          total: round2(totalAno),
+          items: registos.map((r) => ({ tipo: r.type, valor: r.amount })),
+        },
+      });
+      window.location.hash = "dia-liberdade";
+    });
+
+    const botoes = el("div", "taximetro-botoes");
+    botoes.append(novoBtn, avancarBtn);
+
+    card.append(heading, desc, privacidade, resumo, botoes);
     container.append(card);
 
     if (registos.length > 0) {
@@ -119,10 +152,10 @@ export function render(container) {
 
   function drawNovoRegisto() {
     const card = el("section", "card");
-    card.setAttribute("aria-labelledby", "novo-imposto-heading");
+    card.setAttribute("aria-labelledby", "nova-taxa-heading");
 
-    const heading = el("h1", null, "Registar imposto anual/patrimonial");
-    heading.id = "novo-imposto-heading";
+    const heading = el("h1", null, "Registar taxa");
+    heading.id = "nova-taxa-heading";
     heading.tabIndex = -1;
 
     const form = el("form");
@@ -144,7 +177,6 @@ export function render(container) {
     tipoSelect.addEventListener("change", () => {
       const t = TIPOS_IMPOSTO.find((x) => x.value === tipoSelect.value);
       tipoAjuda.textContent = t ? t.ajuda : "";
-      recorrenciaSelect.value = ["IMI", "IUC"].includes(tipoSelect.value) ? "annual" : "one_time";
     });
     tipoField.append(tipoLabel, tipoSelect, tipoAjuda);
 
@@ -159,43 +191,7 @@ export function render(container) {
     valorInput.step = "0.01";
     valorField.append(valorLabel, valorInput);
 
-    const dataField = el("div", "taximetro-field");
-    const dataLabel = document.createElement("label");
-    dataLabel.htmlFor = "data-imposto";
-    dataLabel.textContent = "Data do pagamento";
-    const dataInput = document.createElement("input");
-    dataInput.type = "date";
-    dataInput.id = "data-imposto";
-    dataInput.value = new Date().toISOString().slice(0, 10);
-    dataField.append(dataLabel, dataInput);
-
-    const recorrenciaField = el("div", "taximetro-field");
-    const recorrenciaLabel = document.createElement("label");
-    recorrenciaLabel.htmlFor = "recorrencia-imposto";
-    recorrenciaLabel.textContent = "Recorrência";
-    const recorrenciaSelect = document.createElement("select");
-    recorrenciaSelect.id = "recorrencia-imposto";
-    [
-      { value: "annual", label: "Anual (repete todos os anos)" },
-      { value: "one_time", label: "Pontual (pagamento único)" },
-    ].forEach((r) => {
-      const opt = document.createElement("option");
-      opt.value = r.value;
-      opt.textContent = r.label;
-      recorrenciaSelect.append(opt);
-    });
-    recorrenciaField.append(recorrenciaLabel, recorrenciaSelect);
-
-    const notaField = el("div", "taximetro-field");
-    const notaLabel = document.createElement("label");
-    notaLabel.htmlFor = "nota-imposto";
-    notaLabel.textContent = "Nota (opcional)";
-    const notaInput = document.createElement("input");
-    notaInput.type = "text";
-    notaInput.id = "nota-imposto";
-    notaField.append(notaLabel, notaInput);
-
-    form.append(tipoField, valorField, dataField, recorrenciaField, notaField);
+    form.append(tipoField, valorField);
 
     if (state.erro) {
       const erroEl = el("p", null, state.erro);
@@ -221,20 +217,16 @@ export function render(container) {
         draw();
         return;
       }
-      if (!dataInput.value) {
-        state.erro = "Introduz a data do pagamento.";
-        draw();
-        return;
-      }
+
+      const tipoInfo = TIPOS_IMPOSTO.find((t) => t.value === tipoSelect.value);
 
       try {
         await savePeriodicTax({
           id: generateId(),
           type: tipoSelect.value,
           amount: round2(valor),
-          date: dataInput.value,
-          recurrence: recorrenciaSelect.value,
-          note: notaInput.value.trim() || undefined,
+          date: new Date().toISOString().slice(0, 10),
+          recurrence: tipoInfo ? tipoInfo.recorrencia : "one_time",
         });
         state.view = "lista";
         state.erro = null;

@@ -59,7 +59,7 @@ describe("Taxímetro — Modo Rápido", () => {
     setInput(container, "salario-bruto", 2000);
     submitForm(container);
 
-    assert.match(container.textContent, /O teu Taxímetro/);
+    assert.match(container.textContent, /O teu Rendimento/);
     assert.match(container.textContent, /Custo total para o empregador/);
     assert.match(container.textContent, /Segurança Social/);
     assert.match(container.textContent, /IRS estimado/);

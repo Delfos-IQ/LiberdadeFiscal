@@ -727,8 +727,34 @@ export function calcularImpostoSelo(verba, valor, opcoes = {}) {
   switch (verba) {
     case "transmissaoOnerosaImoveis":
       return montarResultadoSelo("1.1", valor, seloData.verba1_1_aquisicaoOnerosaImoveis.taxa, seloData);
-    case "transmissaoGratuita":
-      return montarResultadoSelo("1.2", valor, seloData.verba1_2_transmissaoGratuita.taxa, seloData);
+    case "transmissaoGratuita": {
+      // Art. 6.º, al. e) do Código do Imposto do Selo: cônjuge/unido de
+      // facto, descendentes e ascendentes estão isentos da verba 1.2
+      // (nunca da 1.1, que é outro imposto). Investigado e confirmado
+      // em 15/08/2026 — ver TAX-METHODOLOGY.md.
+      const { parentesco } = opcoes;
+      const isentoPorParentesco =
+        parentesco === "conjugeOuUniaoFacto" || parentesco === "descendente" || parentesco === "ascendente";
+      if (isentoPorParentesco) {
+        return {
+          status: "verified",
+          verba: "1.2",
+          valorBase: round2(valor),
+          taxa: 0,
+          imposto: 0,
+          isentoPorParentesco: true,
+          fonte: "Código do Imposto do Selo, Art. 6.º, al. e) (isenções subjetivas)",
+          notes:
+            "Isento: transmissões gratuitas a favor de cônjuge/unido de facto, descendentes ou ascendentes estão isentas da verba 1.2 da Tabela Geral (Art. 6.º, al. e) do CIS).",
+        };
+      }
+      const resultado = montarResultadoSelo("1.2", valor, seloData.verba1_2_transmissaoGratuita.taxa, seloData);
+      if (!parentesco) {
+        resultado.notes +=
+          " Nota: se o beneficiário for cônjuge/unido de facto, descendente ou ascendente, esta transmissão está isenta (Art. 6.º, al. e) do CIS) — indica o parentesco para veres o valor correto.";
+      }
+      return resultado;
+    }
     case "arrendamento":
       return montarResultadoSelo("2", valor, seloData.verba2_arrendamento.taxa, seloData);
     case "garantia": {
