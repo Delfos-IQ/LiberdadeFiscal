@@ -31,56 +31,84 @@ import { PATRIMONIAIS_2026 } from "./tax-rules/2026/patrimoniais.js";
  *
  * @param {number} rendimentoColetavel — em EUR/ano, já líquido de
  *   deduções específicas. Deve ser >= 0.
+ * @param {object} [opcoes]
+ * @param {"continente"|"acores"|"madeira"} [opcoes.regiao] — aplica o
+ *   diferencial regional (ESTIMATE, ver TAX-METHODOLOGY.md).
+ * @param {1|2} [opcoes.quocienteFamiliar] — 2 para declaração conjunta
+ *   de casados/unidos de facto, 1 para individual (Art. 69.º CIRS).
  * @returns {{
  *   rendimentoColetavel: number,
  *   isentoPorMinimoExistencia: boolean,
  *   imposto: number,
  *   taxaEfetiva: number,
  *   decomposicaoPorEscalao: Array<{escalao: number, min: number, max: number, taxa: number, valorTributado: number, imposto: number}>,
+ *   regiao: string,
+ *   diferencialRegionalAplicado: boolean,
+ *   quocienteFamiliar: number,
  *   ano: number,
  *   fonte: string
  * }}
  */
-export function calculateIRS(rendimentoColetavel) {
+export function calculateIRS(rendimentoColetavel, opcoes = {}) {
+  const { regiao = "continente", quocienteFamiliar = 1 } = opcoes;
+
   if (typeof rendimentoColetavel !== "number" || !Number.isFinite(rendimentoColetavel)) {
     throw new TypeError("rendimentoColetavel deve ser um número finito.");
   }
   if (rendimentoColetavel < 0) {
     throw new RangeError("rendimentoColetavel não pode ser negativo.");
   }
+  if (quocienteFamiliar !== 1 && quocienteFamiliar !== 2) {
+    throw new RangeError("quocienteFamiliar deve ser 1 (individual) ou 2 (conjunta).");
+  }
+  const diferencialInfo = IRS_2026.diferencialRegional[regiao];
+  if (!diferencialInfo) {
+    throw new RangeError(`Região desconhecida: ${regiao}. Use continente, acores ou madeira.`);
+  }
 
   const isento = rendimentoColetavel <= IRS_2026.minimoExistencia.value;
 
+  // Quociente familiar (Art. 69.º CIRS): divide o rendimento antes de
+  // aplicar os escalões, multiplica o imposto de volta no fim. Isto
+  // reduz a taxa marginal efetiva de casais com rendimento assimétrico
+  // porque "espalha" o rendimento por duas pessoas fictícias.
+  const rendimentoParaEscaloes = rendimentoColetavel / quocienteFamiliar;
+
   const decomposicaoPorEscalao = [];
-  let impostoTotal = 0;
+  let impostoPorQuociente = 0;
 
   if (!isento) {
-    // Arredondamento por escalão (a cêntimo), não só no total final. É
-    // assim que o exemplo oficial documentado em TAX-METHODOLOGY.md
-    // (30.000€ → 6.260,16€) foi calculado — arredondar só no fim dá
-    // 6.260,15€, um cêntimo a menos. Os tests/tax-engine.test.js
-    // apanharam esta diferença ao comparar contra o exemplo da fonte.
-    IRS_2026.escaloes.forEach((escalao, index) => {
-      if (rendimentoColetavel <= escalao.min) return;
+    const reducaoRegional = diferencialInfo.reducaoSobreTaxaMarginal ?? 0;
 
-      const tetoEscalao = Math.min(rendimentoColetavel, escalao.max);
+    IRS_2026.escaloes.forEach((escalao, index) => {
+      if (rendimentoParaEscaloes <= escalao.min) return;
+
+      const tetoEscalao = Math.min(rendimentoParaEscaloes, escalao.max);
       const valorTributado = tetoEscalao - escalao.min;
       if (valorTributado <= 0) return;
 
-      const impostoEscalao = round2(valorTributado * escalao.taxaMarginal);
-      impostoTotal += impostoEscalao;
+      // Taxa efetivamente aplicada, já com o diferencial regional
+      // (ESTIMATE) descontado quando aplicável.
+      const taxaAplicada = escalao.taxaMarginal * (1 - reducaoRegional);
+
+      // Arredondamento por escalão (a cêntimo), não só no total final
+      // — ver nota em TAX-METHODOLOGY.md sobre o exemplo oficial
+      // (30.000€ → 6.260,16€) que só bate certo assim.
+      const impostoEscalao = round2(valorTributado * taxaAplicada);
+      impostoPorQuociente += impostoEscalao;
 
       decomposicaoPorEscalao.push({
         escalao: index + 1,
         min: escalao.min,
         max: escalao.max,
-        taxa: escalao.taxaMarginal,
+        taxa: round4(taxaAplicada),
         valorTributado: round2(valorTributado),
         imposto: impostoEscalao,
       });
     });
   }
 
+  const impostoTotal = impostoPorQuociente * quocienteFamiliar;
   const taxaEfetiva = rendimentoColetavel > 0 ? impostoTotal / rendimentoColetavel : 0;
 
   return {
@@ -89,9 +117,52 @@ export function calculateIRS(rendimentoColetavel) {
     imposto: round2(impostoTotal),
     taxaEfetiva: round4(taxaEfetiva),
     decomposicaoPorEscalao,
+    regiao,
+    diferencialRegionalAplicado: (diferencialInfo.reducaoSobreTaxaMarginal ?? 0) > 0,
+    quocienteFamiliar,
     ano: IRS_2026.year,
     fonte: IRS_2026.source,
   };
+}
+
+/**
+ * Dedução à coleta por dependentes (Art. 78.º-A CIRS) — subtrai-se
+ * DIRETAMENTE ao imposto já calculado, nunca ao rendimento coletável.
+ *
+ * @param {Array<{idade: number}>} dependentes
+ */
+export function calcularDeducaoDependentes(dependentes) {
+  if (!Array.isArray(dependentes)) {
+    throw new TypeError("dependentes deve ser um array de { idade }.");
+  }
+
+  const regras = IRS_2026.deducaoPorDependente;
+  let total = 0;
+  let contadorAte3Anos = 0;
+
+  // Ordena para que a regra "a partir do 2.º dependente ≤3 anos" seja
+  // aplicada de forma determinística, independentemente da ordem de
+  // entrada do utilizador.
+  const ordenados = dependentes.slice().sort((a, b) => a.idade - b.idade);
+
+  for (const dep of ordenados) {
+    if (typeof dep.idade !== "number" || dep.idade < 0) {
+      throw new RangeError("Cada dependente precisa de uma idade numérica >= 0.");
+    }
+
+    if (dep.idade <= 3) {
+      contadorAte3Anos += 1;
+      const valor =
+        contadorAte3Anos >= 2
+          ? regras.segundoDependenteOuSeguinteAte3Anos.value
+          : regras.ate3AnosInclusive.value;
+      total += valor;
+    } else {
+      total += regras.maisDe3Anos.value;
+    }
+  }
+
+  return { totalDeducao: round2(total), numeroDependentes: dependentes.length };
 }
 
 /**
@@ -187,38 +258,92 @@ export function calculateTSU(salarioBrutoMensal) {
    ============================================================ */
 
 /**
- * Materializa a cadeia exigida pelo spec (secção 6.2): valor bruto do
- * trabalho → coste total empregador → rendimento bruto → Segurança
- * Social → IRS → rendimento líquido. Cada elo fica explícito — nunca
- * colapsar isto num único número sem dizer o que representa.
+ * Materializa a cadeia exigida pelo spec (secção 6.2 e 6.4): valor
+ * bruto do trabalho → coste total empregador → rendimento bruto →
+ * Segurança Social → IRS → rendimento líquido. Cada elo fica
+ * explícito — nunca colapsar isto num único número sem dizer o que
+ * representa. Suporta Modo Rápido (valores por defeito) e Modo
+ * Avançado (subsídios, tipo de trabalhador) do Taxímetro.
  *
  * @param {number} salarioBrutoMensal
- * @param {{ dependentes?: number }} [opcoes]
+ * @param {object} [opcoes]
+ * @param {"dependente"|"independente"} [opcoes.tipoTrabalhador]
+ * @param {"individual"|"conjunta"} [opcoes.estadoCivil] — "conjunta" só
+ *   faz sentido para casados/unidos de facto que optem por declaração
+ *   conjunta.
+ * @param {Array<{idade: number}>} [opcoes.dependentes]
+ * @param {"continente"|"acores"|"madeira"} [opcoes.regiao]
+ * @param {boolean} [opcoes.subsidiosDuodecimos] — Modo Avançado: se
+ *   true, assume que os subsídios de férias e Natal são pagos por
+ *   duodécimos (incluídos nos 12 pagamentos mensais) em vez de dois
+ *   pagamentos extra em junho/dezembro. Modo Rápido assume sempre
+ *   duodécimos para manter o resultado num único número mensal
+ *   simples — ver `metodologia` na resposta.
  */
 export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
-  const tsu = calculateTSU(salarioBrutoMensal);
+  const {
+    tipoTrabalhador = "dependente",
+    estadoCivil = "individual",
+    dependentes = [],
+    regiao = "continente",
+  } = opcoes;
 
-  const rendimentoBrutoAnual = salarioBrutoMensal * 12; // simplificação v1: sem 13º/14º
-  const contribuicoesSSAnual = tsu.descontoTrabalhador * 12;
-  const rendimentoColetavelAnual = calcularRendimentoColetavelCategoriaA(
-    rendimentoBrutoAnual,
-    contribuicoesSSAnual
-  );
+  if (tipoTrabalhador !== "dependente" && tipoTrabalhador !== "independente") {
+    throw new RangeError('tipoTrabalhador deve ser "dependente" ou "independente".');
+  }
 
-  const irs = calculateIRS(rendimentoColetavelAnual);
-  const irsMensal = irs.imposto / 12;
+  const quocienteFamiliar =
+    estadoCivil === "conjunta"
+      ? IRS_2026.quocienteFamiliar.declaracaoConjuntaCasadosOuUnidoFacto
+      : IRS_2026.quocienteFamiliar.declaracaoIndividual;
 
-  const liquidoMensal = salarioBrutoMensal - tsu.descontoTrabalhador - irsMensal;
+  const rendimentoBrutoAnual = salarioBrutoMensal * 12; // simplificação v1: sem 13º/14º em pagamentos separados — ver metodologia
+
+  let descontoSSMensal;
+  let custoTotalEmpregadorMensal;
+  let rendimentoColetavelAnual;
+
+  if (tipoTrabalhador === "dependente") {
+    const tsu = calculateTSU(salarioBrutoMensal);
+    descontoSSMensal = tsu.descontoTrabalhador;
+    custoTotalEmpregadorMensal = tsu.custoTotalEmpregador;
+    rendimentoColetavelAnual = calcularRendimentoColetavelCategoriaA(
+      rendimentoBrutoAnual,
+      descontoSSMensal * 12
+    );
+  } else {
+    // Trabalhador independente, regime simplificado — ver ESTIMATE em
+    // seguranca-social.js e irs.js (coeficiente 0.75 para prestação de
+    // serviços). Não há "entidade patronal": o custo total é o próprio
+    // rendimento bruto.
+    const taxaSS = SEGURANCA_SOCIAL_2026.trabalhadorIndependente.taxaContributiva;
+    descontoSSMensal = round2(salarioBrutoMensal * taxaSS);
+    custoTotalEmpregadorMensal = round2(salarioBrutoMensal);
+    const coeficiente = IRS_2026.coeficienteRegimeSimplificado.value;
+    rendimentoColetavelAnual = round2(rendimentoBrutoAnual * coeficiente);
+  }
+
+  const irs = calculateIRS(rendimentoColetavelAnual, { regiao, quocienteFamiliar });
+
+  const deducaoDependentes =
+    dependentes.length > 0 ? calcularDeducaoDependentes(dependentes) : { totalDeducao: 0 };
+  const irsAnualAposDeducoes = Math.max(0, irs.imposto - deducaoDependentes.totalDeducao);
+  const irsMensal = irsAnualAposDeducoes / 12;
+
+  const liquidoMensal = salarioBrutoMensal - descontoSSMensal - irsMensal;
 
   return {
-    custoTotalEmpregadorMensal: tsu.custoTotalEmpregador,
+    tipoTrabalhador,
+    custoTotalEmpregadorMensal,
     salarioBrutoMensal: round2(salarioBrutoMensal),
-    descontoSSMensal: tsu.descontoTrabalhador,
+    descontoSSMensal,
+    irsAnualAntesDeDeducoes: irs.imposto,
+    deducaoAnualPorDependentes: deducaoDependentes.totalDeducao,
     irsEstimadoMensal: round2(irsMensal),
     salarioLiquidoMensal: round2(liquidoMensal),
     detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs },
     metodologia:
-      "Simplificação v1: assume 12 pagamentos mensais iguais, sem subsídios de férias/Natal nem deduções à coleta. Ver TAX-METHODOLOGY.md secção 6.",
+      "Simplificação v1: assume 12 pagamentos mensais iguais (subsídios de férias/Natal em duodécimos), sem outras deduções à coleta além de dependentes. Diferencial regional de IRS em Açores/Madeira é ESTIMATE — ver TAX-METHODOLOGY.md.",
   };
 }
 

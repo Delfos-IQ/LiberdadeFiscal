@@ -318,6 +318,19 @@ p {
   padding: var(--space-5) var(--space-4) var(--space-8);
 }
 
+.app-footer {
+  padding: var(--space-4) var(--space-5) 0;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.app-footer .disclaimer {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
 .app-nav {
   display: flex;
   justify-content: space-around;
@@ -485,6 +498,72 @@ p {
 .quiz-feedback--incorrect {
   background-color: color-mix(in srgb, var(--color-danger) 15%, white);
   color: var(--color-navy);
+}
+
+/* -----------------------------
+   6c. Taxímetro
+   ----------------------------- */
+.taximetro-mode-toggle {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.taximetro-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.taximetro-field label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
+
+.taximetro-field input,
+.taximetro-field select {
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-white);
+  min-height: var(--tap-target-min);
+}
+
+.taximetro-dependentes {
+  margin-bottom: var(--space-4);
+}
+
+.taximetro-dependente-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.taximetro-dependente-row input {
+  width: 80px;
+  padding: var(--space-2);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: var(--tap-target-min);
+}
+
+.taximetro-cadeia {
+  margin: var(--space-4) 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2) var(--space-4);
+}
+
+.taximetro-cadeia dt {
+  color: var(--color-text-muted);
+}
+
+.taximetro-cadeia dd {
+  margin: 0;
+  text-align: right;
+  font-weight: var(--font-weight-semibold);
 }
 
 /* -----------------------------

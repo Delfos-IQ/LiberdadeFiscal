@@ -24,6 +24,7 @@ const STATIC_ASSETS = [
   "style.css",
   "manifest.json",
   "modules/quiz.js",
+  "modules/taximetro.js",
   "data/quiz-engine.js",
   "data/quiz-questions.js",
   "data/db.js",

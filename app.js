@@ -53,7 +53,7 @@ const DEFAULT_ROUTE = "quiz";
 // placeholder — nunca um ecrã em branco nem um erro.
 const ROUTE_MODULES = {
   quiz: () => import("./modules/quiz.js"),
-  taximetro: null,
+  taximetro: () => import("./modules/taximetro.js"),
   faturas: null,
   "impostos-anuais": null,
   "dia-liberdade": null,

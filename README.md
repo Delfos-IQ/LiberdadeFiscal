@@ -37,7 +37,7 @@ Ver o roadmap completo em `CLAUDE.md` (secção 11). Resumo:
 - [x] Fase 1 — Foundation
 - [x] Fase 2 — Motor fiscal (tabelas Portugal 2026) — ver `TAX-METHODOLOGY.md` para o que ainda está por verificar (IABA, ISV, IUC, Imposto de Selo, tabela de concelhos do IMI)
 - [x] Fase 3 — Quiz (36 perguntas, seleção aleatória de 10, router real)
-- [ ] Fase 4 — Ingressos e Taxímetro
+- [x] Fase 4 — Ingressos e Taxímetro (Modo Rápido + Avançado, cadeia bruto→líquido, quociente familiar, dependentes, diferencial regional ESTIMATE)
 - [ ] Fase 5 — Faturas
 - [ ] Fase 6 — Impostos anuais/patrimoniais
 - [ ] Fase 7 — Dia da Liberdade Fiscal

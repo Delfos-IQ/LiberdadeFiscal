@@ -47,14 +47,22 @@
         <h1 id="welcome-heading">A carregar…</h1>
         <p>A preparar o Liberdade Fiscal.</p>
       </section>
+    </main>
 
+    <!-- Fora de #app-main de propósito: o router substitui todo o
+         conteúdo de #app-main a cada mudança de rota (ver app.js,
+         renderRoute). O disclaimer tem de sobreviver a essa troca —
+         é uma das três presenças obrigatórias exigidas pelo spec
+         (secção 9): onboarding, ecrã do Dia da Liberdade Fiscal, e
+         aqui, no footer/Acerca de, sempre visível. -->
+    <footer class="app-footer">
       <p class="disclaimer">
         Esta aplicação fornece estimativas para fins informativos e
         educativos. Não constitui aconselhamento fiscal, financeiro ou
         jurídico e não substitui o cálculo oficial da Autoridade
         Tributária.
       </p>
-    </main>
+    </footer>
 
     <nav class="app-nav" aria-label="Navegação principal">
       <button class="app-nav__item" type="button" data-route="quiz" aria-current="page">

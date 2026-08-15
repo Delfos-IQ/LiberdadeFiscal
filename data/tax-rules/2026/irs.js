@@ -50,6 +50,63 @@ export const IRS_2026 = {
   minimoExistencia: { value: 12880, unit: "EUR/ano", notes: "Atualizado para 2026." },
 
   /**
+   * Quociente familiar (Art. 69.º CIRS) — divide o rendimento coletável
+   * antes de aplicar os escalões, depois multiplica o imposto de volta.
+   * Reduz a taxa marginal efetiva para casais com rendimentos
+   * assimétricos.
+   */
+  quocienteFamiliar: {
+    declaracaoIndividual: 1,
+    declaracaoConjuntaCasadosOuUnidoFacto: 2,
+  },
+
+  /**
+   * Dedução à coleta por dependente (Art. 78.º-A CIRS) — subtrai-se
+   * diretamente ao imposto já calculado (nunca ao rendimento
+   * coletável). Valores verificados via pesquisa web em 15/08/2026.
+   */
+  deducaoPorDependente: {
+    maisDe3Anos: { value: 600, unit: "EUR/ano/dependente" },
+    ate3AnosInclusive: { value: 726, unit: "EUR/ano/dependente" },
+    segundoDependenteOuSeguinteAte3Anos: {
+      value: 900,
+      unit: "EUR/ano",
+      notes: "Substitui os 726€ a partir do 2.º dependente com idade <= 3 anos.",
+    },
+    guardaConjuntaResidenciaAlternada: {
+      value: 300,
+      unit: "EUR/ano/progenitor",
+      notes: "Cada progenitor pode deduzir metade do valor quando há guarda conjunta com residência alternada comunicada à AT.",
+    },
+  },
+
+  /**
+   * Diferencial regional de IRS — Açores e Madeira. 🟡 ESTIMATE: fonte
+   * secundária (imprensa económica, não a Portaria/Decreto Legislativo
+   * Regional original) descreve um "diferencial de 30% que abrange a
+   * totalidade da estrutura de escalões" nas Regiões Autónomas face ao
+   * Continente, em vigor desde fevereiro de 2026 com efeitos a 1 de
+   * janeiro. Interpretamos isto como uma redução de 30% em cada taxa
+   * marginal dos escalões do Continente. Esta é uma inferência sobre
+   * o MECANISMO exato (pode ser aplicado de forma diferente na
+   * legislação primária) — confirmar contra o Decreto Legislativo
+   * Regional antes de publicar. A Madeira tem ainda uma redução
+   * adicional não quantificada para rendimentos imediatamente acima
+   * do salário mínimo regional, não modelada aqui.
+   */
+  diferencialRegional: {
+    status: "ESTIMATE",
+    acores: { reducaoSobreTaxaMarginal: 0.3 },
+    madeira: {
+      reducaoSobreTaxaMarginal: 0.3,
+      notes: "Redução adicional para rendimentos próximos do salário mínimo regional não quantificada — não modelada.",
+    },
+    continente: { reducaoSobreTaxaMarginal: 0 },
+    notes:
+      "Mecanismo exato não confirmado contra fonte primária. Ver TAX-METHODOLOGY.md.",
+  },
+
+  /**
    * Dedução específica da Categoria A (trabalho dependente) — Art. 25.º
    * CIRS. Aplica-se o maior entre este valor fixo e as contribuições
    * efetivas para a Segurança Social, quando superiores.

@@ -98,6 +98,49 @@ escalões.
 superiores. Aplica-se antes de calcular o rendimento coletável de
 trabalho dependente.
 
+### Quociente familiar (Art. 69.º CIRS) — ✅ Verificado (Fase 4)
+
+Declaração conjunta (casados/unidos de facto): quociente 2 — divide o
+rendimento coletável por 2 antes de aplicar os escalões, multiplica o
+imposto de volta por 2 no fim. Declaração individual: quociente 1
+(sem efeito). Implementado em `calculateIRS(rendimento, { quocienteFamiliar })`.
+
+### Dedução à coleta por dependente (Art. 78.º-A CIRS) — ✅ Verificado (Fase 4)
+
+Subtrai-se **diretamente ao imposto já calculado**, nunca ao
+rendimento coletável — são coisas distintas (dedução à coleta vs.
+dedução específica). Valores 2026:
+
+| Situação | Valor |
+|---|---|
+| Dependente com mais de 3 anos | 600 €/ano |
+| Dependente com até 3 anos (o 1.º) | 726 €/ano |
+| 2.º dependente (ou seguinte) com até 3 anos | 900 €/ano |
+| Guarda conjunta com residência alternada | 300 €/ano por progenitor |
+
+Implementado em `calcularDeducaoDependentes()`. Nunca deixa o IRS
+final ficar negativo — a dedução aplica-se com `Math.max(0, ...)`.
+
+### Diferencial regional de IRS — Açores e Madeira — 🟡 ESTIMATE (Fase 4)
+
+**Achado importante da Fase 4:** ao contrário do que se assumia
+inicialmente, o diferencial regional das Regiões Autónomas não se
+limita ao IVA — o IRS também tem uma redução regional. Fonte
+secundária (imprensa económica) descreve um "diferencial de 30% que
+abrange a totalidade da estrutura de escalões", em vigor desde
+fevereiro de 2026 com efeitos a 1 de janeiro.
+
+**A nossa implementação é uma interpretação, não uma leitura direta da
+lei primária:** aplicamos uma redução de 30% a cada taxa marginal dos
+escalões do Continente, para Açores e Madeira. Isto está marcado
+`status: "ESTIMATE"` em `irs.js` e o motor de cálculo devolve
+`diferencialRegionalAplicado: true` sempre que este ajuste é usado —
+a UI do Taxímetro mostra um aviso explícito nesse caso. **Antes de
+publicar em produção, confirmar o mecanismo exato contra o Decreto
+Legislativo Regional correspondente** (não apenas contra imprensa).
+A Madeira tem ainda uma redução adicional não quantificada para
+rendimentos próximos do salário mínimo regional — não modelada.
+
 ### Coeficiente do regime simplificado (trabalhadores independentes) — 🟡 ESTIMATE
 
 Confirmado o coeficiente-regra de 0,75 para prestação de serviços
