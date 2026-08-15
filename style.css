@@ -6,10 +6,12 @@
 /* -----------------------------
    0. Tipografia — Poppins autoalojada
    ----------------------------- */
-/* Ficheiros pendentes de upload em /fonts/ (ver fonts/README.md).
-   Enquanto não existirem, estas declarações falham silenciosamente e
-   a stack de sistema definida em --font-family-base assume o lugar —
-   a app nunca fica sem texto por causa disto. */
+/* Ficheiros autoalojados em /fonts/ (ver fonts/README.md) — Poppins
+   oficial (SIL OFL 1.1), descarregado do repositório google/fonts e
+   convertido para woff2. Caso algum ficheiro falhe (p.ex. cache
+   corrompida), estas declarações falham silenciosamente e a stack de
+   sistema definida em --font-family-base assume o lugar — a app nunca
+   fica sem texto por causa disto. */
 @font-face {
   font-family: "Poppins";
   font-style: normal;

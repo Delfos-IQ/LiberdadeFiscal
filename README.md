@@ -27,8 +27,8 @@ sw.js                service worker (offline shell)
 manifest.json        manifesto PWA
 data/                 conteúdo estruturado (regras fiscais, catálogos,
                        perguntas do quiz) e camada de persistência
-icons/                ícones da PWA (pendente de upload)
-fonts/                tipografia Poppins autoalojada (pendente de upload)
+icons/                ícones da PWA, gerados a partir do logo do autor
+fonts/                tipografia Poppins autoalojada (ver fonts/README.md)
 modules/              módulos de UI por rota (quiz, taxímetro, faturas...)
 worker/               Cloudflare Worker do fallback foto+IA (não desplegado)
 ```
@@ -69,12 +69,6 @@ npx serve .
 ```
 
 Depois abrir `http://localhost:8000`.
-
-## Pendências antes de instalar como PWA
-
-- Adicionar `icons/icon-192.png`, `icons/icon-512.png` e
-  `icons/icon-maskable.png` (ver `icons/README.md`)
-- Adicionar os `.woff2` de Poppins em `fonts/` (ver `fonts/README.md`)
 
 ## Licença
 

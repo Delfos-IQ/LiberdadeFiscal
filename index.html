@@ -19,9 +19,7 @@
   <!-- Tipografía — Poppins autoalojada (ver fonts/README.md). Sem
        ligação a serviços externos: cumpre a promessa de privacidade
        (secção 1 e 9 do CLAUDE.md) e funciona offline desde a primeira
-       visita. Se os ficheiros .woff2 ainda não existirem, o @font-face
-       falha silenciosamente e o browser usa a stack de sistema já
-       definida em style.css — nunca fica sem texto. -->
+       visita, pré-cacheada pelo service worker. -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>

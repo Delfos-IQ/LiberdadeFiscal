@@ -2,7 +2,7 @@
 // Versionamento explícito: sobe o CACHE_VERSION em cada release que
 // altere o shell ou os assets estáticos em cache.
 
-const CACHE_VERSION = "liberdade-fiscal-v0.5";
+const CACHE_VERSION = "liberdade-fiscal-v0.6";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Base do scope do service worker — funciona tanto em GitHub Pages de
@@ -44,6 +44,13 @@ const STATIC_ASSETS = [
   "data/tax-rules/2026/iva.js",
   "data/tax-rules/2026/impostos-especiais.js",
   "data/tax-rules/2026/patrimoniais.js",
+  "fonts/poppins-light.woff2",
+  "fonts/poppins-regular.woff2",
+  "fonts/poppins-semibold.woff2",
+  "fonts/poppins-bold.woff2",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
+  "icons/icon-maskable.png",
 ].map((path) => new URL(path, SCOPE).pathname);
 
 // --- Instalação: pré-cacheia o shell ---
