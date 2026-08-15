@@ -1,0 +1,16 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Node (Fase 1.6 — tests/lint, se vierem a usar tooling local)
+node_modules/
+npm-debug.log*
+
+# Ficheiros temporários de build de fontes/ícones
+*.zip
+*.ttf.tmp

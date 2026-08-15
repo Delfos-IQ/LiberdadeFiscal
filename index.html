@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Liberdade Fiscal — Descobre quanto do teu trabalho fica realmente contigo</title>
+  <meta name="description" content="Simulador educativo da carga fiscal real em Portugal: IRS, Segurança Social, IVA, impostos especiais e patrimoniais — até ao teu Dia da Liberdade Fiscal." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0D1321" />
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Liberdade Fiscal" />
+
+  <!-- Tipografía — Poppins autoalojada (ver fonts/README.md). Sem
+       ligação a serviços externos: cumpre a promessa de privacidade
+       (secção 1 e 9 do CLAUDE.md) e funciona offline desde a primeira
+       visita. Se os ficheiros .woff2 ainda não existirem, o @font-face
+       falha silenciosamente e o browser usa a stack de sistema já
+       definida em style.css — nunca fica sem texto. -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#app-main">Saltar para o conteúdo</a>
+
+  <div class="offline-banner" id="offline-banner" role="status" data-visible="false">
+    Estás offline. O simulador continua a funcionar — os dados ficam guardados no teu dispositivo.
+  </div>
+
+  <div class="app-shell">
+    <header class="app-header">
+      <p class="app-header__brand">Liberdade Fiscal</p>
+      <p class="app-header__claim">Descobre quanto do teu trabalho fica realmente contigo.</p>
+    </header>
+
+    <main class="app-main" id="app-main">
+      <!-- Fase 1: shell estático de espera.
+           A partir da Fase 3+ cada módulo passa a renderizar aqui via
+           app.js (router simples baseado em hash, sem framework). -->
+      <section class="card" aria-labelledby="welcome-heading">
+        <h1 id="welcome-heading">Bem-vindo</h1>
+        <p>
+          A app está a ser construída. Este é o esqueleto (Fase 1 —
+          Foundation): estrutura de ficheiros, PWA instalável, sistema de
+          design e armazenamento local já configurados.
+        </p>
+        <p>
+          Os módulos de Quiz, Taxímetro, Faturas, Impostos anuais e Dia
+          da Liberdade Fiscal chegam nas próximas fases.
+        </p>
+      </section>
+
+      <p class="disclaimer">
+        Esta aplicação fornece estimativas para fins informativos e
+        educativos. Não constitui aconselhamento fiscal, financeiro ou
+        jurídico e não substitui o cálculo oficial da Autoridade
+        Tributária.
+      </p>
+    </main>
+
+    <nav class="app-nav" aria-label="Navegação principal">
+      <button class="app-nav__item" type="button" data-route="quiz" aria-current="page">
+        Quiz
+      </button>
+      <button class="app-nav__item" type="button" data-route="taximetro">
+        Taxímetro
+      </button>
+      <button class="app-nav__item" type="button" data-route="faturas">
+        Faturas
+      </button>
+      <button class="app-nav__item" type="button" data-route="impostos-anuais">
+        Impostos anuais
+      </button>
+      <button class="app-nav__item" type="button" data-route="dia-liberdade">
+        Dia da Liberdade
+      </button>
+    </nav>
+  </div>
+
+  <noscript>
+    <div class="card" style="margin: var(--space-5);">
+      <h1>É necessário JavaScript</h1>
+      <p>
+        O Liberdade Fiscal é um simulador que corre inteiramente no teu
+        dispositivo — sem JavaScript não é possível calcular nem
+        guardar nada. Ativa o JavaScript no navegador para continuar.
+      </p>
+    </div>
+  </noscript>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

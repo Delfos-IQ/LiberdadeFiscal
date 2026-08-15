@@ -1,0 +1,478 @@
+/* =========================================================
+   LIBERDADE FISCAL — DESIGN SYSTEM (Fase 1: Foundation)
+   Mobile-first. Números > explicação > decoração.
+   ========================================================= */
+
+/* -----------------------------
+   0. Tipografia — Poppins autoalojada
+   ----------------------------- */
+/* Ficheiros pendentes de upload em /fonts/ (ver fonts/README.md).
+   Enquanto não existirem, estas declarações falham silenciosamente e
+   a stack de sistema definida em --font-family-base assume o lugar —
+   a app nunca fica sem texto por causa disto. */
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("./fonts/poppins-light.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/poppins-regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/poppins-semibold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/poppins-bold.woff2") format("woff2");
+}
+
+/* -----------------------------
+   1. Tokens — paleta e identidade
+   ----------------------------- */
+:root {
+  /* Paleta confirmada (secção 4 do CLAUDE.md) */
+  --color-navy: #0D1321;      /* confiança / estrutura */
+  --color-green: #22C55E;     /* liberdade / resultado — APENAS fundos, preenchimentos, ícones grandes. NUNCA como cor de texto (2,28:1 sobre branco, falha WCAG AA) */
+  --color-green-text: #15803D; /* variante escura do verde — 4,54:1 sobre branco, cumpre AA. Usar sempre que o verde for cor de primeiro plano (texto, links, ícones pequenos, estado ativo) */
+  --color-mint: #7EEBC1;      /* estados positivos */
+  --color-gold: #F6C453;      /* atenção / dinheiro */
+  --color-background: #F1F3F5;
+  --color-white: #FFFFFF;
+
+  /* Derivados funcionais */
+  --color-text: var(--color-navy);
+  --color-text-muted: #4B5566;
+  --color-border: #D9DEE3;
+  --color-danger: #E5484D;
+  --color-focus-ring: #0D6EFD;
+
+  /* Estados sobre navy (texto claro) */
+  --color-text-on-navy: var(--color-white);
+  --color-text-on-navy-muted: #AEB6C4;
+
+  /* Tipografía */
+  --font-family-base: "Poppins", "Segoe UI", system-ui, -apple-system,
+    Roboto, sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Escala tipográfica — mobile-first */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-hero: 2.75rem; /* números principais, p.ex. Dia da Liberdade Fiscal */
+
+  /* Espaçamento — base 4px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Raios e sombras */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 2px rgba(13, 19, 33, 0.06);
+  --shadow-md: 0 4px 12px rgba(13, 19, 33, 0.10);
+
+  /* Tamanho tátil mínimo (WCAG 2.2 AA — 24x24 CSS px mínimo, 44px recomendado) */
+  --tap-target-min: 44px;
+
+  /* Layout */
+  --content-max-width: 640px;
+  --transition-base: 160ms ease;
+}
+
+/* -----------------------------
+   2. Reset base
+   ----------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-green-text);
+  text-decoration-thickness: 2px;
+}
+
+/* -----------------------------
+   3. Acessibilidade — foco, motion, tátil
+   ----------------------------- */
+:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Alvo tátil mínimo — aplicado apenas a controlos de ação, NUNCA a
+   links dentro de texto corrido (ex: parágrafos de metodologia com
+   links para a Autoridade Tributária), onde forçar 44px de altura
+   quebraria o interlineado. */
+button,
+[role="button"],
+input,
+select,
+summary,
+a.btn,
+.app-nav a,
+.app-nav__item {
+  min-height: var(--tap-target-min);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-4);
+  background: var(--color-navy);
+  color: var(--color-white);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  transition: top var(--transition-base);
+}
+
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -----------------------------
+   4. Tipografía
+   ----------------------------- */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  margin: 0 0 var(--space-3);
+  color: var(--color-navy);
+}
+
+h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+/* Números principales — Dia da Liberdade Fiscal, resultados de Taxímetro */
+.stat-hero {
+  font-size: var(--font-size-hero);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-navy);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.stat-hero--green {
+  color: var(--color-green-text);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+/* -----------------------------
+   5. Layout base
+   ----------------------------- */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.app-header {
+  background-color: var(--color-navy);
+  color: var(--color-text-on-navy);
+  padding: var(--space-4) var(--space-5);
+}
+
+.app-header__brand {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  color: var(--color-white);
+}
+
+.app-header__claim {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-on-navy-muted);
+  margin: 0;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-8);
+}
+
+.app-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: var(--space-1);
+  background-color: var(--color-white);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-2);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.app-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  flex: 1;
+  min-height: var(--tap-target-min);
+  border: none;
+  border-top: 3px solid transparent; /* reserva espaço fixo — evita "salto" ao ativar */
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: color var(--transition-base), background-color var(--transition-base),
+    border-color var(--transition-base);
+}
+
+/* Estado ativo: nunca só cor (WCAG 1.4.1 — uso do cor).
+   Três sinais independentes: cor de texto AA-compliant, peso
+   tipográfico maior, e barra superior sólida. */
+.app-nav__item[aria-current="page"] {
+  color: var(--color-green-text);
+  font-weight: var(--font-weight-bold);
+  border-top-color: var(--color-green-text);
+}
+
+.app-nav__item:hover {
+  background-color: var(--color-background);
+}
+
+/* -----------------------------
+   6. Componentes base
+   ----------------------------- */
+.card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-4);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target-min);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: transform var(--transition-base), box-shadow var(--transition-base),
+    background-color var(--transition-base);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn--primary {
+  background-color: var(--color-green);
+  color: var(--color-navy);
+}
+
+.btn--primary:hover {
+  background-color: #1EA854;
+}
+
+.btn--secondary {
+  background-color: transparent;
+  color: var(--color-navy);
+  border: 2px solid var(--color-navy);
+}
+
+.btn--gold {
+  background-color: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-mint);
+  color: var(--color-navy);
+}
+
+.disclaimer {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+/* -----------------------------
+   7. Estado offline
+   ----------------------------- */
+.offline-banner {
+  display: none;
+  background-color: var(--color-gold);
+  color: var(--color-navy);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-2);
+}
+
+.offline-banner[data-visible="true"] {
+  display: block;
+}
+
+/* -----------------------------
+   8. Responsive — desktop
+   ----------------------------- */
+@media (min-width: 768px) {
+  :root {
+    --font-size-hero: 3.5rem;
+  }
+
+  .app-main {
+    padding-top: var(--space-6);
+  }
+
+  .app-nav {
+    justify-content: center;
+    gap: var(--space-6);
+  }
+
+  .app-nav__item {
+    flex: 0 0 auto;
+    min-width: 96px;
+  }
+}
