@@ -6,8 +6,9 @@ PWA que torna compreensível a carga fiscal real de trabalhar e consumir
 em Portugal — impostos diretos, indiretos, especiais e patrimoniais —
 culminando no "Dia da Liberdade Fiscal" pessoal do utilizador.
 
-Ver `CLAUDE.md` para a especificação completa do produto e
-`AUDITORIA-FASE-1.md` para a auditoria de qualidade da Fase 1.
+Ver `CLAUDE.md` para a especificação completa do produto,
+`AUDITORIA-FASE-1.md` para a auditoria de qualidade da Fase 1, e
+`QA-FASE-9.md` para o relatório final de QA e limitações conhecidas.
 
 ## Stack
 
@@ -44,7 +45,7 @@ Ver o roadmap completo em `CLAUDE.md` (secção 11). Resumo:
 - [x] Fase 6 — Impostos anuais/patrimoniais (registo manual de IMI/IUC/ISV/IMT/Imposto de Selo — não calculados, porque as tabelas completas estão UNKNOWN/ESTIMATE em `data/tax-rules/2026/patrimoniais.js`)
 - [x] Fase 7 — Dia da Liberdade Fiscal (consolida IRS + SS trabalhador + IVA/especiais registados + patrimoniais registados; ver metodologia em `TAX-METHODOLOGY.md` secção 6b)
 - [x] Fase 8 — Benchmark OCDE (tax wedge, Taxing Wages 2026, PT/ES/FR/DE/IE/NL/CH) + cartão para partilhar (Web Share API com fallback de download/clipboard)
-- [ ] Fase 9 — QA
+- [x] Fase 9 — QA final (verificações estáticas scriptadas, ver `QA-FASE-9.md` para o relatório completo e as limitações conhecidas)
 
 ## Testes
 
