@@ -17,9 +17,23 @@ const SCOPE = self.registration ? self.registration.scope : self.location.origin
 // "" (raiz do scope) e "index.html" resolvem para o mesmo recurso do
 // lado do servidor, mas mantemos as duas entradas porque o browser as
 // pode pedir com URLs distintas consoante a navegação.
-const STATIC_ASSETS = ["", "index.html", "app.js", "style.css", "manifest.json"].map(
-  (path) => new URL(path, SCOPE).pathname
-);
+const STATIC_ASSETS = [
+  "",
+  "index.html",
+  "app.js",
+  "style.css",
+  "manifest.json",
+  "modules/quiz.js",
+  "data/quiz-engine.js",
+  "data/quiz-questions.js",
+  "data/db.js",
+  "data/tax-engine.js",
+  "data/tax-rules/2026/irs.js",
+  "data/tax-rules/2026/seguranca-social.js",
+  "data/tax-rules/2026/iva.js",
+  "data/tax-rules/2026/impostos-especiais.js",
+  "data/tax-rules/2026/patrimoniais.js",
+].map((path) => new URL(path, SCOPE).pathname);
 
 // --- Instalação: pré-cacheia o shell ---
 self.addEventListener("install", (event) => {

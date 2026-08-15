@@ -44,27 +44,100 @@ function initOfflineBanner() {
 }
 
 /* -----------------------------
-   3. Router mínimo (placeholder)
+   3. Router — carregamento dinâmico por rota, sem framework
    ----------------------------- */
-const ROUTES = ["quiz", "taximetro", "faturas", "impostos-anuais", "dia-liberdade"];
+const DEFAULT_ROUTE = "quiz";
+
+// Cada rota mapeia para um import() dinâmico do seu módulo. Módulos
+// ainda não construídos (Fases 4-8) ficam como `null` e mostram um
+// placeholder — nunca um ecrã em branco nem um erro.
+const ROUTE_MODULES = {
+  quiz: () => import("./modules/quiz.js"),
+  taximetro: null,
+  faturas: null,
+  "impostos-anuais": null,
+  "dia-liberdade": null,
+};
+
+let currentModuleInstance = null;
+
+async function renderRoute(route) {
+  const main = document.getElementById("app-main");
+  if (!main) return;
+
+  const isValidRoute = Object.prototype.hasOwnProperty.call(ROUTE_MODULES, route);
+  const resolvedRoute = isValidRoute ? route : DEFAULT_ROUTE;
+
+  // Limpa o módulo anterior antes de trocar de rota — evita listeners
+  // ou estado da vista antiga a interferir com a nova.
+  if (currentModuleInstance && typeof currentModuleInstance.destroy === "function") {
+    currentModuleInstance.destroy();
+    currentModuleInstance = null;
+  }
+
+  updateNavCurrent(resolvedRoute);
+
+  const loader = ROUTE_MODULES[resolvedRoute];
+  if (!loader) {
+    renderPlaceholder(main, resolvedRoute);
+    return;
+  }
+
+  try {
+    const mod = await loader();
+    main.innerHTML = "";
+    currentModuleInstance = mod.render(main);
+  } catch (err) {
+    console.error(`Falha ao carregar o módulo da rota "${resolvedRoute}":`, err);
+    renderPlaceholder(main, resolvedRoute, true);
+  }
+}
+
+function renderPlaceholder(main, route, isError = false) {
+  main.innerHTML = "";
+  const card = document.createElement("section");
+  card.className = "card";
+  const heading = document.createElement("h1");
+  heading.textContent = isError ? "Não foi possível carregar esta secção" : "Em construção";
+  const p = document.createElement("p");
+  p.textContent = isError
+    ? "Tenta novamente mais tarde ou volta ao Quiz."
+    : `O módulo "${route}" chega numa próxima fase de construção da app.`;
+  card.append(heading, p);
+  main.append(card);
+}
+
+function updateNavCurrent(route) {
+  document.querySelectorAll("[data-route]").forEach((button) => {
+    if (button.dataset.route === route) {
+      button.setAttribute("aria-current", "page");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
+}
 
 function initNav() {
-  const buttons = document.querySelectorAll("[data-route]");
-
-  buttons.forEach((button) => {
+  document.querySelectorAll("[data-route]").forEach((button) => {
     button.addEventListener("click", () => {
       const route = button.dataset.route;
-      if (!ROUTES.includes(route)) return;
-
-      buttons.forEach((b) => b.removeAttribute("aria-current"));
-      button.setAttribute("aria-current", "page");
-
-      // Fase 1: sem render real de módulos ainda. A partir da Fase 3
-      // isto substitui o conteúdo de #app-main pelo módulo importado
-      // dinamicamente (import() por rota, mantendo tudo vanilla JS).
+      if (!Object.prototype.hasOwnProperty.call(ROUTE_MODULES, route)) return;
       window.location.hash = route;
     });
   });
+
+  // Sincroniza a UI com o histórico do navegador (botão atrás/avançar,
+  // ou entrar diretamente numa URL com #rota) — sem isto o router fica
+  // desligado do histórico, um problema identificado na auditoria da
+  // Fase 1 (M-2).
+  window.addEventListener("hashchange", () => {
+    renderRoute(currentRouteFromHash());
+  });
+}
+
+function currentRouteFromHash() {
+  const hash = window.location.hash.replace(/^#/, "");
+  return hash || DEFAULT_ROUTE;
 }
 
 /* -----------------------------
@@ -117,6 +190,8 @@ async function init() {
   } catch (err) {
     enterEphemeralMode(err);
   }
+
+  await renderRoute(currentRouteFromHash());
 }
 
 if (document.readyState === "loading") {

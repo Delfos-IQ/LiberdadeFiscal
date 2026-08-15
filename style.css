@@ -440,6 +440,54 @@ p {
 }
 
 /* -----------------------------
+   6b. Quiz
+   ----------------------------- */
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.quiz-option {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-white);
+  font-weight: var(--font-weight-regular);
+  cursor: pointer;
+  transition: border-color var(--transition-base), background-color var(--transition-base);
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--color-green-text);
+}
+
+.quiz-option:disabled {
+  cursor: default;
+}
+
+/* Feedback nunca depende só da cor: as opções corretas/incorretas
+   também mudam de ícone textual (ver ✓/✗ no badge de feedback) e de
+   espessura de contorno. */
+.quiz-option--correct {
+  border-color: var(--color-green-text);
+  border-width: 3px;
+  background-color: color-mix(in srgb, var(--color-mint) 30%, white);
+}
+
+.quiz-option--incorrect {
+  border-color: var(--color-danger);
+  border-width: 3px;
+}
+
+.quiz-feedback--incorrect {
+  background-color: color-mix(in srgb, var(--color-danger) 15%, white);
+  color: var(--color-navy);
+}
+
+/* -----------------------------
    7. Estado offline
    ----------------------------- */
 .offline-banner {

@@ -38,20 +38,14 @@
     </header>
 
     <main class="app-main" id="app-main">
-      <!-- Fase 1: shell estático de espera.
-           A partir da Fase 3+ cada módulo passa a renderizar aqui via
-           app.js (router simples baseado em hash, sem framework). -->
+      <!-- Conteúdo inicial de fallback — substituído por app.js assim
+           que o router carrega a rota atual (ver ROUTE_MODULES). Fica
+           visível apenas por instantes com JS ativo, ou de forma
+           permanente e não-interativa se o utilizador tiver o
+           <noscript> ativo (JS desativado). -->
       <section class="card" aria-labelledby="welcome-heading">
-        <h1 id="welcome-heading">Bem-vindo</h1>
-        <p>
-          A app está a ser construída. Este é o esqueleto (Fase 1 —
-          Foundation): estrutura de ficheiros, PWA instalável, sistema de
-          design e armazenamento local já configurados.
-        </p>
-        <p>
-          Os módulos de Quiz, Taxímetro, Faturas, Impostos anuais e Dia
-          da Liberdade Fiscal chegam nas próximas fases.
-        </p>
+        <h1 id="welcome-heading">A carregar…</h1>
+        <p>A preparar o Liberdade Fiscal.</p>
       </section>
 
       <p class="disclaimer">
