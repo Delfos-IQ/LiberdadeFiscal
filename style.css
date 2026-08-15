@@ -135,6 +135,7 @@ body {
   line-height: 1.5;
   color: var(--color-text);
   background-color: var(--color-background);
+  min-height: 100vh; /* fallback para navegadores sem suporte a unidades dinâmicas */
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
@@ -287,6 +288,7 @@ p {
 .app-shell {
   display: flex;
   flex-direction: column;
+  min-height: 100vh; /* fallback para navegadores sem suporte a unidades dinâmicas */
   min-height: 100dvh;
 }
 

@@ -12,7 +12,7 @@
 // Nada de lógica fiscal vive neste ficheiro — isso pertence a
 // data/tax-rules/ e aos módulos de motor de cálculo das próximas fases.
 
-import { getSetting, setSetting } from "./data/db.js";
+import { getSetting } from "./data/db.js";
 
 /* -----------------------------
    1. Service worker
@@ -63,7 +63,6 @@ function initNav() {
       // isto substitui o conteúdo de #app-main pelo módulo importado
       // dinamicamente (import() por rota, mantendo tudo vanilla JS).
       window.location.hash = route;
-      console.info(`[router] rota selecionada: ${route} (módulo ainda não implementado)`);
     });
   });
 }
