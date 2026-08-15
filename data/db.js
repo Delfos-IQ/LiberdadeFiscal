@@ -191,3 +191,39 @@ export async function saveInvoice(invoice) {
 
   return dbPut("invoices", invoice);
 }
+
+/**
+ * Guarda um PeriodicTax (imposto anual/patrimonial: IMI, IUC, ISV, IMT,
+ * Imposto de Selo — secção 6.4 do CLAUDE.md). Ao contrário das
+ * Invoices, estes valores não são calculados pela app (as tabelas
+ * completas de ISV/IUC/Imposto de Selo estão marcadas UNKNOWN/ESTIMATE
+ * em data/tax-rules/2026/patrimoniais.js) — o utilizador introduz o
+ * valor que já sabe que pagou (p.ex. da nota de liquidação de IMI), e
+ * este ponto único de escrita só valida a forma do registo.
+ *
+ * @param {import('./db.js').PeriodicTax} periodicTax
+ */
+export async function savePeriodicTax(periodicTax) {
+  if (!periodicTax || typeof periodicTax !== "object") {
+    throw new TypeError("periodicTax deve ser um objeto.");
+  }
+  const camposObrigatorios = ["id", "type", "amount", "date", "recurrence"];
+  const emFalta = camposObrigatorios.filter(
+    (c) => periodicTax[c] === undefined || periodicTax[c] === null
+  );
+  if (emFalta.length > 0) {
+    throw new Error(`PeriodicTax incompleto — faltam campos: ${emFalta.join(", ")}`);
+  }
+  const tiposValidos = ["IMI", "IUC", "ISV", "IMT", "Imposto_Selo"];
+  if (!tiposValidos.includes(periodicTax.type)) {
+    throw new Error(`type inválido: ${periodicTax.type}. Use um de: ${tiposValidos.join(", ")}.`);
+  }
+  if (typeof periodicTax.amount !== "number" || !Number.isFinite(periodicTax.amount) || periodicTax.amount < 0) {
+    throw new Error("amount deve ser um número >= 0.");
+  }
+  if (!["annual", "one_time"].includes(periodicTax.recurrence)) {
+    throw new Error('recurrence inválida. Use "annual" ou "one_time".');
+  }
+
+  return dbPut("periodicTaxes", periodicTax);
+}

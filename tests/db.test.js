@@ -88,3 +88,64 @@ describe("data/db.js — saveInvoice", () => {
     await assert.rejects(() => saveInvoice("nao-e-objeto"), TypeError);
   });
 });
+
+describe("data/db.js — savePeriodicTax", () => {
+  let savePeriodicTax, dbGetAll, dbClear;
+
+  beforeEach(async () => {
+    const mod = await import(`../data/db.js?t=${Date.now()}-${Math.random()}`);
+    savePeriodicTax = mod.savePeriodicTax;
+    dbGetAll = mod.dbGetAll;
+    dbClear = mod.dbClear;
+    await dbClear("periodicTaxes");
+  });
+
+  function taxaValida(overrides = {}) {
+    return {
+      id: "tax-1",
+      type: "IMI",
+      amount: 350,
+      date: "2026-04-01",
+      recurrence: "annual",
+      ...overrides,
+    };
+  }
+
+  test("guarda um PeriodicTax válido", async () => {
+    await savePeriodicTax(taxaValida());
+    const todos = await dbGetAll("periodicTaxes");
+    assert.equal(todos.length, 1);
+    assert.equal(todos[0].type, "IMI");
+  });
+
+  test("rejeita type inválido", async () => {
+    await assert.rejects(() => savePeriodicTax(taxaValida({ type: "IRS" })), /type inválido/);
+  });
+
+  test("aceita os cinco tipos válidos", async () => {
+    for (const [i, type] of ["IMI", "IUC", "ISV", "IMT", "Imposto_Selo"].entries()) {
+      await savePeriodicTax(taxaValida({ id: `tax-${i}`, type }));
+    }
+    const todos = await dbGetAll("periodicTaxes");
+    assert.equal(todos.length, 5);
+  });
+
+  test("rejeita amount negativo ou não numérico", async () => {
+    await assert.rejects(() => savePeriodicTax(taxaValida({ amount: -10 })), /amount deve ser/);
+    await assert.rejects(() => savePeriodicTax(taxaValida({ amount: "cem" })), /amount deve ser/);
+  });
+
+  test("rejeita recurrence inválida", async () => {
+    await assert.rejects(() => savePeriodicTax(taxaValida({ recurrence: "mensal" })), /recurrence inválida/);
+  });
+
+  test("rejeita campos obrigatórios em falta", async () => {
+    const t = taxaValida();
+    delete t.date;
+    await assert.rejects(() => savePeriodicTax(t), /faltam campos/);
+  });
+
+  test("rejeita valor que não é objeto", async () => {
+    await assert.rejects(() => savePeriodicTax(null), TypeError);
+  });
+});
