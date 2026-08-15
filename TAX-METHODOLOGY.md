@@ -234,15 +234,27 @@ não se reconstruir este parâmetro com regularidade. Recomenda-se um
 processo de atualização mensal, não anual, especificamente para este
 valor — distinto do resto do processo de atualização de janeiro.
 
-### IABA (álcool) — 🔴 UNKNOWN
+### IABA (álcool) — 🟡 ESTIMATE parcial (atualizado 15/08/2026)
 
-Apenas confirmado o regime de redução de 75% para licores e
-aguardentes de medronho de municípios específicos (prorrogado até
-31/12/2026). A tabela completa de taxas por tipo de bebida e grau
-alcoólico (cerveja por hectolitro/grau Plato, vinho, espumantes,
-bebidas espirituosas por hectolitro de álcool puro) **não foi
-verificada**. O motor de cálculo não deve produzir números de IABA até
-este parâmetro estar preenchido com fonte primária.
+Ronda de investigação adicional confirmou três elementos via fonte
+secundária (PwC Portugal, análise de impostos indiretos ao OE2026, e
+AEVC para os valores de vinho/sidra):
+
+1. Regime de redução de 75% do IABA para licores/"crème de" e
+   aguardentes de medronho de municípios elegíveis, prorrogado até
+   31/12/2026.
+2. Vinho tranquilo e espumante mantêm taxa de €0/hl.
+3. Bebidas fermentadas (sidras) tributadas a €10,30/hl — valor herdado
+   de 2017, sem alteração legislativa encontrada desde então, mas
+   **não confirmado diretamente** contra a tabela oficial 2026 do
+   Portal das Finanças.
+
+Cerveja, bebidas espirituosas e produtos intermédios **continuam
+UNKNOWN**: encontrou-se apenas a variação percentual de um aumento de
+2017 (+3%), não o valor absoluto em vigor em 2026. Extrapolar a partir
+de uma variação de 9 anos atrás sem o valor base violaria a regra de
+nunca inventar dados (spec §8) — por isso estes três elementos
+mantêm-se explicitamente `UNKNOWN` em vez de estimados.
 
 ### IT (tabaco) — ✅ Verificado para cigarros, 🔴 UNKNOWN para o resto
 
@@ -271,28 +283,59 @@ mínima em 2026, mas **a taxa exata é decidida por cada câmara
 municipal** — a tabela completa não foi recolhida. O simulador deve
 pedir o concelho ao utilizador, nunca assumir 0,3% silenciosamente.
 
-### ISV — 🟡 ESTIMATE
+### ISV — 🟡 ESTIMATE (atualizado 15/08/2026)
 
-Estrutura confirmada: soma de componente cilindrada + componente
-ambiental (CO₂), com redução por anos de uso em usados. Tabela A
-(automóveis de passageiros) usa as duas componentes; Tabela B
-(motociclos/triciclos/quadriciclos) usa só cilindrada. As tabelas
-numéricas de 2026 são iguais às de 2025 (sem alteração no Orçamento do
-Estado), mas os valores exatos por escalão não foram recolhidos.
+Tabelas numéricas completas obtidas (componente cilindrada + componente
+ambiental CO₂ em protocolo WLTP, para gasolina e gasóleo; desconto por
+idade para usados importados; regime PHEV 2026; isenção total de
+elétricos). Fonte: EcoImport
+(ecoimport.pt/isv-2026-novas-regras/), um agregador especializado em
+importação automóvel — **não a AT diretamente** (o texto do Código do
+ISV devolveu uma página sem conteúdo acessível nesta pesquisa), por
+isso mantém-se ESTIMATE e não ✅ Verified. Os dois exemplos numéricos
+do artigo foram reproduzidos manualmente: um bate certo, o outro (VW
+Golf) revelou um erro de 1€ na própria conta da fonte (1.498×5,61−
+6.194,88 = 2.208,90€, não os 2.209,90€ que o artigo reporta) — o motor
+desta app usa o valor recalculado corretamente, não o valor com erro
+da fonte. Só o protocolo WLTP tem tabela — veículos homologados em
+NEDC (tipicamente pré-2018) continuam a devolver `UNKNOWN`.
+Implementado em `calcularISV()`.
 
-### IUC — 🟡 ESTIMATE
+### IUC — 🟡 ESTIMATE (atualizado 15/08/2026)
 
-Seis categorias (A–F) confirmadas por critério de cálculo (cilindrada,
-peso bruto, potência, ano de matrícula), isenção total para veículos
-100% elétricos confirmada. Tabelas numéricas por escalão não
-recolhidas. Taxas-base 2026 = 2024/2025 (sem alteração legislativa).
+Tabela completa da categoria B (ligeiros de passageiros/mistos, 1.ª
+matrícula desde 1/7/2007 — a mais comum) obtida, incluindo componente
+cilindrada, componente CO₂ (NEDC e WLTP), coeficiente por ano de
+matrícula e adicional para gasóleo. Também obtidas as tabelas de
+veículos pré-2007 (categoria A) e de motociclos/triciclos/quadriciclos
+(categoria E). Fonte: DECO PROteste
+(deco.proteste.pt/dinheiro/impostos/noticias/tabelas-iuc-quanto-paga),
+associação de defesa do consumidor — não é a AT, por isso ESTIMATE.
+Os dois exemplos numéricos do artigo foram reproduzidos manualmente e
+batem certo com a fórmula. Categorias C/D (veículos de mercadorias, por
+peso bruto) e F (potência em kW) continuam sem tabela numérica.
+Implementado em `calcularIUC()`.
 
-### Imposto de Selo — 🔴 UNKNOWN
+### Imposto de Selo — ✅ Verified (atualizado 15/08/2026)
 
-Não pesquisado nesta ronda. **Nota editorial obrigatória do spec
-(§6.3):** Imposto de Selo e IVA são mutuamente exclusivos — nunca se
-acumulam sobre o mesmo ato. Relevante sobretudo em transmissões de
-imóveis (onde substitui o IVA) e operações financeiras/de crédito.
+Tabela Geral completa (30 verbas) obtida diretamente da fonte primária:
+Autoridade Tributária e Aduaneira,
+info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/selo/Pages/ccod-selo-tabgiselo.aspx,
+consultada em 15/08/2026 (versão em vigor nessa data). Esta app
+modela em código de cálculo só as verbas mais relevantes para um
+utilizador particular: aquisição onerosa de imóveis (verba 1.1, 0,8%),
+transmissão gratuita/herança (verba 1.2, 10%), arrendamento (verba 2,
+10% sobre 1 mês de renda), garantias (verba 10, 0,04%/mês a <1 ano,
+0,5% a partir de 1 ano, 0,6% a partir de 5 anos), crédito ao consumo
+(verba 17.2, 0,141%/mês a <1 ano, 1,76% a partir de 1 ano), e seguros
+por ramo (verba 22, 3% a 9% consoante o ramo). As restantes verbas da
+Tabela Geral ficam transcritas em `data/tax-rules/2026/patrimoniais.js`
+para referência, mas sem função de cálculo dedicada. **Nota editorial
+obrigatória do spec (§6.3):** Imposto de Selo e IVA são mutuamente
+exclusivos — nunca se acumulam sobre o mesmo ato. Relevante sobretudo
+em transmissões de imóveis (onde acresce ao IMT, não ao IVA) e
+operações financeiras/de crédito. Implementado em
+`calcularImpostoSelo(verba, valor, opcoes)`.
 
 ---
 
@@ -360,10 +403,18 @@ percentagem e data. Decisões explícitas de metodologia:
 - [ ] Confirmar todos os parâmetros ✅ diretamente contra
       portaldasfinancas.gov.pt / seg-social.pt / diariodarepublica.pt
 - [ ] Resolver o coeficiente completo do regime simplificado (IRS)
-- [ ] Resolver a tabela completa de IABA
-- [ ] Resolver a tabela de concelhos do IMI
-- [ ] Resolver as tabelas numéricas de ISV e IUC
-- [ ] Resolver o Imposto de Selo
+- [ ] Resolver a tabela completa de IABA (cerveja, bebidas
+      espirituosas, produtos intermédios continuam UNKNOWN; vinho,
+      espumante e bebidas fermentadas já ✅/🟡 — ver secção 4)
+- [ ] Resolver a tabela de concelhos do IMI (308 concelhos, ainda não
+      investigada)
+- [x] Resolver as tabelas numéricas de ISV e IUC — 🟡 ESTIMATE,
+      implementadas em `calcularISV()`/`calcularIUC()` com fonte
+      EcoImport/DECO PROteste (ver secção 5); protocolo NEDC (ISV) e
+      matrículas pré-2007 (IUC) continuam UNKNOWN por falta de tabelas
+- [x] Resolver o Imposto de Selo — ✅ Verified diretamente contra
+      info.portaldasfinancas.gov.pt (Tabela Geral), implementado em
+      `calcularImpostoSelo()` para as verbas principais (ver secção 5)
 - [ ] Classificar cada item de `data/goods-services-pt.js` contra as
       Listas I/II do CIVA (Fase 5)
 - [ ] Estabelecer o processo de verificação mensal do ISP

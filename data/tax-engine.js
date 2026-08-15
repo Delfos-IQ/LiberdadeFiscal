@@ -552,28 +552,270 @@ export function calcularIMI(valorPatrimonialTributario, taxaConcelho, tipo = "ur
   };
 }
 
-/** ISV — UNKNOWN explícito. Ver TAX-METHODOLOGY.md secção 5. */
-export function calcularISV() {
+/**
+ * ISV — Imposto sobre Veículos (pago uma única vez, na matrícula).
+ * Status ESTIMATE — ver nota de fonte em data/tax-rules/2026/patrimoniais.js.
+ * Só cobre veículos homologados em WLTP (a generalidade dos veículos
+ * recentes); NEDC devolve UNKNOWN.
+ *
+ * @param {{
+ *   cilindrada: number,
+ *   co2: number,
+ *   combustivel: "gasolina"|"gasoleo",
+ *   protocolo?: "WLTP"|"NEDC",
+ *   eletrico?: boolean,
+ *   phevElegivel?: boolean,
+ *   idadeAnos?: number,
+ * }} opcoes
+ */
+export function calcularISV(opcoes) {
+  const { cilindrada, co2, combustivel, protocolo = "WLTP", eletrico = false, phevElegivel = false, idadeAnos = 0 } =
+    opcoes || {};
+
+  if (eletrico) {
+    return {
+      status: "ESTIMATE",
+      imposto: 0,
+      notes: "Veículos 100% elétricos estão isentos de ISV.",
+      fonte: PATRIMONIAIS_2026.isv.sourceUrl,
+    };
+  }
+
+  if (protocolo !== "WLTP") {
+    return {
+      status: "UNKNOWN",
+      reason: "Só as tabelas de CO2 em protocolo WLTP foram verificadas. Ver TAX-METHODOLOGY.md secção 5.",
+    };
+  }
+  if (typeof cilindrada !== "number" || cilindrada <= 0) {
+    throw new RangeError("cilindrada deve ser um número > 0.");
+  }
+  if (typeof co2 !== "number" || co2 < 0) {
+    throw new RangeError("co2 deve ser um número >= 0.");
+  }
+  if (!["gasolina", "gasoleo"].includes(combustivel)) {
+    throw new RangeError('combustivel deve ser "gasolina" ou "gasoleo".');
+  }
+  if (typeof idadeAnos !== "number" || idadeAnos < 0) {
+    throw new RangeError("idadeAnos deve ser um número >= 0.");
+  }
+
+  const isvData = PATRIMONIAIS_2026.isv;
+  const escalaoCilindrada = escolherEscalao(isvData.componenteCilindrada, cilindrada);
+  const escalaoCO2 = escolherEscalao(isvData.componenteCO2Wltp[combustivel], co2);
+
+  const componenteCilindrada = round2(cilindrada * escalaoCilindrada.taxaPorCC - escalaoCilindrada.parcelaAAbater);
+  const componenteCO2 = round2(co2 * escalaoCO2.taxaPorGrama - escalaoCO2.parcelaAAbater);
+  const adicionalGasoleo = combustivel === "gasoleo" ? isvData.taxaAdicionalGasoleo.ligeiroPassageiros : 0;
+
+  let isvNovo = round2(componenteCilindrada + componenteCO2 + adicionalGasoleo);
+  if (phevElegivel) {
+    isvNovo = round2(isvNovo * isvData.descontoPHEV.percentagemPago);
+  }
+
+  const escalaoIdade = escolherEscalao(isvData.descontoPorIdade, idadeAnos, { maxExclusivo: true });
+  const fatorIdade = 1 - (escalaoIdade ? escalaoIdade.desconto : 0);
+  const isvFinal = round2(isvNovo * fatorIdade);
+
   return {
-    status: "UNKNOWN",
-    reason: "Tabelas numéricas de ISV (componente cilindrada + ambiental) não verificadas. Ver TAX-METHODOLOGY.md secção 5.",
+    status: "ESTIMATE",
+    componenteCilindrada,
+    componenteCO2,
+    adicionalGasoleo,
+    phevAplicado: Boolean(phevElegivel),
+    isvNovo,
+    descontoIdade: escalaoIdade ? escalaoIdade.desconto : 0,
+    isvFinal,
+    imposto: isvFinal,
+    fonte: isvData.sourceUrl,
+    notes:
+      "ESTIMATE — fonte secundária especializada, verificada aritmeticamente mas não confirmada diretamente contra o Código do ISV. Ver TAX-METHODOLOGY.md secção 5.",
   };
 }
 
-/** IUC — UNKNOWN explícito. Ver TAX-METHODOLOGY.md secção 5. */
-export function calcularIUC() {
+/**
+ * IUC — Imposto Único de Circulação (pago anualmente). Cobre a
+ * categoria B (ligeiros de passageiros/mistos, 1.ª matrícula desde
+ * 1/7/2007), a mais comum. Status ESTIMATE.
+ *
+ * @param {{
+ *   cilindrada: number,
+ *   co2: number,
+ *   anoMatricula: number,
+ *   combustivel: "gasolina"|"gasoleo"|"eletrico"|"gpl",
+ *   protocolo?: "WLTP"|"NEDC",
+ * }} opcoes
+ */
+export function calcularIUC(opcoes) {
+  const { cilindrada, co2, anoMatricula, combustivel, protocolo = "WLTP" } = opcoes || {};
+
+  if (combustivel === "eletrico") {
+    return {
+      status: "ESTIMATE",
+      imposto: 0,
+      notes: "Veículos 100% elétricos estão isentos de IUC.",
+      fonte: PATRIMONIAIS_2026.iuc.sourceUrl,
+    };
+  }
+  if (typeof anoMatricula !== "number" || anoMatricula < 2007) {
+    return {
+      status: "UNKNOWN",
+      reason: "Só a categoria B (1.ª matrícula desde 1/7/2007) tem tabela completa nesta app. Ver TAX-METHODOLOGY.md secção 5.",
+    };
+  }
+  if (typeof cilindrada !== "number" || cilindrada <= 0) {
+    throw new RangeError("cilindrada deve ser um número > 0.");
+  }
+  if (typeof co2 !== "number" || co2 < 0) {
+    throw new RangeError("co2 deve ser um número >= 0.");
+  }
+  if (!["gasolina", "gasoleo", "gpl"].includes(combustivel)) {
+    throw new RangeError('combustivel deve ser "gasolina", "gasoleo", "gpl" ou "eletrico".');
+  }
+
+  const iucData = PATRIMONIAIS_2026.iuc.categoriaB;
+  const escalaoCilindrada = escolherEscalao(iucData.componenteCilindrada, cilindrada);
+  const tabelaCO2 = protocolo === "NEDC" ? iucData.componenteCO2.nedc : iucData.componenteCO2.wltp;
+  const escalaoCO2 = escolherEscalao(tabelaCO2, co2);
+
+  const coeficiente =
+    iucData.coeficienteAnoMatricula.find((c) => c.ano === anoMatricula)?.coeficiente ??
+    iucData.coeficienteAnoMatricula.find((c) => c.anoMin && anoMatricula >= c.anoMin)?.coeficiente;
+
+  if (coeficiente === undefined) {
+    return { status: "UNKNOWN", reason: `Coeficiente do ano de matrícula ${anoMatricula} não encontrado.` };
+  }
+
+  const somaBase = escalaoCilindrada.taxa + escalaoCO2.taxa;
+  const adicionalGasoleo = combustivel === "gasoleo" ? escolherEscalao(iucData.adicionalGasoleo, cilindrada).valor : 0;
+  const imposto = round2(somaBase * coeficiente + adicionalGasoleo);
+
+  const limiar = PATRIMONIAIS_2026.iuc.limiarDispensaCobranca;
+  const dispensado = imposto < limiar;
+
   return {
-    status: "UNKNOWN",
-    reason: "Tabelas numéricas de IUC por categoria (A-F) não verificadas. Ver TAX-METHODOLOGY.md secção 5.",
+    status: "ESTIMATE",
+    somaBase: round2(somaBase),
+    coeficiente,
+    adicionalGasoleo,
+    imposto: dispensado ? 0 : imposto,
+    dispensadoPorValorBaixo: dispensado,
+    fonte: PATRIMONIAIS_2026.iuc.sourceUrl,
+    notes: dispensado
+      ? `Imposto calculado (${imposto}€) é inferior ao limiar de dispensa de cobrança (${limiar}€) — não é devido.`
+      : "ESTIMATE — fonte secundária (associação de defesa do consumidor), verificada aritmeticamente mas não confirmada diretamente contra o Código do IUC. Ver TAX-METHODOLOGY.md secção 5.",
   };
 }
 
-/** Imposto de Selo — UNKNOWN explícito. Ver TAX-METHODOLOGY.md secção 5. */
-export function calcularImpostoSelo() {
+/**
+ * Imposto de Selo — cobre só as verbas mais relevantes para um
+ * utilizador particular (Tabela Geral tem 30 números; ver ficheiro de
+ * dados para a lista completa transcrita). Status ✅ Verified — fonte
+ * primária direta (Autoridade Tributária e Aduaneira).
+ *
+ * @param {"transmissaoOnerosaImoveis"|"transmissaoGratuita"|"arrendamento"|"creditoConsumo"|"garantia"|"seguro"} verba
+ * @param {number} valor — valor base sobre o qual incide o imposto (ex.: valor do imóvel, renda mensal, montante do crédito, prémio de seguro)
+ * @param {{ prazoMeses?: number, ramoSeguro?: string }} opcoes
+ */
+export function calcularImpostoSelo(verba, valor, opcoes = {}) {
+  if (typeof valor !== "number" || valor < 0) {
+    throw new RangeError("valor deve ser um número >= 0.");
+  }
+  const seloData = PATRIMONIAIS_2026.impostoSelo;
+  const { prazoMeses, ramoSeguro } = opcoes;
+
+  switch (verba) {
+    case "transmissaoOnerosaImoveis":
+      return montarResultadoSelo("1.1", valor, seloData.verba1_1_aquisicaoOnerosaImoveis.taxa, seloData);
+    case "transmissaoGratuita":
+      return montarResultadoSelo("1.2", valor, seloData.verba1_2_transmissaoGratuita.taxa, seloData);
+    case "arrendamento":
+      return montarResultadoSelo("2", valor, seloData.verba2_arrendamento.taxa, seloData);
+    case "garantia": {
+      if (typeof prazoMeses !== "number" || prazoMeses <= 0) {
+        throw new RangeError("prazoMeses deve ser um número > 0 para a verba 'garantia'.");
+      }
+      const g = seloData.verba10_garantias;
+      if (prazoMeses < 12) {
+        return montarResultadoSelo("10.1", valor, g.prazoInferior1Ano.taxa * prazoMeses, seloData, true);
+      }
+      if (prazoMeses >= 60) {
+        return montarResultadoSelo("10.3", valor, g.semPrazoOuIgualOuSuperior5Anos.taxa, seloData);
+      }
+      return montarResultadoSelo("10.2", valor, g.prazoIgualOuSuperior1Ano.taxa, seloData);
+    }
+    case "creditoConsumo": {
+      if (typeof prazoMeses !== "number" || prazoMeses <= 0) {
+        throw new RangeError("prazoMeses deve ser um número > 0 para a verba 'creditoConsumo'.");
+      }
+      const c = seloData.verba17_2_creditoConsumo;
+      if (prazoMeses < 12) {
+        return montarResultadoSelo("17.2.1", valor, c.prazoInferior1Ano.taxa * prazoMeses, seloData, true);
+      }
+      return montarResultadoSelo("17.2.2", valor, c.prazoIgualOuSuperior1Ano.taxa, seloData);
+    }
+    case "seguro": {
+      const ramos = seloData.verba22_seguros;
+      const mapa = {
+        caucao: ramos.caucao,
+        acidentesDoencasCreditoAgricola: ramos.acidentesDoencasCreditoAgricola,
+        mercadoriasTransportadas: ramos.mercadoriasTransportadas,
+        embarcacoesAeronaves: ramos.embarcacoesAeronaves,
+        outros: ramos.outrosRamos,
+      };
+      const ramoInfo = mapa[ramoSeguro];
+      if (!ramoInfo) {
+        throw new RangeError(
+          `ramoSeguro inválido: "${ramoSeguro}". Use um de: ${Object.keys(mapa).join(", ")}.`
+        );
+      }
+      return montarResultadoSelo("22.1", valor, ramoInfo.taxa, seloData);
+    }
+    default:
+      throw new RangeError(
+        `verba de Imposto de Selo desconhecida ou não modelada nesta app: "${verba}". ` +
+          "Ver data/tax-rules/2026/patrimoniais.js para a lista completa da Tabela Geral (só algumas verbas têm função de cálculo)."
+      );
+  }
+}
+
+function montarResultadoSelo(verbaCodigo, valorBase, taxa, seloData, jaAcumuladaPorMeses = false) {
   return {
-    status: "UNKNOWN",
-    reason: "Não pesquisado nesta fase. Ver TAX-METHODOLOGY.md secção 5.",
+    status: "verified",
+    verba: verbaCodigo,
+    valorBase: round2(valorBase),
+    taxa: jaAcumuladaPorMeses ? undefined : round4(taxa),
+    imposto: round2(valorBase * taxa),
+    fonte: seloData.sourceUrl,
+    notes: "Fonte primária direta: Tabela Geral do Imposto do Selo, Autoridade Tributária e Aduaneira.",
   };
+}
+
+/**
+ * Escolhe o escalão aplicável numa tabela de brackets.
+ *
+ * @param {Array<{min?: number, max?: number}>} tabela
+ * @param {number} valor
+ * @param {{ maxExclusivo?: boolean }} opcoes — a maioria das tabelas
+ *   deste ficheiro (cilindrada, CO2, adicional gasóleo) já vem com os
+ *   limites ajustados pela fonte para não haver ambiguidade em
+ *   inclusive-inclusive (ex.: "até 1000" / "mais de 1000 a 1300" fica
+ *   {max:1000} / {min:1001,...}). A tabela de desconto por idade do
+ *   ISV usa rótulos como "4 a 5 anos" / "5 a 6 anos" sem esse ajuste —
+ *   confirmado com o exemplo oficial da fonte (BMW 520d, 5 anos → cai
+ *   no bracket "5 a 6 anos", não em "4 a 5") que a convenção correta
+ *   aí é limite mínimo inclusivo e máximo exclusivo.
+ */
+function escolherEscalao(tabela, valor, { maxExclusivo = false } = {}) {
+  const escalao = tabela.find((e) => {
+    const min = e.min ?? -Infinity;
+    const max = e.max ?? Infinity;
+    return maxExclusivo ? valor >= min && valor < max : valor >= min && valor <= max;
+  });
+  if (!escalao) {
+    throw new RangeError(`Nenhum escalão encontrado para o valor ${valor}.`);
+  }
+  return escalao;
 }
 
 /* ============================================================
