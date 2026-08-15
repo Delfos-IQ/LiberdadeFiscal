@@ -54,7 +54,7 @@ const DEFAULT_ROUTE = "quiz";
 const ROUTE_MODULES = {
   quiz: () => import("./modules/quiz.js"),
   taximetro: () => import("./modules/taximetro.js"),
-  faturas: null,
+  faturas: () => import("./modules/faturas.js"),
   "impostos-anuais": null,
   "dia-liberdade": null,
 };

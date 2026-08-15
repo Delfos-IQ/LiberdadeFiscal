@@ -33,12 +33,15 @@ function openDb() {
   if (dbPromise) return dbPromise;
 
   dbPromise = new Promise((resolve, reject) => {
-    if (!("indexedDB" in window)) {
+    // globalThis, não window: mais robusto (funciona em qualquer
+    // contexto com IndexedDB — inclui ambientes de teste como
+    // fake-indexeddb, que não definem `window`).
+    if (!("indexedDB" in globalThis)) {
       reject(new Error("IndexedDB não suportado neste navegador."));
       return;
     }
 
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = globalThis.indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = (event) => {
       const db = request.result;
@@ -154,4 +157,37 @@ export async function getSetting(key, fallback = null) {
 
 export async function setSetting(key, value) {
   return dbPut("userSettings", { key, value });
+}
+
+/**
+ * Guarda uma Invoice (fatura) — ponto único de escrita para este
+ * store. Valida o invariante do modelo de dados (secção 5 do
+ * CLAUDE.md): `confirmed_by_user` tem de ser `true` antes de
+ * persistir, seja qual for a origem (manual, QR, foto+OCR). Isto
+ * fecha o hallazgo M-4 da auditoria da Fase 1 — o invariante estava
+ * documentado no spec mas não tinha ponto de aplicação no código.
+ *
+ * @param {import('./db.js').Invoice} invoice
+ */
+export async function saveInvoice(invoice) {
+  if (!invoice || typeof invoice !== "object") {
+    throw new TypeError("invoice deve ser um objeto.");
+  }
+  if (invoice.confirmed_by_user !== true) {
+    throw new Error(
+      "Não é permitido persistir uma fatura sem confirmed_by_user === true. " +
+        "Isto aplica-se a TODAS as origens (manual, QR, foto+OCR) — o utilizador " +
+        "tem sempre de rever e confirmar antes de guardar."
+    );
+  }
+  const camposObrigatorios = ["id", "date", "source", "goodServiceId", "region", "amount_total"];
+  const emFalta = camposObrigatorios.filter((c) => invoice[c] === undefined || invoice[c] === null);
+  if (emFalta.length > 0) {
+    throw new Error(`Invoice incompleta — faltam campos: ${emFalta.join(", ")}`);
+  }
+  if (!["manual", "photo_ocr", "qr"].includes(invoice.source)) {
+    throw new Error(`source inválido: ${invoice.source}. Use "manual", "photo_ocr" ou "qr".`);
+  }
+
+  return dbPut("invoices", invoice);
 }

@@ -28,6 +28,8 @@ data/                 conteúdo estruturado (regras fiscais, catálogos,
                        perguntas do quiz) e camada de persistência
 icons/                ícones da PWA (pendente de upload)
 fonts/                tipografia Poppins autoalojada (pendente de upload)
+modules/              módulos de UI por rota (quiz, taxímetro, faturas...)
+worker/               Cloudflare Worker do fallback foto+IA (não desplegado)
 ```
 
 ## Estado do projeto
@@ -38,7 +40,7 @@ Ver o roadmap completo em `CLAUDE.md` (secção 11). Resumo:
 - [x] Fase 2 — Motor fiscal (tabelas Portugal 2026) — ver `TAX-METHODOLOGY.md` para o que ainda está por verificar (IABA, ISV, IUC, Imposto de Selo, tabela de concelhos do IMI)
 - [x] Fase 3 — Quiz (36 perguntas, seleção aleatória de 10, router real)
 - [x] Fase 4 — Ingressos e Taxímetro (Modo Rápido + Avançado, cadeia bruto→líquido, quociente familiar, dependentes, diferencial regional ESTIMATE)
-- [ ] Fase 5 — Faturas
+- [x] Fase 5 — Faturas (onboarding de região, catálogo de 28 bens/serviços, fluxo manual, atajo QR por colagem de texto, persistência com `confirmed_by_user` obrigatório, worker de foto+IA escrito mas **não desplegado**)
 - [ ] Fase 6 — Impostos anuais/patrimoniais
 - [ ] Fase 7 — Dia da Liberdade Fiscal
 - [ ] Fase 8 — Benchmark OCDE + cartão para partilhar
@@ -51,7 +53,7 @@ npm install   # só a primeira vez — instala o jsdom, usado apenas para os tes
 npm test
 ```
 
-Cobertura atual: 63 testes (motor fiscal, lógica do quiz, integração de UI do quiz via jsdom).
+Cobertura atual: 130 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas, persistência IndexedDB, integração de UI do quiz/taxímetro/faturas via jsdom + fake-indexeddb).
 
 ## Desenvolvimento local
 
