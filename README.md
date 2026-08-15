@@ -42,7 +42,7 @@ Ver o roadmap completo em `CLAUDE.md` (secção 11). Resumo:
 - [x] Fase 4 — Ingressos e Taxímetro (Modo Rápido + Avançado, cadeia bruto→líquido, quociente familiar, dependentes, diferencial regional ESTIMATE)
 - [x] Fase 5 — Faturas (onboarding de região, catálogo de 28 bens/serviços, fluxo manual, atajo QR por colagem de texto, persistência com `confirmed_by_user` obrigatório, worker de foto+IA escrito mas **não desplegado**)
 - [x] Fase 6 — Impostos anuais/patrimoniais (registo manual de IMI/IUC/ISV/IMT/Imposto de Selo — não calculados, porque as tabelas completas estão UNKNOWN/ESTIMATE em `data/tax-rules/2026/patrimoniais.js`)
-- [ ] Fase 7 — Dia da Liberdade Fiscal
+- [x] Fase 7 — Dia da Liberdade Fiscal (consolida IRS + SS trabalhador + IVA/especiais registados + patrimoniais registados; ver metodologia em `TAX-METHODOLOGY.md` secção 6b)
 - [ ] Fase 8 — Benchmark OCDE + cartão para partilhar
 - [ ] Fase 9 — QA
 
@@ -53,7 +53,7 @@ npm install   # só a primeira vez — instala o jsdom, usado apenas para os tes
 npm test
 ```
 
-Cobertura atual: 145 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas, persistência IndexedDB, integração de UI do quiz/taxímetro/faturas/impostos anuais via jsdom + fake-indexeddb).
+Cobertura atual: 165 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas, persistência IndexedDB, integração de UI do quiz/taxímetro/faturas/impostos anuais via jsdom + fake-indexeddb).
 
 ## Desenvolvimento local
 

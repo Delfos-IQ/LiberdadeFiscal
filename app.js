@@ -56,7 +56,7 @@ const ROUTE_MODULES = {
   taximetro: () => import("./modules/taximetro.js"),
   faturas: () => import("./modules/faturas.js"),
   "impostos-anuais": () => import("./modules/impostos-anuais.js"),
-  "dia-liberdade": null,
+  "dia-liberdade": () => import("./modules/dia-liberdade.js"),
 };
 
 let currentModuleInstance = null;

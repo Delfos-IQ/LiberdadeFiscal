@@ -577,8 +577,107 @@ export function calcularImpostoSelo() {
 }
 
 /* ============================================================
+   7. Dia da Liberdade Fiscal
+   ============================================================ */
+
+/**
+ * Consolida os totais anuais de cada figura tributária num único
+ * resultado explicável (spec §6.5). NUNCA soma o custo total para o
+ * empregador (TSU patronal) ao numerador nem ao denominador desta
+ * proporção — essa cifra é informativa à parte (mostrada no
+ * Taxímetro), porque misturá-la aqui inflacionaria a percentagem sem
+ * ser o que a pessoa reconhece como "o meu rendimento". Ver o campo
+ * `methodology` devolvido para o texto exato das hipóteses assumidas.
+ *
+ * @param {{
+ *   ano: number,
+ *   rendimentoBrutoAnual: number,
+ *   irsAnual: number,
+ *   ssTrabalhadorAnual: number,
+ *   ivaEEspeciaisRegistado: number,
+ *   patrimoniaisRegistado: number,
+ * }} input
+ */
+export function calculateFiscalFreedomDay(input) {
+  const {
+    ano,
+    rendimentoBrutoAnual,
+    irsAnual,
+    ssTrabalhadorAnual,
+    ivaEEspeciaisRegistado,
+    patrimoniaisRegistado,
+  } = input || {};
+
+  for (const [nome, valor] of Object.entries({
+    rendimentoBrutoAnual,
+    irsAnual,
+    ssTrabalhadorAnual,
+    ivaEEspeciaisRegistado,
+    patrimoniaisRegistado,
+  })) {
+    if (typeof valor !== "number" || !Number.isFinite(valor) || valor < 0) {
+      throw new RangeError(`${nome} deve ser um número >= 0.`);
+    }
+  }
+  if (!Number.isInteger(ano) || ano < 2000) {
+    throw new RangeError("ano deve ser um número inteiro válido.");
+  }
+  if (rendimentoBrutoAnual === 0) {
+    throw new RangeError(
+      "rendimentoBrutoAnual não pode ser 0 — sem rendimento de referência não é possível calcular uma proporção do ano."
+    );
+  }
+
+  const totalImpostos = round2(irsAnual + ssTrabalhadorAnual + ivaEEspeciaisRegistado + patrimoniaisRegistado);
+
+  // Denominador: rendimento bruto de trabalho do próprio utilizador. Se
+  // o total de impostos exceder o rendimento bruto (possível quando o
+  // consumo/patrimoniais registados são desproporcionalmente altos face
+  // ao rendimento introduzido), a percentagem satura em 100% em vez de
+  // produzir uma data inválida (dia > 365).
+  const percentage = Math.min(1, totalImpostos / rendimentoBrutoAnual);
+
+  const diasNoAno = isAnoBissexto(ano) ? 366 : 365;
+  const dayOfYear = Math.max(1, Math.round(percentage * diasNoAno));
+  const date = dayOfYearParaData(ano, dayOfYear);
+
+  return {
+    ano,
+    dayOfYear,
+    date,
+    daysForTaxes: dayOfYear,
+    percentage: round4(percentage),
+    totalImpostos,
+    rendimentoBase: round2(rendimentoBrutoAnual),
+    breakdown: {
+      irs: round2(irsAnual),
+      segurancaSocial: round2(ssTrabalhadorAnual),
+      ivaEEspeciais: round2(ivaEEspeciaisRegistado),
+      patrimoniais: round2(patrimoniaisRegistado),
+    },
+    methodology:
+      "Percentagem = (IRS anual + Segurança Social do trabalhador + IVA/impostos especiais registados nas Faturas + impostos patrimoniais/anuais registados) ÷ rendimento bruto anual de trabalho. " +
+      "O custo total para o empregador (TSU patronal) NÃO está incluído nesta proporção — é uma cifra informativa à parte, mostrada no Taxímetro. " +
+      "O IVA e os impostos especiais refletem apenas o que foi registado manualmente em Faturas, não uma projeção do consumo anual total — quanto mais despesas registares, mais preciso este número fica. " +
+      "Segundo as hipóteses utilizadas nesta simulação, esta é a data correspondente à proporção anual do valor destinado a impostos e contribuições — não significa que deixes de pagar impostos a partir desta data.",
+  };
+}
+
+/* ============================================================
    Utilitários internos
    ============================================================ */
+
+function isAnoBissexto(ano) {
+  return (ano % 4 === 0 && ano % 100 !== 0) || ano % 400 === 0;
+}
+
+function dayOfYearParaData(ano, dayOfYear) {
+  const data = new Date(Date.UTC(ano, 0, 1));
+  data.setUTCDate(data.getUTCDate() + (dayOfYear - 1));
+  const mm = String(data.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(data.getUTCDate()).padStart(2, "0");
+  return `${ano}-${mm}-${dd}`;
+}
 
 function round2(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;

@@ -309,6 +309,43 @@ consciente da v1, a comunicar no disclaimer.
 
 ---
 
+## 6b. Dia da Liberdade Fiscal — metodologia de consolidação (Fase 7)
+
+`calculateFiscalFreedomDay()` em `data/tax-engine.js` combina as
+figuras já calculadas/registadas noutros módulos numa única
+percentagem e data. Decisões explícitas de metodologia:
+
+- **Numerador** (total de impostos): IRS anual (após dedução por
+  dependentes) + Segurança Social do trabalhador (não a TSU patronal)
+  + soma do `amount_tax` de todas as faturas registadas em Faturas +
+  soma do `amount` de todos os registos em Impostos Anuais.
+- **Denominador** (rendimento de referência): rendimento bruto anual de
+  trabalho do utilizador (salário bruto mensal × 12 — mesma
+  simplificação do Taxímetro, sem 13º/14º separados).
+- **TSU patronal excluída de propósito**: o custo total para o
+  empregador já é mostrado como cifra informativa à parte no Taxímetro
+  (spec §6.2: "nunca misturar estas cifras num único número sem
+  explicar o que representa cada uma"). Incluí-la aqui inflacionaria a
+  percentagem sem corresponder ao rendimento que a pessoa reconhece
+  como seu.
+- **IVA/especiais e patrimoniais são o que foi registado, não uma
+  projeção**: se o utilizador só registou 3 faturas, o resultado reflete
+  só essas 3 faturas — comunicado explicitamente no ecrã (texto
+  "Baseado em N registo(s)...") e na string `methodology` devolvida
+  pela função. Isto é uma limitação consciente da v1: não existe ainda
+  extrapolação estatística do consumo anual a partir de uma amostra.
+- **Nunca "a partir de hoje deixas de pagar impostos"**: o texto de
+  enquadramento no ecrã de resultado usa sempre a formulação do spec
+  §6.5 ("segundo as hipóteses utilizadas nesta simulação, esta é a data
+  correspondente à proporção anual...").
+- **Saturação em 100%**: se o total de impostos ultrapassar o
+  rendimento bruto anual (possível com valores patrimoniais/consumo
+  desproporcionalmente altos face a um rendimento baixo introduzido), a
+  percentagem satura em 100% (31 de dezembro) em vez de produzir uma
+  data inválida.
+
+---
+
 ## 7. Processo de atualização recomendado
 
 | Parâmetro | Cadência de revisão |
