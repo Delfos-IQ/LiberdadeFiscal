@@ -644,6 +644,67 @@ p {
 }
 
 /* -----------------------------
+   6f. Benchmark OCDE
+   ----------------------------- */
+.benchmark-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.benchmark-linha {
+  display: grid;
+  grid-template-columns: 8rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.benchmark-linha__label {
+  font-size: var(--font-size-sm);
+}
+
+.benchmark-linha__barra-wrapper {
+  display: block;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 16px;
+}
+
+.benchmark-linha__barra {
+  display: block;
+  height: 100%;
+  background-color: var(--color-green);
+  border-radius: var(--radius-sm);
+}
+
+.benchmark-linha__valor {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.benchmark-linha--portugal .benchmark-linha__barra {
+  background-color: var(--color-gold);
+}
+
+.benchmark-linha--media .benchmark-linha__barra {
+  background-color: var(--color-navy);
+  opacity: 0.6;
+}
+
+.benchmark-linha--utilizador .benchmark-linha__barra {
+  background-color: var(--color-mint);
+}
+
+.benchmark-linha--portugal .benchmark-linha__label,
+.benchmark-linha--utilizador .benchmark-linha__label {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* -----------------------------
    7. Estado offline
    ----------------------------- */
 .offline-banner {

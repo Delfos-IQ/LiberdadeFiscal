@@ -137,6 +137,24 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
     assert.ok(container.querySelector(".disclaimer"));
   });
 
+  test("mostra o link 'Comparar com a OCDE' e o botão 'Partilhar resultado'", async () => {
+    const container = getContainer();
+    render(container);
+    setInput(container, "dl-salario-bruto", 2000);
+    submitForm(container);
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    const compararLink = container.querySelector('a[href="#benchmark-ocde"]');
+    assert.ok(compararLink, "devia existir um link para o benchmark OCDE");
+
+    const partilharBtn = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Partilhar resultado")
+    );
+    assert.ok(partilharBtn, "devia existir um botão de partilha");
+    // Clicar não deve lançar exceção síncrona mesmo sem Canvas/Web Share API reais (ambiente jsdom).
+    assert.doesNotThrow(() => partilharBtn.click());
+  });
+
   test("Recalcular volta ao formulário", async () => {
     const container = getContainer();
     render(container);

@@ -57,6 +57,10 @@ const ROUTE_MODULES = {
   faturas: () => import("./modules/faturas.js"),
   "impostos-anuais": () => import("./modules/impostos-anuais.js"),
   "dia-liberdade": () => import("./modules/dia-liberdade.js"),
+  // Rota secundária, sem botão próprio na navegação principal — acede-se
+  // a partir do link "Comparar com a OCDE" no ecrã de resultado do Dia
+  // da Liberdade Fiscal (Fase 8, spec §6.6).
+  "benchmark-ocde": () => import("./modules/benchmark-ocde.js"),
 };
 
 let currentModuleInstance = null;

@@ -12,6 +12,7 @@
 
 import { calcularCadeiaSalarial, calculateFiscalFreedomDay } from "../data/tax-engine.js";
 import { dbGetAll } from "../data/db.js";
+import { buildShareText, desenharCartaoCanvas } from "../data/share-card.js";
 
 // Ano fiscal ativo — tem de acompanhar data/tax-rules/2026/*.js. Não
 // existe ainda um mecanismo de seleção de ano fiscal (fora do âmbito
@@ -272,13 +273,81 @@ export function render(container) {
       "Esta aplicação fornece estimativas para fins informativos e educativos. Não constitui aconselhamento fiscal, financeiro ou jurídico e não substitui o cálculo oficial da Autoridade Tributária."
     );
 
+    const acoes = el("div", "faturas-actions");
+
     const voltarBtn = el("button", "btn btn--secondary", "Recalcular");
     voltarBtn.type = "button";
     voltarBtn.addEventListener("click", voltarAoFormulario);
+    acoes.append(voltarBtn);
 
-    card.append(heading, dataHero, percentagemLabel, framing, breakdown, detalhes, voltarBtn, disclaimer);
+    if (typeof document !== "undefined" && "createElement" in document) {
+      const partilharBtn = el("button", "btn btn--primary", "Partilhar resultado");
+      partilharBtn.type = "button";
+      partilharBtn.addEventListener("click", () => partilharResultado(r));
+      acoes.append(partilharBtn);
+    }
+
+    const compararLink = document.createElement("a");
+    compararLink.href = "#benchmark-ocde";
+    compararLink.className = "btn btn--secondary";
+    compararLink.textContent = "Comparar com a OCDE →";
+    acoes.append(compararLink);
+
+    card.append(heading, dataHero, percentagemLabel, framing, breakdown, detalhes, acoes, disclaimer);
     container.append(card);
     heading.focus({ preventScroll: false });
+  }
+
+  async function partilharResultado(resultado) {
+    const texto = buildShareText(resultado);
+
+    // Canvas API pode não existir em todos os ambientes (ex.: testes
+    // headless) — nesse caso caímos diretamente para a partilha de
+    // texto simples, sem imagem.
+    let blob = null;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1920;
+      if (canvas.getContext) {
+        desenharCartaoCanvas(canvas, resultado);
+        blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      }
+    } catch {
+      blob = null;
+    }
+
+    const podePartilharFicheiro =
+      blob && typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [ficheiroDe(blob)] });
+
+    try {
+      if (podePartilharFicheiro) {
+        await navigator.share({ text: texto, files: [ficheiroDe(blob)] });
+        return;
+      }
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ text: texto });
+        return;
+      }
+    } catch {
+      // Utilizador cancelou a partilha nativa, ou falhou — cai para o
+      // fallback abaixo em vez de deixar o botão sem efeito nenhum.
+    }
+
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "liberdade-fiscal.png";
+      link.click();
+      URL.revokeObjectURL(url);
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(texto);
+    }
+  }
+
+  function ficheiroDe(blob) {
+    return new File([blob], "liberdade-fiscal.png", { type: "image/png" });
   }
 
   draw();
