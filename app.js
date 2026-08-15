@@ -15,6 +15,27 @@
 import { getSetting } from "./data/db.js";
 
 /* -----------------------------
+   0. Ecrã de boas-vindas (storytelling de marca) — mostra-se uma
+   única vez, antes de qualquer rota. Ver modules/boas-vindas.js para
+   o porquê de ser um módulo separado do onboarding de região.
+   ----------------------------- */
+function showBrandIntro() {
+  return new Promise((resolve) => {
+    const main = document.getElementById("app-main");
+    if (!main) {
+      resolve();
+      return;
+    }
+    import("./modules/boas-vindas.js")
+      .then((mod) => mod.render(main, { onComplete: resolve }))
+      .catch((err) => {
+        console.error("Falha ao carregar o ecrã de boas-vindas:", err);
+        resolve();
+      });
+  });
+}
+
+/* -----------------------------
    1. Service worker
    ----------------------------- */
 async function registerServiceWorker() {
@@ -188,6 +209,18 @@ async function init() {
   initOfflineBanner();
   initNav();
   await registerServiceWorker();
+
+  try {
+    const introVista = await getSetting("introVista");
+    if (!introVista) {
+      await showBrandIntro();
+    }
+  } catch (err) {
+    // Falha ao ler o armazenamento: mostra a introdução na mesma (o
+    // pior cenário é reaparecer noutra visita), não bloqueia o arranque.
+    console.error("Não foi possível verificar se a introdução já foi vista:", err);
+    await showBrandIntro();
+  }
 
   try {
     await ensureOnboarding();

@@ -300,10 +300,23 @@ p {
   padding: var(--space-4) var(--space-5);
 }
 
+.app-header__brand-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-header__logo {
+  height: 32px;
+  width: auto;
+  flex-shrink: 0;
+}
+
 .app-header__brand {
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-lg);
   color: var(--color-white);
+  margin: 0;
 }
 
 .app-header__claim {
@@ -611,6 +624,79 @@ p {
 .onboarding-regiao-option input {
   min-width: 20px;
   min-height: 20px;
+}
+
+/* -----------------------------
+   6d-bis. Boas-vindas (storytelling de marca, ver
+   modules/boas-vindas.js) — ecrã de apresentação, não de formulário,
+   por isso não usa .card (fundo próprio, sem sombra de cartão).
+   ----------------------------- */
+.welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-6) 0 var(--space-4);
+}
+
+.welcome-hero__logo {
+  height: 96px;
+  width: auto;
+  margin-bottom: var(--space-4);
+}
+
+.welcome-hero__heading {
+  font-size: var(--font-size-xl);
+  margin: 0 0 var(--space-3);
+}
+
+.welcome-hero__lead {
+  color: var(--color-text-muted);
+  max-width: 46ch;
+  margin: 0 0 var(--space-6);
+}
+
+.welcome-promises {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  width: 100%;
+  margin-bottom: var(--space-6);
+}
+
+@media (min-width: 560px) {
+  .welcome-promises {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.welcome-promise {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  text-align: left;
+}
+
+.welcome-promise__icon {
+  color: var(--color-green-text);
+  margin-bottom: var(--space-2);
+}
+
+.welcome-promise__titulo {
+  font-size: var(--font-size-base);
+  margin: 0 0 var(--space-1);
+}
+
+.welcome-promise__texto {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.welcome-hero__cta {
+  width: 100%;
+  max-width: 320px;
 }
 
 /* -----------------------------
