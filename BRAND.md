@@ -82,6 +82,28 @@ navy (consistente com `theme_color` em `manifest.json`) — ver
 `icons/README.md` para o processo de geração e a margem de segurança
 usada no ícone maskable.
 
+### Variante monocromática branca — implementada em 16/08/2026
+
+A variação 2 do board ("monocromático claro — símbolo a branco, para
+fundos escuros") estava documentada mas nunca tinha sido gerada como
+ficheiro. Corrigido: `icons/logo-mark-white.png` — silhueta branca
+sólida, fundo transparente, gerada a partir do canal alpha de
+`icons/logo-mark.png` (script em `icons/README.md`). Motivo: o símbolo
+colorido tem a asa superior em navy escuro, que desaparecia quase por
+completo sobre o header navy da app (`.app-header`, mesma cor de
+fundo) — parecia um logo cortado e apagado, não intencional. A
+variante branca resolve isto e é a usada em `.app-header__logo`
+(`index.html`), agora também maior (48px, 56px a partir de 640px —
+antes 32px).
+
+O favicon foi regenerado a partir da mesma silhueta branca, centrada
+num quadrado navy sólido (`icons/favicon-512.png`, com derivados em
+16/32/48/180/192px e um `.ico` multi-resolução) — mais legível a
+tamanhos minúsculos do que o ícone colorido original, cujos detalhes
+finos se perdiam a 16-32px. O `manifest.json` mantém os ícones
+coloridos originais para o ecrã principal do telemóvel (mais vívidos
+ali, onde há espaço para os detalhes).
+
 ## Cartão para partilhar
 
 O mockup do board confirma o formato descrito em `CLAUDE.md` §6.7:
