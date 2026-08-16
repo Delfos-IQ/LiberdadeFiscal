@@ -267,6 +267,17 @@ export function render(container) {
       partilharBtn.type = "button";
       partilharBtn.addEventListener("click", () => partilharResultado(r));
       acoes.append(partilharBtn);
+
+      // Via manual sempre disponível: em alguns Android/Chrome o menu
+      // de partilha nativo abre mas o WhatsApp não aparece na lista
+      // (normalmente uma cache desatualizada do próprio Chrome, fora do
+      // nosso controlo) — este botão garante sempre um caminho para
+      // partilhar manualmente, independentemente do que o menu do
+      // sistema mostrar.
+      const descarregarBtn = el("button", "btn btn--secondary", "Descarregar imagem");
+      descarregarBtn.type = "button";
+      descarregarBtn.addEventListener("click", () => descarregarCartao(r));
+      acoes.append(descarregarBtn);
     }
 
     const compararLink = document.createElement("a");
@@ -274,6 +285,12 @@ export function render(container) {
     compararLink.className = "btn btn--secondary";
     compararLink.textContent = "Comparar com a OCDE →";
     acoes.append(compararLink);
+
+    const notaPartilha = el(
+      "p",
+      "stat-label",
+      "Se o WhatsApp não aparecer no menu de partilha do teu telemóvel, usa \"Descarregar imagem\" e anexa-a manualmente numa conversa."
+    );
 
     const fecharBtn = el("button", "btn btn--secondary", "Fechar este período e começar um novo");
     fecharBtn.type = "button";
@@ -286,7 +303,7 @@ export function render(container) {
 
     card.append(heading, dataHero, percentagemLabel, framing, pensarCritico, breakdown);
     if (avisoFaltantes) card.append(avisoFaltantes);
-    card.append(detalhes, privacidade, acoes, fecharBtn, disclaimer);
+    card.append(detalhes, privacidade, acoes, notaPartilha, fecharBtn, disclaimer);
     container.append(card);
     heading.focus({ preventScroll: false });
   }
@@ -313,46 +330,72 @@ export function render(container) {
     return wrap;
   }
 
-  async function partilharResultado(resultado) {
-    const texto = buildShareText(resultado);
-
-    // Canvas API pode não existir em todos os ambientes (ex.: testes
-    // headless) — nesse caso caímos diretamente para a partilha de
-    // texto simples, sem imagem.
-    let blob = null;
+  /**
+   * Gera o cartão de partilha em canvas e devolve o blob PNG, ou null
+   * se a Canvas API não existir (ex.: testes headless).
+   */
+  async function gerarCartaoBlob(resultado) {
     try {
       const canvas = document.createElement("canvas");
       canvas.width = 1080;
       canvas.height = 1920;
-      if (canvas.getContext) {
-        desenharCartaoCanvas(canvas, resultado);
-        blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-      }
+      if (!canvas.getContext) return null;
+      desenharCartaoCanvas(canvas, resultado);
+      return await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     } catch {
-      blob = null;
+      return null;
     }
+  }
 
-    // navigator.share({files}) (Web Share API Level 2) já entrega a
-    // imagem à folha de partilha nativa do sistema operativo — que
-    // inclui o WhatsApp automaticamente quando está instalado, sem
-    // precisar de nenhuma integração específica do WhatsApp aqui.
-    const podePartilharFicheiro =
-      blob && typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [ficheiroDe(blob)] });
+  async function partilharResultado(resultado) {
+    const texto = buildShareText(resultado);
+    const blob = await gerarCartaoBlob(resultado);
+    const temShareNativo = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
-    try {
-      if (podePartilharFicheiro) {
+    // Tentamos partilhar com a imagem diretamente, sem usar
+    // navigator.canShare() como filtro prévio: em vários Android/Chrome
+    // esse método dá falsos negativos (recusa uma partilha que o
+    // próprio share() depois aceita sem problema) — é mais fiável
+    // deixar o share() decidir e só cair para texto simples se ele
+    // recusar por um motivo real.
+    if (temShareNativo && blob) {
+      try {
         await navigator.share({ text: texto, files: [ficheiroDe(blob)] });
         return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // utilizador cancelou — não insistir com mais nada
       }
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ text: texto });
-        return;
-      }
-    } catch {
-      // Utilizador cancelou a partilha nativa, ou falhou — cai para o
-      // fallback abaixo em vez de deixar o botão sem efeito nenhum.
     }
 
+    if (temShareNativo) {
+      try {
+        await navigator.share({ text: texto });
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+      }
+    }
+
+    // Sem Web Share API disponível, ou falhou por um motivo real (não
+    // cancelamento do utilizador): cai para descarregar a imagem +
+    // copiar o texto, para nunca deixar o botão sem efeito nenhum.
+    await descarregarECopiar(blob, texto);
+  }
+
+  /**
+   * Via manual, sempre disponível a partir do seu próprio botão — não
+   * depende do menu de partilha nativo (nem do que ele decide mostrar
+   * ou não mostrar, ex.: um Android/Chrome com a lista de apps
+   * partilháveis desatualizada em cache). Descarrega a imagem e copia
+   * o texto, para o utilizador anexar manualmente numa conversa.
+   */
+  async function descarregarCartao(resultado) {
+    const texto = buildShareText(resultado);
+    const blob = await gerarCartaoBlob(resultado);
+    await descarregarECopiar(blob, texto);
+  }
+
+  async function descarregarECopiar(blob, texto) {
     if (blob) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -360,8 +403,14 @@ export function render(container) {
       link.download = "liberdade-fiscal.png";
       link.click();
       URL.revokeObjectURL(url);
-    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(texto);
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(texto);
+      } catch {
+        // Clipboard pode falhar por permissões — não é crítico, a
+        // imagem já foi descarregada (ou tentou sê-lo).
+      }
     }
   }
 

@@ -182,6 +182,22 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
     assert.doesNotThrow(() => partilharBtn.click());
   });
 
+  test("mostra sempre um botão \"Descarregar imagem\", independente do menu de partilha nativo", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    const descarregarBtn = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Descarregar imagem")
+    );
+    assert.ok(descarregarBtn, "devia existir um botão para descarregar a imagem manualmente");
+    assert.doesNotThrow(() => descarregarBtn.click());
+    assert.match(container.textContent, /Descarregar imagem/);
+  });
+
   test("Recalcular volta ao ecrã de resumo/Calcular (não pede dados outra vez)", async () => {
     await preencherRendimentos();
     const container = getContainer();
