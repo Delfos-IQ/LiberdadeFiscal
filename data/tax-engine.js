@@ -87,9 +87,23 @@ export function calculateIRS(rendimentoColetavel, opcoes = {}) {
       const valorTributado = tetoEscalao - escalao.min;
       if (valorTributado <= 0) return;
 
+      // Diferencial regional por escalão: a maioria das regiões usa uma
+      // única percentagem uniforme (`reducaoSobreTaxaMarginal`, caso da
+      // Madeira — 30% em todos os escalões, verificado). Os Açores têm
+      // um mecanismo diferenciado por escalão (DLR n.º 2/99/A, 20/1,
+      // na redação da DLR n.º 15-A/2021/A: 30% no 1.º escalão, 20% nos
+      // restantes) — `reducaoPrimeiroEscalao`/`reducaoRestantesEscaloes`
+      // têm prioridade sobre `reducaoSobreTaxaMarginal` quando definidos.
+      const reducaoEscalao =
+        diferencialInfo.reducaoPrimeiroEscalao !== undefined
+          ? index === 0
+            ? diferencialInfo.reducaoPrimeiroEscalao
+            : diferencialInfo.reducaoRestantesEscaloes ?? 0
+          : reducaoRegional;
+
       // Taxa efetivamente aplicada, já com o diferencial regional
       // (ESTIMATE) descontado quando aplicável.
-      const taxaAplicada = escalao.taxaMarginal * (1 - reducaoRegional);
+      const taxaAplicada = escalao.taxaMarginal * (1 - reducaoEscalao);
 
       // Arredondamento por escalão (a cêntimo), não só no total final
       // — ver nota em TAX-METHODOLOGY.md sobre o exemplo oficial
@@ -118,7 +132,8 @@ export function calculateIRS(rendimentoColetavel, opcoes = {}) {
     taxaEfetiva: round4(taxaEfetiva),
     decomposicaoPorEscalao,
     regiao,
-    diferencialRegionalAplicado: (diferencialInfo.reducaoSobreTaxaMarginal ?? 0) > 0,
+    diferencialRegionalAplicado:
+      (diferencialInfo.reducaoSobreTaxaMarginal ?? 0) > 0 || (diferencialInfo.reducaoPrimeiroEscalao ?? 0) > 0,
     quocienteFamiliar,
     ano: IRS_2026.year,
     fonte: IRS_2026.source,

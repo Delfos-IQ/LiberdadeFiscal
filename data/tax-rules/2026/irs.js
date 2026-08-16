@@ -97,10 +97,13 @@ export const IRS_2026 = {
   diferencialRegional: {
     status: "ESTIMATE",
     acores: {
-      reducaoSobreTaxaMarginal: 0.3,
+      reducaoPrimeiroEscalao: 0.3,
+      reducaoRestantesEscaloes: 0.2,
       status: "ESTIMATE",
+      source: "Decreto Legislativo Regional n.º 2/99/A, de 20 de janeiro (na redação da DLR n.º 15-A/2021/A, de 31 de maio) — referido como base legal no Despacho n.º 1179/2026",
+      sourceUrl: "https://files.diariodarepublica.pt/2s/2026/02/023000000/0005100057.pdf",
       notes:
-        "Não reconfirmado nesta ronda (15/08/2026). A fonte encontrada (Despacho n.º 1179/2026, DR) descreve coeficientes de retenção na fonte mensal específicos dos Açores, não uma redução percentual direta sobre a taxa marginal anual — os escalões de IRS aplicados nos Açores são, segundo essa fonte, os mesmos do Código do IRS nacional, com a diferença nos coeficientes de retenção. Mantém-se o valor de 0,3 herdado de uma ronda anterior como estimativa de trabalho, mas não está confirmado para 2026 e pode não refletir corretamente o imposto anual devido (só a retenção mensal).",
+        "Ronda de reinvestigação (16/08/2026): mecanismo revisto. O Despacho n.º 1179/2026 (tabelas de retenção na fonte dos Açores para 2026) cita como base legal o Decreto Legislativo Regional n.º 2/99/A — que, segundo múltiplas fontes secundárias, aplica uma redução de 30% à taxa nacional do 1.º escalão de IRS e de 20% aos restantes escalões (diferente do diferencial uniforme de 30% da Madeira). Substituímos aqui o valor uniforme herdado de uma ronda anterior por este mecanismo diferenciado por escalão. Continua ESTIMATE porque não foi possível ler o texto integral do DLR 2/99/A diretamente (fonte primária bloqueada/sem conteúdo acessível nesta pesquisa) — a leitura baseia-se em fontes secundárias convergentes, não no diploma original. Importante: as tabelas de retenção mensal do Despacho 1179/2026 são uma aproximação ao imposto devido, não o próprio imposto anual — este motor calcula o imposto ANUAL aplicando a redução por escalão diretamente às taxas marginais nacionais, o que é uma simplificação do mecanismo legal real.",
     },
     madeira: {
       reducaoSobreTaxaMarginal: 0.3,

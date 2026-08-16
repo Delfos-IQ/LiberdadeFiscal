@@ -17,14 +17,48 @@
 //
 // Pesos de referência (quanto gasta em média um agregado português em
 // cada categoria): o INE publica o Inquérito às Despesas das Famílias
-// 2022/2023 com esta informação (alimentação passou de 14,3% para
-// 12,9% do orçamento familiar entre edições), mas não foi possível
-// extrair a tabela completa por categoria nesta ronda de investigação
-// (15/08/2026) — o portal do INE serve os dados via JavaScript, fora
-// do alcance das ferramentas de pesquisa disponíveis. Por isso esta
-// categoria fica sem valores de referência pré-preenchidos: o
-// utilizador estima do zero, sem uma "resposta certa" para comparar.
-// Ver TAX-METHODOLOGY.md.
+// 2022/2023 com esta informação. Numa primeira ronda (15/08/2026) não
+// foi possível extrair a tabela completa por categoria — o portal do
+// INE serve os dados via JavaScript, fora do alcance das ferramentas
+// de pesquisa disponíveis. Numa reinvestigação (16/08/2026), via
+// imprensa que citou o destaque do INE diretamente (Jornal de
+// Negócios, 20/12/2023), obtiveram-se os três maiores blocos —
+// Habitação 39,1%, Alimentação 12,9%, Transportes 12,4% — mas não a
+// tabela completa das restantes categorias, e as categorias do INE não
+// correspondem 1:1 às categorias desta app (p.ex. "Habitação" do INE
+// inclui renda/prestação, que esta app não modela como imposto). Por
+// isso, mesmo com estes três valores confirmados, a app continua sem
+// os injetar como pré-preenchimento nos campos — ver
+// MEDIAS_NACIONAIS_INE_REFERENCIA abaixo, usada apenas como contexto
+// documental, nunca como valor por omissão. Ver TAX-METHODOLOGY.md.
+
+/**
+ * Referência apenas informativa (NÃO usada para pré-preencher nada na
+ * UI) — média nacional de peso no orçamento familiar, segundo o
+ * Inquérito às Despesas das Famílias do INE 2022/2023, despesa média
+ * anual total de referência: 23.900€/agregado. Fonte: Jornal de
+ * Negócios, "Peso da despesa das famílias com habitação
+ * praticamente duplicou" (20/12/2023), citando diretamente o INE.
+ * As categorias do INE são mais amplas que as desta app (incluem
+ * renda, prestações de crédito habitação, etc., que aqui não contam
+ * como imposto) — por isso não são diretamente comparáveis categoria
+ * a categoria, só uma ordem de grandeza.
+ */
+export const MEDIAS_NACIONAIS_INE_REFERENCIA = {
+  status: "ESTIMATE",
+  fonte: "INE, Inquérito às Despesas das Famílias 2022/2023, via Jornal de Negócios (20/12/2023)",
+  fonteUrl:
+    "https://www.jornaldenegocios.pt/economia/detalhe/-peso-da-despesa-das-familias-com-habitacao-praticamente-duplicou",
+  despesaMediaAnualTotal: 23900,
+  pesos: {
+    habitacao: 0.391,
+    alimentacao: 0.129,
+    transportes: 0.124,
+    restauracaoEAlojamento: 0.089,
+  },
+  notes:
+    "Categorias amplas do INE, não diretamente equiparáveis às categorias desta app — usar apenas como ordem de grandeza, nunca como valor por omissão nos campos.",
+};
 
 /**
  * @typedef {object} CategoriaGasto

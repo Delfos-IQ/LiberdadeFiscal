@@ -139,21 +139,35 @@ Também não modelado: o reforço do mínimo de existência que isenta
 totalmente quem aufere o salário mínimo regional. Fonte:
 [at.madeira.gov.pt, Agenda Fiscal Janeiro 2026](https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf).
 
-**Açores — 🟡 ESTIMATE, não reconfirmado.** A fonte encontrada em
-15/08/2026 (Despacho n.º 1179/2026, que aprova as tabelas de retenção
-na fonte para os Açores) descreve algo estruturalmente diferente do
-caso da Madeira: os escalões de IRS aplicados nos Açores são,
-segundo essa fonte, **os mesmos do Código do IRS nacional**, com a
-diferença nos *coeficientes de retenção na fonte mensal* — não
-necessariamente numa redução de 30% sobre o imposto anual devido.
-Mantém-se o valor de 0,3 herdado de uma ronda de pesquisa anterior
-como estimativa de trabalho (`status: "ESTIMATE"` em `irs.js`), mas
-**não está confirmado para 2026** e pode estar a modelar o mecanismo
-errado (retenção mensal em vez de imposto anual). A UI do Rendimentos
-mostra um aviso explícito sempre que `diferencialRegionalAplicado` é
-`true`. Antes de publicar em produção, confirmar contra o Decreto
-Legislativo Regional dos Açores correspondente, não apenas contra
-imprensa ou despachos de retenção na fonte.
+**Açores — 🟡 ESTIMATE, mecanismo revisto (reinvestigado 16/08/2026).**
+Numa primeira ronda (15/08/2026) só se tinha encontrado o Despacho
+n.º 1179/2026 (tabelas de retenção na fonte para os Açores em 2026),
+que descreve um mecanismo de retenção mensal por coeficientes — sem
+deixar claro se existe também uma redução direta sobre o imposto
+anual devido. Numa reinvestigação, confirmou-se que esse despacho cita
+como base legal o **Decreto Legislativo Regional n.º 2/99/A, de 20 de
+janeiro** (na redação da DLR n.º 15-A/2021/A, de 31 de maio) — e
+múltiplas fontes secundárias convergentes descrevem esse diploma como
+aplicando uma redução de **30% ao 1.º escalão** de IRS e de **20% aos
+restantes escalões**, face às taxas nacionais — um mecanismo
+estruturalmente diferente do diferencial uniforme de 30% da Madeira.
+
+O motor foi atualizado (`irs.js` e `calculateIRS()` em
+`tax-engine.js`) para suportar reduções diferenciadas por escalão
+(`reducaoPrimeiroEscalao` / `reducaoRestantesEscaloes`), substituindo o
+valor uniforme de 0,3 herdado de uma ronda anterior. **Continua
+ESTIMATE, não ✅ Verificado**, por duas razões: (1) não foi possível
+ler o texto integral do DLR 2/99/A diretamente — a fonte primária
+devolveu conteúdo vazio nesta ronda de pesquisa, só se confirmou via
+fontes secundárias convergentes; (2) as tabelas de retenção do
+Despacho 1179/2026 são uma *aproximação* ao imposto anual devido, não
+o próprio imposto — este motor aplica a redução por escalão
+diretamente ao cálculo anual, o que é uma simplificação do mecanismo
+legal real (que passa por retenção mensal, não por uma fórmula anual
+direta). A UI do Rendimentos mostra um aviso explícito sempre que
+`diferencialRegionalAplicado` é `true`. Antes de publicar em produção,
+confirmar o texto integral do DLR 2/99/A contra o Diário da República.
+Fonte: [Despacho n.º 1179/2026 (DRE)](https://files.diariodarepublica.pt/2s/2026/02/023000000/0005100057.pdf).
 
 ### Coeficiente do regime simplificado (trabalhadores independentes) — 🟡 ESTIMATE
 
@@ -295,6 +309,19 @@ de uma variação de 9 anos atrás sem o valor base violaria a regra de
 nunca inventar dados (spec §8) — por isso estes três elementos
 mantêm-se explicitamente `UNKNOWN` em vez de estimados.
 
+**Reinvestigação (16/08/2026), sem sucesso mas com um dado novo:**
+confirmou-se por imprensa (Observador, 10/10/2025) que o setor de
+bebidas espirituosas "se congratula com o congelamento" da respetiva
+taxa de IABA no OE2026 — isto é, não houve aumento de taxa para
+espirituosas em 2026 (mas isto confirma ausência de variação, não dá o
+valor absoluto). Encontraram-se também dois valores candidatos para a
+cerveja em fontes secundárias não oficiais e mutuamente incompatíveis
+(21,10 €/hl nalgumas, 9,96 €/hl "desde 2005" noutras) — a própria
+incompatibilidade entre eles é motivo para não usar nenhum sem
+confirmação direta contra o texto do CIEC (Anexo I / Art. 66.º) ou a
+tabela oficial da AT, que não foram acessíveis nesta ronda de
+pesquisa. Mantém-se `UNKNOWN`.
+
 ### IT (tabaco) — ✅ Verificado para cigarros, 🔴 UNKNOWN para o resto
 
 | Elemento | Valor |
@@ -313,14 +340,22 @@ Charutos, tabaco de enrolar e tabaco aquecido não foram verificados.
 Imposto de Selo.
 **Ficheiro:** `data/tax-rules/2026/patrimoniais.js`
 
-### IMI — 🟡 estrutura verificada, tabela por concelho 🔴 UNKNOWN
+### IMI — 🟡 estrutura verificada, tabela por concelho 🟡 ESTIMATE parcial (reinvestigado 16/08/2026)
 
 Intervalo legal nacional: 0,3%–0,45% do VPT/ano para prédios urbanos
 (até 0,5% em casos específicos — devolutos, degradados), 0,8% fixo
-para prédios rústicos. A maioria dos 308 municípios aplica a taxa
-mínima em 2026, mas **a taxa exata é decidida por cada câmara
-municipal** — a tabela completa não foi recolhida. O simulador deve
-pedir o concelho ao utilizador, nunca assumir 0,3% silenciosamente.
+para prédios rústicos. A tabela completa dos 308 municípios continua
+por embutir na app — é volumosa e muda todos os anos, câmara a câmara,
+até ao final do ano anterior — mas deixou de ser totalmente
+`UNKNOWN`. Confirmado (Doutor Finanças, 06/01/2026, dados comunicados
+à AT): mais de 200 dos 308 municípios aplicam a taxa mínima de 0,3% em
+2026; só **três** aplicam a taxa máxima de 0,45% — Vila Real de Santo
+António, Oeiras e Cartaxo; 31 municípios desceram a taxa e 6 subiram-na
+face a 2025 (destaque: Oeiras passou da taxa mínima para a máxima,
+0,3%→0,45%; Cascais subiu de 0,33% para 0,35%). O simulador usa 0,3%
+como valor sugerido por omissão (o mais comum, não necessariamente o
+do concelho do utilizador) e continua a pedir confirmação explícita —
+nunca assume silenciosamente. Fonte: [Doutor Finanças, "31 municípios descem IMI a pagar em 2026. Apenas 6 sobem."](https://www.doutorfinancas.pt/impostos/imi/31-municipios-descem-imi-a-pagar-em-2026-apenas-6-sobem/).
 
 ### ISV — 🟡 ESTIMATE (atualizado 15/08/2026)
 
@@ -455,10 +490,25 @@ percentagem e data. Decisões explícitas de metodologia:
       portaldasfinancas.gov.pt / seg-social.pt / diariodarepublica.pt
 - [ ] Resolver o coeficiente completo do regime simplificado (IRS)
 - [ ] Resolver a tabela completa de IABA (cerveja, bebidas
-      espirituosas, produtos intermédios continuam UNKNOWN; vinho,
-      espumante e bebidas fermentadas já ✅/🟡 — ver secção 4)
-- [ ] Resolver a tabela de concelhos do IMI (308 concelhos, ainda não
-      investigada)
+      espirituosas, produtos intermédios continuam UNKNOWN após duas
+      rondas de investigação — 15/08 e 16/08/2026; vinho, espumante e
+      bebidas fermentadas já ✅/🟡 — ver secção 4)
+- [ ] Resolver a tabela completa de concelhos do IMI (308 concelhos —
+      reinvestigado 16/08/2026: já não é totalmente UNKNOWN, sabe-se
+      que >200 aplicam 0,3% e só 3 aplicam 0,45%, mas a lista completa
+      dos 308 continua por embutir — ver secção 5)
+- [ ] Confirmar o texto integral do Decreto Legislativo Regional
+      n.º 2/99/A (Açores) diretamente contra o Diário da República —
+      o mecanismo de redução por escalão (30%/20%) foi reconstruído a
+      partir de fontes secundárias convergentes, não do diploma
+      original (ver secção 1)
+- [ ] Obter a tabela completa de pesos de categorias de consumo do INE
+      (Inquérito às Despesas das Famílias 2022/2023) — só se
+      confirmaram os três maiores blocos (Habitação, Alimentação,
+      Transportes) via imprensa; o portal do INE serve os dados via
+      JavaScript, inacessível às ferramentas de pesquisa usadas nas
+      duas rondas tentadas (15/08 e 16/08/2026) — ver
+      `data/categorias-gastos-pt.js`
 - [x] Resolver as tabelas numéricas de ISV e IUC — 🟡 ESTIMATE,
       implementadas em `calcularISV()`/`calcularIUC()` com fonte
       EcoImport/DECO PROteste (ver secção 5); protocolo NEDC (ISV) e

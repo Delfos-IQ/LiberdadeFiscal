@@ -30,9 +30,15 @@ export const PATRIMONIAIS_2026 = {
     },
     prediosRusticos: { value: 0.008, unit: "fração do VPT/ano" },
     tabelaPorConcelho: {
-      status: "UNKNOWN",
+      status: "ESTIMATE",
+      source: "Doutor Finanças, \"31 municípios descem IMI a pagar em 2026. Apenas 6 sobem.\" (06/01/2026), consultado 16/08/2026",
+      sourceUrl: "https://www.doutorfinancas.pt/impostos/imi/31-municipios-descem-imi-a-pagar-em-2026-apenas-6-sobem/",
       notes:
-        "Tabela dos 308 municípios com a taxa exata de 2026 não recolhida nesta pesquisa. Necessária antes da Fase 6 para que o utilizador simplesmente selecione o seu concelho em vez de saber a taxa de cor.",
+        "Tabela completa dos 308 municípios continua por embutir na app (demasiado volumosa e volátil — cada câmara pode mudar a taxa todos os anos até final do ano anterior). Mas já não é totalmente UNKNOWN: confirmado que mais de 200 dos 308 municípios (a esmagadora maioria) aplicam a taxa mínima de 0,3% em 2026, e que só 3 aplicam a taxa máxima de 0,45% — Vila Real de Santo António, Oeiras e Cartaxo. 31 municípios desceram a taxa e 6 subiram-na face a 2025 (incluindo Cascais, de 0,33% para 0,35%, e Oeiras, de 0,3% para 0,45%). A app usa 0,3% como valor sugerido por omissão (o mais comum, não necessariamente o correto para o concelho do utilizador) e pede sempre para confirmar/corrigir contra o Portal das Finanças ou a Câmara Municipal — nunca assume silenciosamente.",
+      taxaSugeridaPorOmissao: 0.003,
+      excecoesConhecidas: {
+        taxaMaxima045: ["Vila Real de Santo António", "Oeiras", "Cartaxo"],
+      },
     },
   },
 

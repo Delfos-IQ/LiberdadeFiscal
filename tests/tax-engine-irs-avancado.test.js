@@ -45,10 +45,27 @@ describe("calculateIRS — diferencial regional (Açores/Madeira)", () => {
     assert.ok(madeira.imposto < continente.imposto);
   });
 
-  test("redução regional é de 30% sobre cada taxa marginal (conforme ESTIMATE documentado)", () => {
-    const r = calculateIRS(30000, { regiao: "acores" });
+  test("Madeira: redução uniforme de 30% sobre cada taxa marginal, em todos os escalões (✅ verificado)", () => {
+    const r = calculateIRS(60000, { regiao: "madeira" });
+    r.decomposicaoPorEscalao.forEach((escalao, index) => {
+      const taxaNacional = [0.125, 0.157, 0.212, 0.241, 0.311, 0.349, 0.431, 0.446, 0.48][index];
+      assert.equal(escalao.taxa, round4(taxaNacional * 0.7));
+    });
+  });
+
+  test("Açores: redução diferenciada por escalão — 30% no 1.º, 20% nos restantes (reinvestigado 16/08/2026)", () => {
+    const r = calculateIRS(60000, { regiao: "acores" });
     const primeiroEscalao = r.decomposicaoPorEscalao[0];
     assert.equal(primeiroEscalao.taxa, round4(0.125 * 0.7));
+
+    const segundoEscalao = r.decomposicaoPorEscalao[1];
+    assert.equal(segundoEscalao.taxa, round4(0.157 * 0.8));
+
+    // Confirma que o mecanismo dos Açores já não é o valor uniforme de
+    // 30% herdado de uma ronda anterior — deve divergir da Madeira a
+    // partir do 2.º escalão.
+    const madeira = calculateIRS(60000, { regiao: "madeira" });
+    assert.notEqual(r.decomposicaoPorEscalao[1].taxa, madeira.decomposicaoPorEscalao[1].taxa);
   });
 
   test("rejeita região desconhecida", () => {
