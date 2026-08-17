@@ -65,11 +65,24 @@ jsdom + fake-indexeddb, acessibilidade básica em cada ecrã).
 - Erros de validação usam `role="alert"` (nunca só cor).
 - Tap targets ≥44px aplicados a controlos de ação (`button`,
   `a.btn`, inputs, selects) — não a todos os `<a>` genéricos.
-- **Não verificado nesta fase**: navegação por teclado ponta-a-ponta
-  num browser real, leitura por leitor de ecrã real (VoiceOver/NVDA),
-  e pontuação Lighthouse — o sandbox de execução não tem um browser
-  disponível. Recomenda-se correr `npx lighthouse` e um teste manual
-  com leitor de ecrã antes de publicar em produção.
+- **Atualização 2026-08 (roadmap P1-7)**: `tests/accessibility-axe.test.js`
+  corre o axe-core (a mesma engine usada pelo Lighthouse e pelas
+  extensões de acessibilidade de browser) sobre jsdom, contra os 9
+  principais estados de ecrã da app — 0 violações em todas as regras
+  estruturais/ARIA (labels, nomes acessíveis, ids duplicados, ordem de
+  headings, uso de ARIA). Isto não substitui um teste com leitor de
+  ecrã real, mas é uma verificação genuína e automatizada, não apenas
+  inferida do código.
+- **Continua não verificado**: navegação por teclado ponta-a-ponta num
+  browser real, leitura por leitor de ecrã real (VoiceOver/NVDA), e
+  pontuação Lighthouse (que também mede performance/SEO, não só
+  acessibilidade) — o sandbox de execução não tem um browser
+  disponível. O contraste de cor (color-contrast) também fica sempre
+  "incomplete" em jsdom, porque depende de um motor de rendering CSS
+  real — foi verificado à parte por cálculo de luminância relativa
+  (`AUDITORIA-FASE-1.md`, hallazgo C-1). Recomenda-se correr
+  `npx lighthouse` e um teste manual com leitor de ecrã antes de
+  publicar em produção.
 
 ## 5. Limitações conhecidas, não bloqueantes para o MVP
 

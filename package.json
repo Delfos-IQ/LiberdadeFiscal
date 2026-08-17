@@ -9,8 +9,9 @@
     "serve": "python3 -m http.server 8000"
   },
   "devDependencies": {
-    "jsdom": "^30.0.1",
-    "fake-indexeddb": "^6.2.5"
+    "axe-core": "^4.13.0",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^30.0.1"
   },
   "engines": {
     "node": ">=20"
