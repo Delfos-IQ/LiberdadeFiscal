@@ -193,6 +193,53 @@ describe("Gastos — captura mensal por categoria", () => {
     const totalHero = container2.querySelector(".stat-hero");
     assert.match(totalHero.textContent, /100,00/, "o total mensal também devia refletir o valor recuperado");
   });
+
+  test("voltar ao ecrã também recupera o detalhe opcional de combustível e tabaco", async () => {
+    // Extensão do mesmo fix: litros/nº de cigarros/preço do maço não
+    // entram no cálculo do total, mas eram perdidos ao voltar — o
+    // utilizador tinha de os reintroduzir para manter o ISP/IT exato
+    // (em vez da estimativa só com IVA) depois de sair e voltar a este
+    // ecrã.
+    const container1 = getContainer();
+    render(container1);
+    await waitFor(() => container1.querySelector("#gastos-heading"));
+
+    const inputCombustivel = container1.querySelector("#gasto-combustivel");
+    inputCombustivel.value = "80";
+    inputCombustivel.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const inputLitros = container1.querySelector("#detalhe-litros-combustivel");
+    inputLitros.value = "50";
+    inputLitros.dispatchEvent(new window.Event("input", { bubbles: true }));
+
+    const inputTabaco = container1.querySelector("#gasto-tabaco");
+    inputTabaco.value = "60";
+    inputTabaco.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const inputCigarros = container1.querySelector("#detalhe-cigarros-tabaco");
+    inputCigarros.value = "300";
+    inputCigarros.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const inputPrecoMaco = container1.querySelector("#detalhe-preco-maco-tabaco");
+    inputPrecoMaco.value = "6";
+    inputPrecoMaco.dispatchEvent(new window.Event("input", { bubbles: true }));
+
+    const avancarBtn = [...container1.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Guardar e avançar")
+    );
+    avancarBtn.click();
+    await waitFor(() => window.location.hash === "#impostos-anuais");
+
+    const periodo = await getPeriodoAtual();
+    const combustivel = periodo.gastosMensal.categorias.find((c) => c.id === "combustivel");
+    assert.equal(combustivel.detalhe.litros, "50", "devia ter persistido os litros introduzidos");
+    assert.ok(combustivel.impostoEspecialMensal > 0, "devia ter calculado o ISP com os litros dados");
+
+    const container2 = getContainer();
+    render(container2);
+    await waitFor(() => container2.querySelector("#detalhe-litros-combustivel")?.value === "50");
+
+    assert.equal(container2.querySelector("#detalhe-litros-combustivel").value, "50");
+    assert.equal(container2.querySelector("#detalhe-cigarros-tabaco").value, "300");
+    assert.equal(container2.querySelector("#detalhe-preco-maco-tabaco").value, "6");
+  });
 });
 
 describe("Gastos — acessibilidade básica", () => {

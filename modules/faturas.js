@@ -95,15 +95,15 @@ function renderGastosApp(container, regiao) {
   // guardados (o utilizador está só a voltar a este ecrã), voltamos a
   // desenhar com os valores por categoria já preenchidos assim que o
   // IndexedDB responder — sem isto o ecrã mostrava tudo a 0€, mesmo com
-  // o total já contabilizado no Dia da Liberdade Fiscal. Nota: os
-  // campos opcionais de litros/nº de cigarros/preço do maço não ficam
-  // guardados no período (só o valor mensal final), por isso esses
-  // continuam vazios ao voltar — só o valor por categoria é recuperado.
+  // o total já contabilizado no Dia da Liberdade Fiscal. O detalhe
+  // opcional (litros; nº cigarros + preço do maço) também é restaurado
+  // — ficou persistido desde guardarEAvancar() precisamente para isto.
   getPeriodoAtual()
     .then((periodo) => {
       if (destroyed || !periodo.gastosMensal) return;
       periodo.gastosMensal.categorias.forEach((c) => {
         if (c.valorMensal > 0) valores[c.id] = String(c.valorMensal);
+        if (c.detalhe) Object.assign(detalhes[c.id], c.detalhe);
       });
       draw();
     })
@@ -433,6 +433,11 @@ function renderGastosApp(container, regiao) {
         valorMensal,
         ivaMensal: round2(ivaMensal),
         impostoEspecialMensal: round2(impostoEspecialMensal),
+        // Detalhe opcional (litros; nº cigarros + preço do maço) das
+        // categorias de dupla tributação — guardado tal e qual para
+        // reaparecer nos campos ao voltar a este ecrã, não só o valor
+        // mensal final já calculado.
+        detalhe: { ...detalhes[c.id] },
       };
     });
     const totalMensalArredondado = round2(totalMensal());
