@@ -16,7 +16,7 @@
 // registado aqui para não parecer um esquecimento.
 
 import { calcularCadeiaSalarial } from "../data/tax-engine.js";
-import { atualizarPeriodoAtual } from "../data/db.js";
+import { atualizarPeriodoAtual, getPeriodoAtual } from "../data/db.js";
 
 const REGIOES = [
   { value: "continente", label: "Continente" },
@@ -37,6 +37,27 @@ export function render(container) {
     erro: null,
     resultado: null,
   };
+  let destroyed = false;
+
+  // O render() em si é síncrono (desenha o formulário vazio de
+  // imediato), mas se o período atual já tiver um resultado de
+  // Rendimentos guardado (ex.: o utilizador já preencheu isto e só
+  // está a voltar a este ecrã vindo de Gastos/Taxas), voltamos a
+  // desenhar em "result" assim que o IndexedDB responder — sem isto o
+  // ecrã parecia ter "esquecido" os dados, mesmo com o período a
+  // manter tudo internamente (o Dia da Liberdade continuava correto).
+  getPeriodoAtual()
+    .then((periodo) => {
+      if (destroyed || state.phase !== "form" || !periodo.rendimentos) return;
+      state.resultado = periodo.rendimentos;
+      state.usouSimplificacaoDependentes = Boolean(periodo.rendimentos.usouSimplificacaoDependentes);
+      state.phase = "result";
+      draw();
+    })
+    // Se o IndexedDB não estiver disponível (ex.: navegação privada em
+    // certos browsers), falha em silêncio — o formulário vazio já
+    // desenhado continua a funcionar, só sem re-hidratação.
+    .catch(() => {});
 
   function draw() {
     container.innerHTML = "";
@@ -329,7 +350,12 @@ export function render(container) {
     const avancarBtn = el("button", "btn btn--primary", "Guardar e avançar →");
     avancarBtn.type = "button";
     avancarBtn.addEventListener("click", async () => {
-      await atualizarPeriodoAtual({ rendimentos: r });
+      // usouSimplificacaoDependentes vive em state, não no resultado do
+      // motor fiscal — anexamo-lo aqui para sobreviver à persistência e
+      // podermos mostrar o mesmo aviso quando o ecrã for re-hidratado.
+      await atualizarPeriodoAtual({
+        rendimentos: { ...r, usouSimplificacaoDependentes: state.usouSimplificacaoDependentes },
+      });
       window.location.hash = "faturas";
     });
 
@@ -398,6 +424,7 @@ export function render(container) {
 
   return {
     destroy() {
+      destroyed = true;
       container.innerHTML = "";
     },
   };

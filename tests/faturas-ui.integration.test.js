@@ -161,6 +161,38 @@ describe("Gastos — captura mensal por categoria", () => {
     assert.equal(alimentacao.valorMensal, 100);
     assert.ok(alimentacao.ivaMensal > 0, "devia ter calculado o IVA estimado da categoria");
   });
+
+  test("voltar ao ecrã depois de guardar mostra os valores já preenchidos, não em branco", async () => {
+    // Regressão: navegar Rendimentos → Gastos → Taxas → Dia da
+    // Liberdade e voltar a Gastos mostrava tudo a 0€, mesmo com o
+    // Período a manter os dados corretamente (Dia da Liberdade
+    // continuava certo). O módulo de UI nunca se re-hidratava a partir
+    // do período guardado ao montar — só escrevia, nunca relia.
+    const container1 = getContainer();
+    render(container1);
+    await waitFor(() => container1.querySelector("#gastos-heading"));
+    const input1 = container1.querySelector("#gasto-alimentacao");
+    input1.value = "100";
+    input1.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const avancarBtn = [...container1.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Guardar e avançar")
+    );
+    avancarBtn.click();
+    await waitFor(() => window.location.hash === "#impostos-anuais");
+
+    // Simula "voltar" a Gastos: nova instância do módulo, novo container
+    // (é o que app.js faz a cada mudança de rota).
+    const container2 = getContainer();
+    render(container2);
+    await waitFor(() => container2.querySelector("#gastos-heading"));
+    await waitFor(() => container2.querySelector("#gasto-alimentacao")?.value === "100");
+
+    const input2 = container2.querySelector("#gasto-alimentacao");
+    assert.equal(input2.value, "100", "o valor guardado devia reaparecer no input ao voltar ao ecrã");
+
+    const totalHero = container2.querySelector(".stat-hero");
+    assert.match(totalHero.textContent, /100,00/, "o total mensal também devia refletir o valor recuperado");
+  });
 });
 
 describe("Gastos — acessibilidade básica", () => {

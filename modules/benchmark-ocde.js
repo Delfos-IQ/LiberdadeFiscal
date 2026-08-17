@@ -87,6 +87,17 @@ export function render(container) {
 
     const avisoMetodologia = el("p", "disclaimer", OECD_BENCHMARK_2025.methodologyNote);
 
+    // Esta é uma rota secundária, sem botão próprio na navegação
+    // principal (só se chega aqui a partir do link em Dia da
+    // Liberdade) — sem este botão, o único caminho de volta seria o
+    // "recuar" do browser, que nem sequer existe quando a app está
+    // instalada como PWA (display: standalone, sem barra de endereço).
+    const voltarBtn = el("button", "btn btn--secondary", "← Voltar ao Dia da Liberdade");
+    voltarBtn.type = "button";
+    voltarBtn.addEventListener("click", () => {
+      window.location.hash = "dia-liberdade";
+    });
+
     const form = el("form");
     form.noValidate = true;
 
@@ -133,7 +144,7 @@ export function render(container) {
     form.addEventListener("submit", handleSubmit);
     form.append(submitBtn);
 
-    card.append(heading, desc, avisoMetodologia, form);
+    card.append(heading, desc, avisoMetodologia, voltarBtn, form);
     container.append(card);
 
     const listaCard = el("section", "card");
@@ -155,6 +166,17 @@ export function render(container) {
 
     listaCard.append(listaHeading, listaWrapper);
     container.append(listaCard);
+
+    // Segundo botão de voltar, no fundo — a lista de países pode ser
+    // comprida, e o botão do topo já pode estar fora do ecrã.
+    const voltarCard = el("section", "card");
+    const voltarBtnFundo = el("button", "btn btn--secondary", "← Voltar ao Dia da Liberdade");
+    voltarBtnFundo.type = "button";
+    voltarBtnFundo.addEventListener("click", () => {
+      window.location.hash = "dia-liberdade";
+    });
+    voltarCard.append(voltarBtnFundo);
+    container.append(voltarCard);
 
     focusHeading(heading);
   }

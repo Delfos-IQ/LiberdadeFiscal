@@ -21,7 +21,7 @@
 // aqui evita que fique morto silenciosamente sem ninguém notar: ficará
 // por reativar explicitamente quando/se esse modo avançado avançar.
 
-import { getSetting, atualizarPeriodoAtual } from "../data/db.js";
+import { getSetting, atualizarPeriodoAtual, getPeriodoAtual } from "../data/db.js";
 import { CATEGORIAS_GASTOS_PT } from "../data/categorias-gastos-pt.js";
 import { decomporIVADeTotal, calcularITCigarros } from "../data/tax-engine.js";
 import { IMPOSTOS_ESPECIAIS_2026 } from "../data/tax-rules/2026/impostos-especiais.js";
@@ -89,6 +89,27 @@ function renderGastosApp(container, regiao) {
     valores[c.id] = "";
     detalhes[c.id] = {};
   });
+  let destroyed = false;
+
+  // Tal como em Rendimentos: se o período atual já tiver gastos
+  // guardados (o utilizador está só a voltar a este ecrã), voltamos a
+  // desenhar com os valores por categoria já preenchidos assim que o
+  // IndexedDB responder — sem isto o ecrã mostrava tudo a 0€, mesmo com
+  // o total já contabilizado no Dia da Liberdade Fiscal. Nota: os
+  // campos opcionais de litros/nº de cigarros/preço do maço não ficam
+  // guardados no período (só o valor mensal final), por isso esses
+  // continuam vazios ao voltar — só o valor por categoria é recuperado.
+  getPeriodoAtual()
+    .then((periodo) => {
+      if (destroyed || !periodo.gastosMensal) return;
+      periodo.gastosMensal.categorias.forEach((c) => {
+        if (c.valorMensal > 0) valores[c.id] = String(c.valorMensal);
+      });
+      draw();
+    })
+    // Se o IndexedDB não estiver disponível, falha em silêncio — o
+    // formulário vazio já desenhado continua a funcionar.
+    .catch(() => {});
 
   function draw() {
     container.innerHTML = "";
@@ -434,6 +455,7 @@ function renderGastosApp(container, regiao) {
 
   return {
     destroy() {
+      destroyed = true;
       container.innerHTML = "";
     },
   };

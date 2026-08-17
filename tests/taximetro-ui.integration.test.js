@@ -3,12 +3,18 @@
 //
 // Sobe um DOM real via jsdom e simula o preenchimento do formulário —
 // Modo Rápido e Modo Avançado — até ao ecrã de resultado.
+//
+// Usa fake-indexeddb: desde que este módulo passou a re-hidratar-se a
+// partir do Período atual ao montar (ver getPeriodoAtual() em
+// modules/taximetro.js), toca sempre em IndexedDB, mesmo nos testes
+// que nunca chegam a clicar em "Guardar e avançar".
 
-import { test, describe, before } from "node:test";
+import "fake-indexeddb/auto";
+import { test, describe, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-let render;
+let render, dbClear, getPeriodoAtual;
 
 before(async () => {
   const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", { url: "http://localhost/" });
@@ -18,7 +24,21 @@ before(async () => {
   global.Intl = Intl; // jsdom usa o Intl do próprio Node — só garantir que está acessível
 
   ({ render } = await import("../modules/taximetro.js"));
+  ({ dbClear, getPeriodoAtual } = await import("../data/db.js"));
 });
+
+beforeEach(async () => {
+  await dbClear("userSettings");
+});
+
+async function waitFor(predicate, { timeout = 1000, interval = 5 } = {}) {
+  const inicio = Date.now();
+  while (Date.now() - inicio < timeout) {
+    if (predicate()) return true;
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return predicate();
+}
 
 function getContainer() {
   const container = document.createElement("div");
@@ -114,6 +134,47 @@ describe("Taxímetro — Modo Rápido", () => {
     voltarBtn.click();
 
     assert.ok(container.querySelector("#salario-bruto"), "deve mostrar o formulário outra vez");
+  });
+});
+
+describe("Taxímetro — re-hidratação a partir do Período guardado", () => {
+  test("voltar ao ecrã depois de guardar mostra o resultado, não o formulário vazio", async () => {
+    // Regressão: navegar Rendimentos → Gastos → Taxas → Dia da
+    // Liberdade e voltar a Rendimentos mostrava o formulário em branco,
+    // mesmo com o Período a manter o resultado corretamente (Dia da
+    // Liberdade continuava certo). O módulo nunca se re-hidratava a
+    // partir do período guardado ao montar — só escrevia, nunca lia.
+    const container1 = getContainer();
+    render(container1);
+    setInput(container1, "salario-bruto", 2000);
+    submitForm(container1);
+
+    const avancarBtn = [...container1.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Guardar e avançar")
+    );
+    avancarBtn.click();
+    // window.location.hash só muda depois do "await atualizarPeriodoAtual(...)"
+    // dentro do handler de clique — é um proxy síncrono fiável para
+    // "a escrita no IndexedDB já terminou" (waitFor só suporta
+    // predicados síncronos, nunca uma Promise, que seria sempre truthy).
+    await waitFor(() => window.location.hash === "#faturas");
+    assert.ok((await getPeriodoAtual()).rendimentos, "devia ter persistido rendimentos no período");
+
+    // Simula "voltar" a Rendimentos: nova instância do módulo, novo
+    // container (é o que app.js faz a cada mudança de rota).
+    const container2 = getContainer();
+    render(container2);
+    await waitFor(() => container2.querySelector(".stat-hero"));
+
+    assert.ok(
+      container2.querySelector(".stat-hero"),
+      "devia mostrar o ecrã de resultado, não o formulário vazio"
+    );
+    assert.equal(
+      container2.querySelector("#salario-bruto"),
+      null,
+      "não devia mostrar o formulário em branco depois de já ter dados guardados"
+    );
   });
 });
 

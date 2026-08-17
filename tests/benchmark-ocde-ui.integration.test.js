@@ -80,6 +80,34 @@ describe("Benchmark OCDE — cálculo da posição do utilizador", () => {
   });
 });
 
+describe("Benchmark OCDE — navegação", () => {
+  // Regressão: esta é uma rota secundária, sem botão próprio na
+  // navegação principal — só se chega aqui a partir do link em Dia da
+  // Liberdade. Sem um botão de voltar explícito, o único caminho de
+  // volta seria o "recuar" do browser, que nem sequer existe quando a
+  // app está instalada como PWA (display: standalone).
+  test("tem um botão para voltar ao Dia da Liberdade", () => {
+    const container = getContainer();
+    render(container);
+    const voltarBtns = [...container.querySelectorAll("button")].filter((b) =>
+      /Voltar ao Dia da Liberdade/.test(b.textContent)
+    );
+    assert.ok(voltarBtns.length >= 1, "devia ter pelo menos um botão de voltar");
+    voltarBtns.forEach((b) => assert.equal(b.type, "button", "não deve submeter o formulário de simulação"));
+  });
+
+  test("clicar em voltar muda a hash para dia-liberdade", () => {
+    const container = getContainer();
+    render(container);
+    window.location.hash = "benchmark-ocde";
+    const voltarBtn = [...container.querySelectorAll("button")].find((b) =>
+      /Voltar ao Dia da Liberdade/.test(b.textContent)
+    );
+    voltarBtn.click();
+    assert.equal(window.location.hash, "#dia-liberdade");
+  });
+});
+
 describe("Benchmark OCDE — acessibilidade básica", () => {
   test("tem exatamente um h1 com foco programático", () => {
     const container = getContainer();
