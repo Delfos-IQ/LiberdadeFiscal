@@ -164,7 +164,7 @@ function renderGastosApp(container, regiao) {
     }
 
     if (cat.notes) {
-      card.append(el("p", "disclaimer", cat.notes));
+      card.append(el("p", "info-note", cat.notes));
     }
 
     const desgloseWrap = el("div");
@@ -312,7 +312,7 @@ function renderGastosApp(container, regiao) {
       wrap.append(
         el(
           "p",
-          "disclaimer",
+          "info-note",
           "Introduz os litros abastecidos acima para ver também o ISP — sem essa informação só mostramos o IVA."
         )
       );
@@ -321,7 +321,7 @@ function renderGastosApp(container, regiao) {
       wrap.append(
         el(
           "p",
-          "disclaimer",
+          "info-note",
           "Introduz o nº de cigarros e o preço do maço acima para ver também o IT — sem essa informação só mostramos o IVA."
         )
       );
