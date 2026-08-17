@@ -314,7 +314,7 @@ export function render(container) {
       const avisoRegional = el(
         "p",
         null,
-        "Este cálculo inclui uma redução de IRS para a região autónoma escolhida (já refletida na tabela de escalões acima). O mecanismo exato deste diferencial regional ainda não foi confirmado contra a fonte legal primária — trata este valor como uma estimativa, não como um valor oficial."
+        "Este cálculo inclui uma redução de IRS para a região autónoma que escolheste (já refletida na tabela de escalões acima). Ainda não conseguimos confirmar o mecanismo exato deste diferencial regional contra a fonte legal primária — trata este valor como uma estimativa nossa, não como um valor oficial."
       );
       avisoRegional.className = "disclaimer";
       explicacao.append(avisoRegional);

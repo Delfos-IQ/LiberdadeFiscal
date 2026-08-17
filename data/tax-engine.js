@@ -358,7 +358,7 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     salarioLiquidoMensal: round2(liquidoMensal),
     detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs },
     metodologia:
-      "Simplificação v1: assume 12 pagamentos mensais iguais (subsídios de férias/Natal em duodécimos), sem outras deduções à coleta além de dependentes. O diferencial regional de IRS em Açores/Madeira é uma estimativa, não um valor oficialmente confirmado.",
+      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente.",
   };
 }
 
@@ -939,10 +939,10 @@ export function calculateFiscalFreedomDay(input) {
       patrimoniais: round2(patrimoniaisRegistado),
     },
     methodology:
-      "Percentagem = (IRS anual + Segurança Social do trabalhador + IVA/impostos especiais registados nas Faturas + impostos patrimoniais/anuais registados) ÷ rendimento bruto anual de trabalho. " +
-      "O custo total para o empregador (TSU patronal) NÃO está incluído nesta proporção — é uma cifra informativa à parte, mostrada no Taxímetro. " +
-      "O IVA e os impostos especiais refletem apenas o que foi registado manualmente em Faturas, não uma projeção do consumo anual total — quanto mais despesas registares, mais preciso este número fica. " +
-      "Segundo as hipóteses utilizadas nesta simulação, esta é a data correspondente à proporção anual do valor destinado a impostos e contribuições — não significa que deixes de pagar impostos a partir desta data.",
+      "A percentagem que usamos é: (IRS anual + Segurança Social do trabalhador + IVA/impostos especiais registados em Gastos + impostos patrimoniais/anuais registados em Taxas) ÷ o teu rendimento bruto anual. " +
+      "Não incluímos nesta proporção o custo total para o empregador (a TSU patronal) — mostramo-lo à parte, como cifra informativa, em Rendimentos. " +
+      "O IVA e os impostos especiais que usamos aqui refletem só o que registaste em Gastos, não uma projeção do teu consumo anual total — por isso, quanto mais despesas nos deres, mais precisos ficamos. " +
+      "Com as hipóteses que usámos nesta simulação, chegámos a esta data como a proporção anual do valor destinado a impostos e contribuições — o que não significa que deixes de pagar impostos a partir de hoje.",
   };
 }
 

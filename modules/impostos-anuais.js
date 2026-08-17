@@ -208,11 +208,11 @@ export function render(container) {
       const percentagem = (taxa * 100).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
       if (!concelhoInput.value.trim()) {
         concelhoTaxaInfo.textContent =
-          "Sem concelho indicado: mais de 200 dos 308 municípios aplicam 0,3% — mas confirma sempre contra o Portal das Finanças ou a Câmara Municipal.";
+          "Ainda não nos disseste o concelho — sabemos que mais de 200 dos 308 municípios aplicam 0,3%, mas confirma sempre a tua taxa no Portal das Finanças ou na Câmara Municipal.";
       } else if (excecao) {
-        concelhoTaxaInfo.textContent = `Taxa de IMI em ${excecao}: ${percentagem}% do VPT — um dos 3 concelhos com a taxa máxima em 2026 (🟡 estimativa, confirma contra a Câmara Municipal).`;
+        concelhoTaxaInfo.textContent = `Em ${excecao} a taxa de IMI é ${percentagem}% do VPT — um dos 3 concelhos com a taxa máxima em 2026 (🟡 é uma estimativa nossa, confirma na Câmara Municipal).`;
       } else {
-        concelhoTaxaInfo.textContent = `Não temos a taxa exata de "${concelhoInput.value.trim()}" na nossa lista (só cobrimos os concelhos com a taxa máxima). A maioria dos municípios aplica ${percentagem}% — confirma a tua no Portal das Finanças ou na Câmara Municipal, e ajusta o valor pago abaixo se for diferente.`;
+        concelhoTaxaInfo.textContent = `Ainda não temos a taxa exata de "${concelhoInput.value.trim()}" na nossa lista — só cobrimos os concelhos com a taxa máxima. A maioria dos municípios aplica ${percentagem}%, mas confirma o teu no Portal das Finanças ou na Câmara Municipal, e ajusta o valor pago abaixo se for diferente.`;
       }
     }
     concelhoInput.addEventListener("input", atualizarTaxaImi);

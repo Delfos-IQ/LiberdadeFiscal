@@ -61,7 +61,7 @@ export const CATEGORIAS_GASTOS_PT = [
     exemplos: ["Pão, fruta, legumes", "Carne e peixe", "Azeite", "Leite e lacticínios"],
     tipo: "reduzida",
     notes:
-      "A maioria dos alimentos básicos tem taxa reduzida, mas nem todos — produtos como bebidas alcoólicas, refrigerantes ou certos produtos preparados/de charcutaria fina podem estar à taxa normal. Este valor assume que o cabaz é maioritariamente à taxa reduzida, uma simplificação: o Inquérito às Despesas das Famílias do INE não desagrega o gasto em alimentação por taxa de IVA, só por categoria de despesa geral — não há dados públicos que permitam estimar a proporção exata sem os inventar.",
+      "A maioria dos alimentos básicos tem taxa reduzida, mas nem todos — bebidas alcoólicas, refrigerantes ou certos produtos preparados/de charcutaria fina podem estar à taxa normal. Assumimos que o teu cabaz é maioritariamente à taxa reduzida, uma simplificação da nossa parte: o Inquérito às Despesas das Famílias do INE não desagrega o gasto em alimentação por taxa de IVA, só por categoria de despesa geral, e não encontrámos dados públicos que nos permitissem estimar a proporção exata sem os inventar — e isso é algo que nunca fazemos.",
   },
   {
     id: "restauracao",
@@ -75,7 +75,7 @@ export const CATEGORIAS_GASTOS_PT = [
     exemplos: ["Água", "Eletricidade (dentro do limite)", "Gás"],
     tipo: "reduzida",
     notes:
-      "A taxa reduzida de eletricidade só se aplica até 200 kWh/mês (300 kWh para famílias numerosas) e potências até 6,9 kVA — acima disso a taxa é normal. Este valor assume que estás dentro do limite; se sabes que ultrapassas, o desglose vai subestimar ligeiramente o IVA pago.",
+      "A taxa reduzida de eletricidade só se aplica até 200 kWh/mês (300 kWh para famílias numerosas) e potências até 6,9 kVA — acima disso a taxa é normal. Assumimos que estás dentro do limite; se sabes que o ultrapassas, o nosso desglose vai subestimar ligeiramente o IVA que pagas.",
   },
   {
     id: "combustivel",
@@ -84,7 +84,7 @@ export const CATEGORIAS_GASTOS_PT = [
     tipo: "combustivel",
     duplaTributacao: "combustivel",
     notes:
-      "Dupla tributação: o combustível tem o ISP (Imposto sobre Produtos Petrolíferos) já incluído no preço, e o IVA incide sobre o preço com o ISP já lá dentro — paga-se IVA sobre um imposto. Introduz os litros abastecidos por mês (opcional) para saber exatamente quanto é ISP; sem essa informação, só conseguimos calcular o IVA.",
+      "Dupla tributação: o combustível tem o ISP (Imposto sobre Produtos Petrolíferos) já incluído no preço, e depois o IVA incide sobre esse preço, já com o ISP lá dentro — ou seja, pagas IVA sobre um imposto. Se nos disseres quantos litros abasteces por mês (é opcional), conseguimos calcular-te o ISP exato; sem essa informação, só te mostramos o IVA.",
   },
   {
     id: "transportes",
@@ -97,7 +97,7 @@ export const CATEGORIAS_GASTOS_PT = [
     label: "Saúde",
     exemplos: ["Medicamentos", "Consultas e exames"],
     tipo: "reduzida",
-    notes: "Medicamentos têm taxa reduzida; muitos serviços de saúde são isentos de IVA (isento não é o mesmo que gratuito) — este desglose assume taxa reduzida para todo o valor, uma simplificação.",
+    notes: "Os medicamentos têm taxa reduzida; já muitos serviços de saúde são isentos de IVA (isento não é o mesmo que gratuito). Para simplificar, assumimos taxa reduzida para todo o valor que indicares aqui.",
   },
   {
     id: "cultura-lazer",
@@ -118,7 +118,7 @@ export const CATEGORIAS_GASTOS_PT = [
     tipo: "normal",
     duplaTributacao: "tabaco",
     notes:
-      "Dupla tributação: o tabaco tem o IT (Imposto sobre o Tabaco — elemento específico + elemento ad valorem) já incluído no preço, e o IVA incide sobre o preço com o IT já lá dentro. Introduz o nº de cigarros por mês e o preço médio do maço (opcional) para saber exatamente quanto é IT; sem essa informação, só conseguimos calcular o IVA. Só cigarros têm tabela verificada — charutos, tabaco de enrolar e tabaco aquecido não estão modelados.",
+      "Dupla tributação: o tabaco tem o IT (Imposto sobre o Tabaco — elemento específico + elemento ad valorem) já incluído no preço, e depois o IVA incide sobre esse preço, já com o IT lá dentro. Se nos disseres quantos cigarros fumas por mês e o preço médio do maço (é opcional), conseguimos calcular-te o IT exato; sem essa informação, só te mostramos o IVA. Por agora só temos a tabela dos cigarros verificada — ainda não modelámos charutos, tabaco de enrolar nem tabaco aquecido.",
   },
   {
     id: "alcool",
@@ -126,7 +126,7 @@ export const CATEGORIAS_GASTOS_PT = [
     exemplos: ["Cerveja, vinho", "Bebidas espirituosas"],
     tipo: "normal",
     notes:
-      "Além do IVA, a maioria das bebidas alcoólicas tem também o IABA (Imposto sobre o Álcool) já incluído no preço — outra dupla tributação, como no combustível e no tabaco. Mas a tabela de taxas de IABA para cerveja, bebidas espirituosas e produtos intermédios não foi encontrada em nenhuma das duas rondas de investigação feitas para este simulador (15/08 e 16/08/2026) — por isso aqui só conseguimos calcular o IVA, não o IABA. Vinho tranquilo e espumante estão isentos de IABA (taxa de €0).",
+      "Além do IVA, a maioria das bebidas alcoólicas tem também o IABA (Imposto sobre o Álcool) já incluído no preço — mais uma dupla tributação, tal como acontece no combustível e no tabaco. Só que, apesar de termos tentado duas vezes (em 15/08 e 16/08/2026), não conseguimos encontrar a tabela de taxas de IABA para cerveja, bebidas espirituosas e produtos intermédios — por isso, para já, só te conseguimos mostrar o IVA, não o IABA. Uma exceção que já confirmámos: o vinho tranquilo e o espumante estão isentos de IABA (taxa de 0€).",
   },
 ];
 
@@ -155,5 +155,5 @@ export const MEDIAS_NACIONAIS_INE_REFERENCIA = {
     restauracaoEAlojamento: 0.089,
   },
   notes:
-    "Categorias amplas do INE, não diretamente equiparáveis às categorias desta app — usar apenas como ordem de grandeza, nunca como valor por omissão nos campos.",
+    "As categorias do INE são mais amplas do que as nossas, por isso não são diretamente equiparáveis — usa este número só como ordem de grandeza, nunca o tomes como um valor que preenchemos por ti nos campos.",
 };
