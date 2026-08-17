@@ -145,7 +145,9 @@ export function render(container) {
       const ssTrabalhadorAnual = round2(r.descontoSSMensal * 12);
       const rendimentoBrutoAnual = r.detalheAnual.rendimentoBrutoAnual;
 
-      const ivaEEspeciaisRegistado = p.gastosMensal ? round2((p.gastosMensal.totalIvaMensal || 0) * 12) : 0;
+      const ivaEEspeciaisRegistado = p.gastosMensal
+        ? round2(((p.gastosMensal.totalIvaMensal || 0) + (p.gastosMensal.totalImpostoEspecialMensal || 0)) * 12)
+        : 0;
       const patrimoniaisRegistado = p.taxasAnuais ? round2(p.taxasAnuais.total || 0) : 0;
 
       const resultado = calculateFiscalFreedomDay({
@@ -236,7 +238,7 @@ export function render(container) {
     const fonteRendimentos = el(
       "p",
       "disclaimer",
-      "Fonte do IRS e Segurança Social: CIRS (Código do IRS) e taxas de TSU da Segurança Social, 2026 — ver TAX-METHODOLOGY.md para os parâmetros exatos usados."
+      "Fonte do IRS e Segurança Social: CIRS (Código do IRS) e taxas de TSU da Segurança Social, 2026."
     );
     detalhes.append(summary, metodologiaTexto, fonteRendimentos);
 

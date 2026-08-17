@@ -56,7 +56,7 @@ export const GOODS_SERVICES_PT = [
     iva_level: "normal",
     special_tax: {
       type: "IABA",
-      note: "Sujeita a IABA além do IVA — ver desglose educativo no ecrã de registo. Tabela de taxas IABA por bebida ainda não verificada (TAX-METHODOLOGY.md secção 4).",
+      note: "Sujeita a IABA além do IVA. Tabela de taxas IABA por bebida ainda não disponível neste simulador.",
     },
     confianca: "media",
   },
@@ -104,7 +104,7 @@ export const GOODS_SERVICES_PT = [
     iva_level: "normal",
     special_tax: {
       type: "ISP",
-      note: "O IVA calcula-se sobre o preço que já inclui o ISP. Ver desglose educativo — ISP é o parâmetro fiscal mais volátil do projeto (TAX-METHODOLOGY.md).",
+      note: "O IVA calcula-se sobre o preço que já inclui o ISP — este é o parâmetro fiscal mais volátil do simulador, atualizado com muito mais frequência que os restantes.",
     },
     confianca: "alta",
   },
@@ -115,7 +115,7 @@ export const GOODS_SERVICES_PT = [
     iva_level: "normal",
     special_tax: {
       type: "ISP",
-      note: "O IVA calcula-se sobre o preço que já inclui o ISP. Ver desglose educativo — ISP é o parâmetro fiscal mais volátil do projeto (TAX-METHODOLOGY.md).",
+      note: "O IVA calcula-se sobre o preço que já inclui o ISP — este é o parâmetro fiscal mais volátil do simulador, atualizado com muito mais frequência que os restantes.",
     },
     confianca: "alta",
   },
@@ -138,7 +138,7 @@ export const GOODS_SERVICES_PT = [
     iva_level: "normal",
     special_tax: {
       type: "IABA",
-      note: "Tabela de taxas IABA por bebida/grau alcoólico ainda não verificada — ver TAX-METHODOLOGY.md secção 4. O desglose especial não fica disponível até esse dado ser confirmado.",
+      note: "Tabela de taxas IABA por bebida/grau alcoólico ainda não disponível neste simulador. O desglose especial não fica disponível até esse dado ser confirmado.",
     },
     confianca: "media",
   },

@@ -358,7 +358,7 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     salarioLiquidoMensal: round2(liquidoMensal),
     detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs },
     metodologia:
-      "Simplificação v1: assume 12 pagamentos mensais iguais (subsídios de férias/Natal em duodécimos), sem outras deduções à coleta além de dependentes. Diferencial regional de IRS em Açores/Madeira é ESTIMATE — ver TAX-METHODOLOGY.md.",
+      "Simplificação v1: assume 12 pagamentos mensais iguais (subsídios de férias/Natal em duodécimos), sem outras deduções à coleta além de dependentes. O diferencial regional de IRS em Açores/Madeira é uma estimativa, não um valor oficialmente confirmado.",
   };
 }
 
@@ -473,7 +473,7 @@ export function decomporCombustivel(valorTotalPago, tipoCombustivel, regiao) {
     ispUnitario: ispInfo.value,
     ispUnidade: ispInfo.unit,
     notes:
-      "Decomposição aproximada: isola o IVA sobre o total pago. Não calcula os litros exatos nem o valor exato de ISP contido no total, porque isso exigiria o preço sem impostos por litro no momento da compra, que o utilizador não introduz. Ver TAX-METHODOLOGY.md — ISP é o parâmetro mais volátil do projeto.",
+      "Decomposição aproximada: isola o IVA sobre o total pago. Sem os litros exatos, não é possível calcular o valor exato de ISP contido no total. O ISP é o parâmetro fiscal mais volátil deste simulador — muda por portaria do Governo com frequência semanal ou mensal, ao contrário dos restantes impostos.",
     fonte: IMPOSTOS_ESPECIAIS_2026.source,
     ispAsOfDate: IMPOSTOS_ESPECIAIS_2026.isp.asOfDate,
   };
@@ -490,7 +490,7 @@ export function decomporIABA() {
   return {
     status: "UNKNOWN",
     reason:
-      "Tabela de taxas IABA por tipo de bebida/grau alcoólico não verificada. Ver TAX-METHODOLOGY.md secção 4.",
+      "Tabela de taxas IABA por tipo de bebida/grau alcoólico ainda não disponível neste simulador.",
   };
 }
 
@@ -554,7 +554,7 @@ export function calcularIMI(valorPatrimonialTributario, taxaConcelho, tipo = "ur
   if (typeof taxaConcelho !== "number" || taxaConcelho < min || taxaConcelho > max) {
     throw new RangeError(
       `taxaConcelho deve estar entre ${min} e ${max} (intervalo legal para prédios urbanos). ` +
-        "A tabela completa por concelho não está disponível — ver TAX-METHODOLOGY.md."
+        "A tabela completa por concelho não está disponível neste simulador."
     );
   }
 
@@ -599,7 +599,7 @@ export function calcularISV(opcoes) {
   if (protocolo !== "WLTP") {
     return {
       status: "UNKNOWN",
-      reason: "Só as tabelas de CO2 em protocolo WLTP foram verificadas. Ver TAX-METHODOLOGY.md secção 5.",
+      reason: "Só as tabelas de CO2 em protocolo WLTP foram verificadas neste simulador.",
     };
   }
   if (typeof cilindrada !== "number" || cilindrada <= 0) {
@@ -644,7 +644,7 @@ export function calcularISV(opcoes) {
     imposto: isvFinal,
     fonte: isvData.sourceUrl,
     notes:
-      "ESTIMATE — fonte secundária especializada, verificada aritmeticamente mas não confirmada diretamente contra o Código do ISV. Ver TAX-METHODOLOGY.md secção 5.",
+      "Estimativa a partir de fonte secundária especializada, verificada aritmeticamente mas não confirmada diretamente contra o Código do ISV.",
   };
 }
 
@@ -675,7 +675,7 @@ export function calcularIUC(opcoes) {
   if (typeof anoMatricula !== "number" || anoMatricula < 2007) {
     return {
       status: "UNKNOWN",
-      reason: "Só a categoria B (1.ª matrícula desde 1/7/2007) tem tabela completa nesta app. Ver TAX-METHODOLOGY.md secção 5.",
+      reason: "Só a categoria B (1.ª matrícula desde 1/7/2007) tem tabela completa nesta app.",
     };
   }
   if (typeof cilindrada !== "number" || cilindrada <= 0) {
@@ -718,7 +718,7 @@ export function calcularIUC(opcoes) {
     fonte: PATRIMONIAIS_2026.iuc.sourceUrl,
     notes: dispensado
       ? `Imposto calculado (${imposto}€) é inferior ao limiar de dispensa de cobrança (${limiar}€) — não é devido.`
-      : "ESTIMATE — fonte secundária (associação de defesa do consumidor), verificada aritmeticamente mas não confirmada diretamente contra o Código do IUC. Ver TAX-METHODOLOGY.md secção 5.",
+      : "Estimativa a partir de fonte secundária (associação de defesa do consumidor), verificada aritmeticamente mas não confirmada diretamente contra o Código do IUC.",
   };
 }
 

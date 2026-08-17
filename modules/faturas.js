@@ -6,7 +6,13 @@
 // autorreportada por categoria (data/categorias-gastos-pt.js) — menos
 // precisa, muito menos fricção. Para cada categoria o utilizador
 // introduz quanto gasta em média por mês; a app decompõe esse valor em
-// base + IVA (e ISP quando aplicável) e mostra a fonte de cada taxa.
+// base + IVA (e ISP/IT quando aplicável) e mostra a taxa/fonte de
+// cada imposto.
+//
+// Categorias de dupla tributação (Combustível, Tabaco): aceitam um
+// detalhe opcional (litros; nº de cigarros + preço do maço) que
+// permite calcular o imposto especial (ISP/IT) com exatidão, além do
+// IVA — em vez de só mostrar o IVA e deixar o resto por explicar.
 //
 // O fluxo de fatura individual + QR (faturas-qr.js) e o fallback de
 // foto+IA continuam no código, mas ficam FORA da navegação ativa desta
@@ -17,7 +23,8 @@
 
 import { getSetting, atualizarPeriodoAtual } from "../data/db.js";
 import { CATEGORIAS_GASTOS_PT } from "../data/categorias-gastos-pt.js";
-import { decomporIVADeTotal, decomporCombustivel } from "../data/tax-engine.js";
+import { decomporIVADeTotal, calcularITCigarros } from "../data/tax-engine.js";
+import { IMPOSTOS_ESPECIAIS_2026 } from "../data/tax-rules/2026/impostos-especiais.js";
 import { render as renderOnboarding } from "./onboarding.js";
 
 export function render(container) {
@@ -55,8 +62,12 @@ function renderGastosApp(container, regiao) {
   // valores[categoriaId] = string do <input> (mantém-se como string
   // para não perder "0," a meio de escrever, etc.)
   const valores = {};
+  // detalhes[categoriaId] = { litros } ou { numeroCigarros, precoMaco }
+  // — campos opcionais das categorias de dupla tributação.
+  const detalhes = {};
   CATEGORIAS_GASTOS_PT.forEach((c) => {
     valores[c.id] = "";
+    detalhes[c.id] = {};
   });
 
   function draw() {
@@ -72,7 +83,7 @@ function renderGastosApp(container, regiao) {
     const desc = el(
       "p",
       null,
-      `Estima quanto gastas por mês em cada categoria (região: ${labelRegiao(regiao)}). Não precisas de guardar faturas — é uma estimativa tua, arredondada é suficiente. Cada categoria mostra depois quanto disso é, em média, IVA.`
+      `Estima quanto gastas por mês em cada categoria (região: ${labelRegiao(regiao)}). Não precisas de guardar faturas — é uma estimativa tua, arredondada é suficiente. Cada categoria mostra depois quanto disso é, em média, IVA (e outros impostos, quando aplicável).`
     );
 
     const privacidade = el(
@@ -95,12 +106,19 @@ function renderGastosApp(container, regiao) {
     });
 
     const avancarCard = el("section", "card");
+    const voltarBtn = el("button", "btn btn--secondary", "← Voltar a Rendimentos");
+    voltarBtn.type = "button";
+    voltarBtn.addEventListener("click", () => {
+      window.location.hash = "taximetro";
+    });
     const avancarBtn = el("button", "btn btn--primary", "Guardar e avançar →");
     avancarBtn.type = "button";
     avancarBtn.addEventListener("click", async () => {
       await guardarEAvancar();
     });
-    avancarCard.append(avancarBtn);
+    const botoes = el("div", "taximetro-botoes");
+    botoes.append(voltarBtn, avancarBtn);
+    avancarCard.append(botoes);
     container.append(avancarCard);
 
     focusHeading(heading);
@@ -138,15 +156,95 @@ function renderGastosApp(container, regiao) {
 
     card.append(heading, exemplos, field);
 
+    if (cat.duplaTributacao === "combustivel") {
+      card.append(drawDetalheCombustivel(cat, desgloseWrap_placeholder_ref));
+    }
+    if (cat.duplaTributacao === "tabaco") {
+      card.append(drawDetalheTabaco(cat, desgloseWrap_placeholder_ref));
+    }
+
     if (cat.notes) {
       card.append(el("p", "disclaimer", cat.notes));
     }
 
     const desgloseWrap = el("div");
+    // As funções de detalhe acima precisam de referenciar o mesmo
+    // desgloseWrap para o atualizar ao mudar litros/cigarros/preço —
+    // por isso são desenhadas depois de desgloseWrap existir (ver
+    // reatribuição de desgloseWrap_placeholder_ref abaixo).
     atualizarDesgloseCategoria(cat, desgloseWrap);
     card.append(desgloseWrap);
 
     return card;
+  }
+
+  // Pequeno truque para os campos de detalhe (definidos antes de
+  // desgloseWrap existir, na ordem de append pretendida) conseguirem
+  // referenciar o wrap correto: guardamos a referência mutável aqui e
+  // resolvemo-la já dentro dos handlers de input.
+  let desgloseWrap_placeholder_ref = null;
+
+  function drawDetalheCombustivel(cat) {
+    const wrap = el("div", "taximetro-field");
+    const label = document.createElement("label");
+    const inputId = `detalhe-litros-${cat.id}`;
+    label.htmlFor = inputId;
+    label.textContent = "Litros abastecidos por mês (opcional, para saber o ISP exato)";
+    const input = document.createElement("input");
+    input.type = "number";
+    input.id = inputId;
+    input.min = "0";
+    input.step = "0.01";
+    input.value = detalhes[cat.id].litros || "";
+    input.addEventListener("input", (e) => {
+      detalhes[cat.id].litros = e.target.value;
+      const desgloseWrap = document.getElementById(`desglose-${cat.id}`);
+      if (desgloseWrap) atualizarDesgloseCategoria(cat, desgloseWrap);
+    });
+    wrap.append(label, input);
+    return wrap;
+  }
+
+  function drawDetalheTabaco(cat) {
+    const wrap = el("div");
+    const cigarrosField = el("div", "taximetro-field");
+    const cigarrosLabel = document.createElement("label");
+    const cigarrosId = `detalhe-cigarros-${cat.id}`;
+    cigarrosLabel.htmlFor = cigarrosId;
+    cigarrosLabel.textContent = "Nº de cigarros por mês (opcional, para saber o IT exato)";
+    const cigarrosInput = document.createElement("input");
+    cigarrosInput.type = "number";
+    cigarrosInput.id = cigarrosId;
+    cigarrosInput.min = "0";
+    cigarrosInput.step = "1";
+    cigarrosInput.value = detalhes[cat.id].numeroCigarros || "";
+    cigarrosInput.addEventListener("input", (e) => {
+      detalhes[cat.id].numeroCigarros = e.target.value;
+      const desgloseWrap = document.getElementById(`desglose-${cat.id}`);
+      if (desgloseWrap) atualizarDesgloseCategoria(cat, desgloseWrap);
+    });
+    cigarrosField.append(cigarrosLabel, cigarrosInput);
+
+    const precoField = el("div", "taximetro-field");
+    const precoLabel = document.createElement("label");
+    const precoId = `detalhe-preco-maco-${cat.id}`;
+    precoLabel.htmlFor = precoId;
+    precoLabel.textContent = "Preço médio do maço (€, opcional)";
+    const precoInput = document.createElement("input");
+    precoInput.type = "number";
+    precoInput.id = precoId;
+    precoInput.min = "0";
+    precoInput.step = "0.01";
+    precoInput.value = detalhes[cat.id].precoMaco || "";
+    precoInput.addEventListener("input", (e) => {
+      detalhes[cat.id].precoMaco = e.target.value;
+      const desgloseWrap = document.getElementById(`desglose-${cat.id}`);
+      if (desgloseWrap) atualizarDesgloseCategoria(cat, desgloseWrap);
+    });
+    precoField.append(precoLabel, precoInput);
+
+    wrap.append(cigarrosField, precoField);
+    return wrap;
   }
 
   function totalHeroLive() {
@@ -154,38 +252,79 @@ function renderGastosApp(container, regiao) {
     if (hero) hero.textContent = formatEUR(totalMensal());
   }
 
+  /**
+   * Calcula o desglose de uma categoria: IVA sempre; ISP/IT adicional
+   * quando a categoria tem dupla tributação e o utilizador preencheu o
+   * detalhe opcional (litros; nº cigarros + preço do maço).
+   */
+  function calcularDesgloseCategoria(cat, valor) {
+    const nivelIva = cat.tipo === "combustivel" ? "normal" : cat.tipo;
+    const desglose = decomporIVADeTotal(valor, regiao, nivelIva);
+
+    let especial = null;
+    if (cat.duplaTributacao === "combustivel") {
+      const litros = Number(detalhes[cat.id].litros);
+      if (Number.isFinite(litros) && litros > 0) {
+        // Assume gasolina como referência (a categoria não distingue
+        // gasolina/gasóleo) — ver nota da categoria sobre esta
+        // simplificação.
+        const ispUnitario = IMPOSTOS_ESPECIAIS_2026.isp.gasolina.value;
+        especial = { tipo: "ISP", valor: round2(litros * ispUnitario), fonte: IMPOSTOS_ESPECIAIS_2026.source };
+      }
+    } else if (cat.duplaTributacao === "tabaco") {
+      const numeroCigarros = Number(detalhes[cat.id].numeroCigarros);
+      const precoMaco = Number(detalhes[cat.id].precoMaco);
+      if (Number.isFinite(numeroCigarros) && numeroCigarros > 0 && Number.isFinite(precoMaco) && precoMaco > 0) {
+        const it = calcularITCigarros(numeroCigarros, precoMaco);
+        especial = { tipo: "IT", valor: it.itTotal, fonte: IMPOSTOS_ESPECIAIS_2026.source };
+      }
+    }
+
+    return { desglose, especial };
+  }
+
   function atualizarDesgloseCategoria(cat, wrap) {
+    wrap.id = `desglose-${cat.id}`;
     wrap.innerHTML = "";
     const valor = Number(valores[cat.id]);
     if (!Number.isFinite(valor) || valor <= 0) return;
 
-    let desglose;
-    let notaEspecial = null;
-
-    if (cat.tipo === "combustivel") {
-      const especial = decomporCombustivel(valor, "gasolina", regiao);
-      desglose = { baseTributavel: null, imposto: especial.ivaEstimado };
-      notaEspecial = especial;
-    } else {
-      desglose = decomporIVADeTotal(valor, regiao, cat.tipo);
-    }
+    const { desglose, especial } = calcularDesgloseCategoria(cat, valor);
 
     const dl = el("dl", "taximetro-cadeia");
-    if (desglose.baseTributavel !== null) {
-      appendItem(dl, "Base sem IVA (estimada)", formatEUR(desglose.baseTributavel));
+    if (especial) {
+      appendItem(dl, `Imposto especial (${especial.tipo})`, formatEUR(especial.valor));
     }
     appendItem(dl, "IVA (estimado)", formatEUR(desglose.imposto));
     wrap.append(dl);
 
+    // Percentagem de IVA explícita — pedido para aparecer em todas as
+    // categorias, não só o valor em euros.
+    const percentagemIva = Math.round(desglose.taxa * 100);
     const fonte = el(
       "p",
       "disclaimer",
-      `Fonte: Código do IVA (CIVA), Art. 18.º e Listas I/II anexas — taxa ${labelNivel(cat.tipo)} aplicada em ${labelRegiao(regiao)}.`
+      `Taxa de IVA aplicada: ${percentagemIva}% (${labelNivel(cat.tipo === "combustivel" ? "normal" : cat.tipo)}, ${labelRegiao(regiao)}). Fonte: Código do IVA (CIVA), Art. 18.º e Listas I/II anexas.`
     );
     wrap.append(fonte);
 
-    if (notaEspecial && notaEspecial.notes) {
-      wrap.append(el("p", "disclaimer", notaEspecial.notes));
+    if (cat.duplaTributacao === "combustivel" && !especial) {
+      wrap.append(
+        el(
+          "p",
+          "disclaimer",
+          "Introduz os litros abastecidos acima para ver também o ISP — sem essa informação só mostramos o IVA."
+        )
+      );
+    }
+    if (cat.duplaTributacao === "tabaco" && !especial) {
+      wrap.append(
+        el(
+          "p",
+          "disclaimer",
+          "Introduz o nº de cigarros e o preço do maço acima para ver também o IT — sem essa informação só mostramos o IVA."
+        )
+      );
     }
   }
 
@@ -193,18 +332,23 @@ function renderGastosApp(container, regiao) {
     const categorias = CATEGORIAS_GASTOS_PT.map((c) => {
       const valorMensal = round2(Number(valores[c.id]) || 0);
       let ivaMensal = 0;
+      let impostoEspecialMensal = 0;
       if (valorMensal > 0) {
-        if (c.tipo === "combustivel") {
-          const especial = decomporCombustivel(valorMensal, "gasolina", regiao);
-          ivaMensal = especial.ivaEstimado || 0;
-        } else {
-          ivaMensal = decomporIVADeTotal(valorMensal, regiao, c.tipo).imposto;
-        }
+        const { desglose, especial } = calcularDesgloseCategoria(c, valorMensal);
+        ivaMensal = desglose.imposto;
+        if (especial) impostoEspecialMensal = especial.valor;
       }
-      return { id: c.id, label: c.label, valorMensal, ivaMensal: round2(ivaMensal) };
+      return {
+        id: c.id,
+        label: c.label,
+        valorMensal,
+        ivaMensal: round2(ivaMensal),
+        impostoEspecialMensal: round2(impostoEspecialMensal),
+      };
     });
     const totalMensalArredondado = round2(totalMensal());
     const totalIvaMensal = round2(categorias.reduce((sum, c) => sum + c.ivaMensal, 0));
+    const totalImpostoEspecialMensal = round2(categorias.reduce((sum, c) => sum + c.impostoEspecialMensal, 0));
 
     await atualizarPeriodoAtual({
       gastosMensal: {
@@ -212,6 +356,7 @@ function renderGastosApp(container, regiao) {
         categorias,
         totalMensal: totalMensalArredondado,
         totalIvaMensal,
+        totalImpostoEspecialMensal,
       },
     });
     window.location.hash = "impostos-anuais";

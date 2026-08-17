@@ -587,6 +587,41 @@ p {
   font-weight: var(--font-weight-semibold);
 }
 
+.taximetro-escaloes {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-3) 0;
+  font-size: var(--font-size-sm);
+}
+
+.taximetro-escaloes caption {
+  text-align: left;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.taximetro-escaloes th,
+.taximetro-escaloes td {
+  padding: var(--space-2);
+  text-align: right;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.taximetro-escaloes th:first-child,
+.taximetro-escaloes td:first-child {
+  text-align: left;
+}
+
+.taximetro-escaloes thead th {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+
+.taximetro-escaloes tbody tr:last-child th,
+.taximetro-escaloes tbody tr:last-child td {
+  border-bottom: none;
+}
+
 /* -----------------------------
    6d. Onboarding (região)
    ----------------------------- */
@@ -713,6 +748,24 @@ p {
   gap: var(--space-3);
   flex-wrap: wrap;
   margin-top: var(--space-4);
+}
+
+/* Usado nos ecrãs de Rendimentos e Taxas para agrupar os botões de
+   ação (ex.: "Guardar e avançar" / "Simular outro valor") — sem esta
+   regra os botões ficam encostados uns aos outros (sem gap), porque
+   são anexados via DOM sem nós de texto/espaço entre eles. */
+.taximetro-botoes {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.taximetro-perguntas {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .faturas-list {

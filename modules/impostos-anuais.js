@@ -18,6 +18,7 @@
 // o total no Período atual (data/db.js) e navega para o resultado.
 
 import { savePeriodicTax, dbGetAll, dbDelete, atualizarPeriodoAtual } from "../data/db.js";
+import { PATRIMONIAIS_2026 } from "../data/tax-rules/2026/patrimoniais.js";
 
 const TIPOS_IMPOSTO = [
   {
@@ -96,6 +97,12 @@ export function render(container) {
       el("p", "stat-label", "Total registado nesta categoria")
     );
 
+    const voltarBtn = el("button", "btn btn--secondary", "← Voltar a Gastos");
+    voltarBtn.type = "button";
+    voltarBtn.addEventListener("click", () => {
+      window.location.hash = "faturas";
+    });
+
     const novoBtn = el("button", "btn btn--primary", "+ Registar taxa");
     novoBtn.type = "button";
     novoBtn.addEventListener("click", () => {
@@ -117,7 +124,7 @@ export function render(container) {
     });
 
     const botoes = el("div", "taximetro-botoes");
-    botoes.append(novoBtn, avancarBtn);
+    botoes.append(voltarBtn, novoBtn, avancarBtn);
 
     card.append(heading, desc, privacidade, resumo, botoes);
     container.append(card);
@@ -174,11 +181,49 @@ export function render(container) {
       tipoSelect.append(opt);
     });
     const tipoAjuda = el("span", "stat-label", TIPOS_IMPOSTO[0].ajuda);
+    tipoField.append(tipoLabel, tipoSelect, tipoAjuda);
+
+    // IMI: a taxa varia por concelho (0,3%-0,45% do VPT) — pedir a
+    // localidade em vez de assumir silenciosamente a taxa mais comum
+    // (0,3%), e mostrar a taxa aplicável em %.
+    const concelhoField = el("div", "taximetro-field");
+    const concelhoLabel = document.createElement("label");
+    concelhoLabel.htmlFor = "concelho-imi";
+    concelhoLabel.textContent = "Em que concelho fica o imóvel? (ex.: Oeiras, Sintra, Leiria)";
+    const concelhoInput = document.createElement("input");
+    concelhoInput.type = "text";
+    concelhoInput.id = "concelho-imi";
+    concelhoInput.autocomplete = "off";
+    const concelhoTaxaInfo = el("span", "stat-label", "");
+    concelhoField.append(concelhoLabel, concelhoInput, concelhoTaxaInfo);
+    concelhoField.hidden = true;
+
+    function atualizarTaxaImi() {
+      const tabela = PATRIMONIAIS_2026.imi.tabelaPorConcelho;
+      const concelhoNormalizado = concelhoInput.value.trim().toLowerCase();
+      const excecao = tabela.excecoesConhecidas.taxaMaxima045.find(
+        (nome) => nome.toLowerCase() === concelhoNormalizado
+      );
+      const taxa = excecao ? 0.0045 : tabela.taxaSugeridaPorOmissao;
+      const percentagem = (taxa * 100).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
+      if (!concelhoInput.value.trim()) {
+        concelhoTaxaInfo.textContent =
+          "Sem concelho indicado: mais de 200 dos 308 municípios aplicam 0,3% — mas confirma sempre contra o Portal das Finanças ou a Câmara Municipal.";
+      } else if (excecao) {
+        concelhoTaxaInfo.textContent = `Taxa de IMI em ${excecao}: ${percentagem}% do VPT — um dos 3 concelhos com a taxa máxima em 2026 (🟡 estimativa, confirma contra a Câmara Municipal).`;
+      } else {
+        concelhoTaxaInfo.textContent = `Não temos a taxa exata de "${concelhoInput.value.trim()}" na nossa lista (só cobrimos os concelhos com a taxa máxima). A maioria dos municípios aplica ${percentagem}% — confirma a tua no Portal das Finanças ou na Câmara Municipal, e ajusta o valor pago abaixo se for diferente.`;
+      }
+    }
+    concelhoInput.addEventListener("input", atualizarTaxaImi);
+    atualizarTaxaImi();
+
     tipoSelect.addEventListener("change", () => {
       const t = TIPOS_IMPOSTO.find((x) => x.value === tipoSelect.value);
       tipoAjuda.textContent = t ? t.ajuda : "";
+      concelhoField.hidden = tipoSelect.value !== "IMI";
     });
-    tipoField.append(tipoLabel, tipoSelect, tipoAjuda);
+    concelhoField.hidden = tipoSelect.value !== "IMI";
 
     const valorField = el("div", "taximetro-field");
     const valorLabel = document.createElement("label");
@@ -191,7 +236,7 @@ export function render(container) {
     valorInput.step = "0.01";
     valorField.append(valorLabel, valorInput);
 
-    form.append(tipoField, valorField);
+    form.append(tipoField, concelhoField, valorField);
 
     if (state.erro) {
       const erroEl = el("p", null, state.erro);

@@ -115,7 +115,7 @@ export const IRS_2026 = {
     },
     continente: { reducaoSobreTaxaMarginal: 0 },
     notes:
-      "Mecanismo exato não confirmado contra fonte primária para Açores. Madeira confirmado contra fonte oficial da AT-RAM em 15/08/2026 (ver acima), mas com uma simplificação conhecida (limites de escalão não ajustados). Ver TAX-METHODOLOGY.md.",
+      "Mecanismo exato não confirmado contra fonte primária para Açores. Madeira confirmado contra fonte oficial da AT-RAM em 15/08/2026 (ver acima), mas com uma simplificação conhecida (limites de escalão não ajustados).",
   },
 
   /**

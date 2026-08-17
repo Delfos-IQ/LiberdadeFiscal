@@ -265,11 +265,32 @@ export function render(container) {
         "p",
         null,
         `Rendimento coletável anual: ${formatEUR(r.detalheAnual.rendimentoColetavelAnual)} · Taxa efetiva de IRS: ${(r.detalheAnual.irs.taxaEfetiva * 100).toFixed(2)}%`
-      ),
+      )
+    );
+
+    // Tabela de escalões de IRS efetivamente aplicados — cada escalão
+    // com a sua taxa marginal em %, já com o diferencial regional
+    // descontado quando aplicável (pedido explícito: mostrar os
+    // tramos/escalões em percentagem, não só a taxa efetiva agregada).
+    const escaloesTabela = document.createElement("table");
+    escaloesTabela.className = "taximetro-escaloes";
+    const thead = document.createElement("thead");
+    thead.innerHTML = "<tr><th>Escalão</th><th>Rendimento</th><th>Taxa</th><th>Imposto</th></tr>";
+    const tbody = document.createElement("tbody");
+    r.detalheAnual.irs.decomposicaoPorEscalao.forEach((esc) => {
+      const tr = document.createElement("tr");
+      const limiteSup = esc.max === Infinity ? "∞" : formatEUR(esc.max);
+      tr.innerHTML = `<td>${esc.escalao}.º</td><td>${formatEUR(esc.min)} – ${limiteSup}</td><td>${(esc.taxa * 100).toFixed(2)}%</td><td>${formatEUR(esc.imposto)}</td>`;
+      tbody.append(tr);
+    });
+    escaloesTabela.append(thead, tbody);
+    explicacao.append(escaloesTabela);
+
+    explicacao.append(
       el(
         "p",
         "disclaimer",
-        "Fonte: Lei n.º 73-A/2025 (Orçamento do Estado 2026), Art. 68.º e 68.º-A do CIRS (escalões de IRS) e taxas de TSU da Segurança Social 2026. Ver TAX-METHODOLOGY.md para os parâmetros completos e as suas fontes individuais."
+        "Fonte: Lei n.º 73-A/2025 (Orçamento do Estado 2026), Art. 68.º e 68.º-A do CIRS (escalões de IRS) e taxas de TSU da Segurança Social 2026."
       )
     );
 
@@ -287,7 +308,7 @@ export function render(container) {
       const avisoRegional = el(
         "p",
         null,
-        "Este cálculo inclui uma redução de IRS para a região autónoma escolhida. O mecanismo exato deste diferencial regional ainda não foi confirmado contra a fonte legal primária — ver TAX-METHODOLOGY.md. Trata este valor como uma estimativa, não como um valor oficial."
+        "Este cálculo inclui uma redução de IRS para a região autónoma escolhida (já refletida na tabela de escalões acima). O mecanismo exato deste diferencial regional ainda não foi confirmado contra a fonte legal primária — trata este valor como uma estimativa, não como um valor oficial."
       );
       avisoRegional.className = "disclaimer";
       explicacao.append(avisoRegional);
