@@ -27,6 +27,25 @@ import { decomporIVADeTotal, calcularITCigarros } from "../data/tax-engine.js";
 import { IMPOSTOS_ESPECIAIS_2026 } from "../data/tax-rules/2026/impostos-especiais.js";
 import { render as renderOnboarding } from "./onboarding.js";
 
+// Ícones por categoria — puramente decorativos (aria-hidden), mesmo
+// estilo de linha usado no nav principal (index.html), para dar
+// identidade visual a cada categoria e quebrar a monotonia de cards
+// idênticos. Markup interno de <svg>, sem viewBox/atributos externos
+// repetidos — ver ICONE_VIEWBOX abaixo.
+const ICONE_VIEWBOX = "0 0 24 24";
+const ICONES_CATEGORIAS = {
+  alimentacao: `<path d="M5 10h14l-1.3 8.2a2 2 0 0 1-2 1.8H8.3a2 2 0 0 1-2-1.8L5 10Z"/><path d="M8.5 10 10 5.5M15.5 10 14 5.5"/><path d="M9.5 13.5v3.5M14.5 13.5v3.5"/>`,
+  restauracao: `<path d="M5 9h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9Z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 5.5c0-1 .8-1.3.8-2.3M11.5 5.5c0-1 .8-1.3.8-2.3"/>`,
+  habitacao: `<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10.5V20a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-9.5"/>`,
+  combustivel: `<path d="M4 20.5V6.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v14"/><path d="M3 20.5h11"/><path d="M13 9.5h2.3a1.7 1.7 0 0 1 1.7 1.7v5.3a1.5 1.5 0 0 0 3 0V9l-2-2"/><path d="M6 8.5h4"/>`,
+  transportes: `<rect x="3.5" y="6" width="17" height="11" rx="2.5"/><path d="M3.5 12h17"/><circle cx="7.5" cy="19.5" r="1.4"/><circle cx="16.5" cy="19.5" r="1.4"/><path d="M6.5 9h3M14.5 9h3"/>`,
+  saude: `<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>`,
+  "cultura-lazer": `<path d="M12 4.5 14 9.7l5.5.4-4.2 3.6 1.4 5.4L12 16.8l-4.7 2.3 1.4-5.4-4.2-3.6 5.5-.4Z"/>`,
+  "vestuario-outros": `<circle cx="12" cy="5" r="1.6"/><path d="M12 6.6v2"/><path d="M4 17.5 11 12a1.4 1.4 0 0 1 2 0l7 5.5"/><path d="M3.5 17.5h17"/>`,
+  tabaco: `<rect x="3" y="10.5" width="14" height="3.5" rx="1"/><rect x="17" y="10.5" width="3.5" height="3.5" rx="1"/><path d="M4 8.5c0-1 .8-1.2.8-2.2S4 4.5 4 3.5M7 8.5c0-1 .8-1.2.8-2.2S7 4.5 7 3.5"/>`,
+  alcool: `<path d="M8 3h8l-1 6.5a3 3 0 0 1-3 2.5 3 3 0 0 1-3-2.5L8 3Z"/><path d="M12 12v6M9 21h6"/>`,
+};
+
 export function render(container) {
   let destroyed = false;
   let subInstance = null;
@@ -131,19 +150,33 @@ function renderGastosApp(container, regiao) {
   function drawCategoria(cat) {
     const card = el("section", "card");
 
+    const headerRow = el("div", "gastos-categoria-header");
+    const iconChip = el("span", "gastos-categoria-icon");
+    iconChip.setAttribute("aria-hidden", "true");
+    iconChip.innerHTML = `<svg viewBox="${ICONE_VIEWBOX}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${
+      ICONES_CATEGORIAS[cat.id] || ""
+    }</svg>`;
     const heading = el("h2", null, cat.label);
-    const exemplos = el("p", "stat-label", `Ex.: ${cat.exemplos.join(", ")}`);
+    headerRow.append(iconChip, heading);
+
+    const exemplos = el("ul", "gastos-exemplos");
+    exemplos.append(el("li", "visually-hidden", "Ex.:"));
+    cat.exemplos.forEach((ex) => {
+      exemplos.append(el("li", "gastos-exemplo-chip", ex));
+    });
 
     const field = el("div", "taximetro-field");
     const label = document.createElement("label");
     const inputId = `gasto-${cat.id}`;
     label.htmlFor = inputId;
-    label.textContent = "Quanto gastas por mês (€)?";
+    label.textContent = "Quanto gastas por mês?";
+    const inputWrap = el("div", "input-euro");
     const input = document.createElement("input");
     input.type = "number";
     input.id = inputId;
     input.min = "0";
     input.step = "0.01";
+    input.inputMode = "decimal";
     input.value = valores[cat.id];
     input.addEventListener("input", (e) => {
       valores[cat.id] = e.target.value;
@@ -152,9 +185,10 @@ function renderGastosApp(container, regiao) {
       totalHeroLive();
       atualizarDesgloseCategoria(cat, desgloseWrap);
     });
-    field.append(label, input);
+    inputWrap.append(input);
+    field.append(label, inputWrap);
 
-    card.append(heading, exemplos, field);
+    card.append(headerRow, exemplos, field);
 
     if (cat.duplaTributacao === "combustivel") {
       card.append(drawDetalheCombustivel(cat, desgloseWrap_placeholder_ref));
@@ -229,7 +263,8 @@ function renderGastosApp(container, regiao) {
     const precoLabel = document.createElement("label");
     const precoId = `detalhe-preco-maco-${cat.id}`;
     precoLabel.htmlFor = precoId;
-    precoLabel.textContent = "Preço médio do maço (€, opcional)";
+    precoLabel.textContent = "Preço médio do maço (opcional)";
+    const precoInputWrap = el("div", "input-euro");
     const precoInput = document.createElement("input");
     precoInput.type = "number";
     precoInput.id = precoId;
@@ -241,7 +276,8 @@ function renderGastosApp(container, regiao) {
       const desgloseWrap = document.getElementById(`desglose-${cat.id}`);
       if (desgloseWrap) atualizarDesgloseCategoria(cat, desgloseWrap);
     });
-    precoField.append(precoLabel, precoInput);
+    precoInputWrap.append(precoInput);
+    precoField.append(precoLabel, precoInputWrap);
 
     wrap.append(cigarrosField, precoField);
     return wrap;

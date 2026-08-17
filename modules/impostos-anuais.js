@@ -228,13 +228,15 @@ export function render(container) {
     const valorField = el("div", "taximetro-field");
     const valorLabel = document.createElement("label");
     valorLabel.htmlFor = "valor-imposto";
-    valorLabel.textContent = "Valor pago (€)";
+    valorLabel.textContent = "Valor pago";
+    const valorInputWrap = el("div", "input-euro");
     const valorInput = document.createElement("input");
     valorInput.type = "number";
     valorInput.id = "valor-imposto";
     valorInput.min = "0";
     valorInput.step = "0.01";
-    valorField.append(valorLabel, valorInput);
+    valorInputWrap.append(valorInput);
+    valorField.append(valorLabel, valorInputWrap);
 
     form.append(tipoField, concelhoField, valorField);
 

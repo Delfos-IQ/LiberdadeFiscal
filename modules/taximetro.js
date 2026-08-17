@@ -122,9 +122,15 @@ export function render(container) {
     form.addEventListener("submit", handleSubmit);
 
     form.append(
-      fieldNumber("salario-bruto", "Salário bruto mensal (€)", state.salarioBruto, (v) => {
-        state.salarioBruto = v;
-      }),
+      fieldNumber(
+        "salario-bruto",
+        "Salário bruto mensal",
+        state.salarioBruto,
+        (v) => {
+          state.salarioBruto = v;
+        },
+        { euro: true }
+      ),
       fieldSelect(
         "tipo-trabalhador",
         "Tipo de trabalhador",
@@ -421,7 +427,13 @@ function fieldNumber(id, labelText, value, onChange, attrs = {}) {
   input.min = attrs.min !== undefined ? String(attrs.min) : "0";
   if (attrs.step !== undefined) input.step = String(attrs.step);
   input.addEventListener("input", (e) => onChange(e.target.value));
-  wrapper.append(label, input);
+  if (attrs.euro) {
+    const inputWrap = el("div", "input-euro");
+    inputWrap.append(input);
+    wrapper.append(label, inputWrap);
+  } else {
+    wrapper.append(label, input);
+  }
   return wrapper;
 }
 

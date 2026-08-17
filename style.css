@@ -613,6 +613,29 @@ p {
   font-size: var(--font-size-sm);
 }
 
+/* Prefixo de moeda dentro do campo — em vez de deixar "quanto gastas
+   por mês (€)?" só na label, o próprio símbolo aparece dentro do
+   campo, junto ao número, como em qualquer app financeira bem
+   acabada. */
+.input-euro {
+  position: relative;
+}
+
+.input-euro::before {
+  content: "€";
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  pointer-events: none;
+}
+
+.input-euro input {
+  padding-left: calc(var(--space-3) + 14px) !important;
+}
+
 .taximetro-field input,
 .taximetro-field select {
   padding: var(--space-2) var(--space-3);
@@ -834,8 +857,50 @@ p {
 }
 
 /* -----------------------------
-   6e. Faturas
+   6e. Faturas / Gastos
    ----------------------------- */
+.gastos-categoria-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.gastos-categoria-header h2 {
+  margin: 0;
+}
+
+.gastos-categoria-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: color-mix(in srgb, var(--color-mint) 35%, white);
+  color: var(--color-green-text);
+}
+
+.gastos-categoria-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.gastos-exemplos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-4);
+}
+
+.gastos-exemplo-chip {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background-color: var(--color-background);
+  border-radius: 999px;
+  padding: 3px var(--space-3);
+}
 .faturas-actions {
   display: flex;
   gap: var(--space-3);
