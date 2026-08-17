@@ -484,7 +484,55 @@ percentagem e data. Decisões explícitas de metodologia:
 | Tabela de concelhos IMI | Anual, em janeiro |
 | Tabelas ISV/IUC completas | Antes da Fase 6, depois anual |
 
-## 8. Checklist antes de publicar em produção
+## 8. Checklist operacional — atualização anual (Auditoria 2026-08, hallazgo B-4)
+
+A secção 7 já dizia "anual, em janeiro" — mas uma cadência sem passos
+concretos é fácil de adiar sem se notar. Esta é a amenaça mais séria
+identificada na auditoria de 18/08/2026: sem isto, a app passa de útil
+a silenciosamente incorreta a cada Orçamento do Estado, sem que
+ninguém se aperceba (`AUDITORIA-2026-08.md`, secção 5, "Amenazas").
+
+**Gatilho:** correr esta checklist assim que o Orçamento do Estado do
+ano seguinte for publicado em Diário da República (tipicamente
+dezembro), e o mais tardar antes de 31 de janeiro.
+
+- [ ] Criar `data/tax-rules/AAAA/` (novo ano) copiando a estrutura de
+      `data/tax-rules/2026/` — nunca editar os ficheiros do ano
+      anterior no local: os períodos já fechados
+      (`periodosFechados`) guardam o *resultado* já calculado, não
+      recalculam com as tabelas atuais, mas se algum dia a app passar
+      a recalcular histórico, vai precisar das tabelas antigas
+      intactas.
+- [ ] Atualizar cada parâmetro em `data/tax-rules/AAAA/*.js` contra a
+      fonte primária (secção 8 do CLAUDE.md: AT, Segurança Social,
+      Diário da República — nunca uma fonte secundária como único
+      apoio). Marcar `UNKNOWN`/`ESTIMATE` o que não se conseguir
+      confirmar, nunca copiar o valor do ano anterior "a assumir que
+      não mudou" sem verificar.
+- [ ] Atualizar os 5 imports em `data/tax-engine.js` (linhas ~16-20)
+      para o novo caminho `./tax-rules/AAAA/...`.
+- [ ] Atualizar o import em `modules/impostos-anuais.js`
+      (`PATRIMONIAIS_2026`) e em `modules/faturas.js`
+      (`IMPOSTOS_ESPECIAIS_2026`, `IVA_2026`) — grep por
+      `tax-rules/2026` no projeto para apanhar qualquer sítio
+      adicional que se tenha acrescentado entretanto.
+- [ ] Atualizar `ANO_FISCAL` em `modules/dia-liberdade.js`.
+- [ ] Atualizar as 5 entradas `data/tax-rules/2026/*.js` em
+      `STATIC_ASSETS` (`sw.js`) para o novo caminho, e subir
+      `CACHE_VERSION`.
+- [ ] Correr `npm test` — os testes do motor fiscal
+      (`tests/tax-engine*.test.js`) vão falhar em qualquer valor que
+      mude, o que é o comportamento esperado: atualizar os valores
+      esperados nos testes é a forma de confirmar que a mudança foi
+      intencional, não um efeito colateral.
+- [ ] Rever esta checklist e a secção 9 abaixo — atualizar datas e
+      estados UNKNOWN/ESTIMATE conforme o que se resolveu ou não nesta
+      ronda.
+- [ ] Registar a data em que esta checklist foi executada, e por quem,
+      no `CHANGELOG` do commit — não é preciso um ficheiro à parte,
+      mas tem de ficar rastreável no histórico do git.
+
+## 9. Checklist antes de publicar em produção
 
 - [ ] Confirmar todos os parâmetros ✅ diretamente contra
       portaldasfinancas.gov.pt / seg-social.pt / diariodarepublica.pt

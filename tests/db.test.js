@@ -201,4 +201,98 @@ describe("data/db.js — Período acumulativo (getPeriodoAtual/atualizarPeriodoA
     assert.equal(historico.length, 2);
     assert.equal(historico[0].resultadoDiaLiberdade.dayOfYear, 200);
   });
+
+  test("fecharPeriodoAtual persiste no histórico E reinicia numa só transação (regressão B-3)", async () => {
+    // Não há forma direta de simular uma interrupção a meio de uma
+    // transação IndexedDB num teste — mas podemos confirmar que as
+    // duas escritas ficam sempre em sincronia: nunca um histórico sem
+    // reset, nem um reset sem histórico.
+    await atualizarPeriodoAtual({ rendimentos: { salarioLiquidoMensal: 2000 } });
+    await fecharPeriodoAtual({ dayOfYear: 50 });
+    const [historico, atual] = await Promise.all([getHistoricoPeriodos(), getPeriodoAtual()]);
+    assert.equal(historico.length, 1);
+    assert.equal(atual.rendimentos, null);
+  });
+});
+
+describe("data/db.js — exportação e importação (Auditoria 2026-08, hallazgo B-1)", () => {
+  let saveInvoice, savePeriodicTax, setSetting, dbClear, exportarTodosDados, validarDadosImportacao, importarTodosDados;
+
+  beforeEach(async () => {
+    const mod = await import(`../data/db.js?t=${Date.now()}-${Math.random()}`);
+    ({ saveInvoice, savePeriodicTax, setSetting, dbClear, exportarTodosDados, validarDadosImportacao, importarTodosDados } =
+      mod);
+    for (const store of ["invoices", "periodicTaxes", "quizResults", "userSettings", "taxParameterCache", "periodosFechados"]) {
+      await dbClear(store);
+    }
+  });
+
+  function invoiceValida(overrides = {}) {
+    return {
+      id: "inv-1",
+      date: "2026-08-15",
+      source: "manual",
+      goodServiceId: "pao",
+      region: "continente",
+      amount_total: 2.5,
+      confirmed_by_user: true,
+      ...overrides,
+    };
+  }
+
+  test("exportarTodosDados devolve todos os stores, incluindo os vazios", async () => {
+    await saveInvoice(invoiceValida());
+    await setSetting("region", "continente");
+
+    const exportado = await exportarTodosDados();
+    assert.equal(exportado.formato, "liberdade-fiscal-export");
+    assert.equal(exportado.stores.invoices.length, 1);
+    assert.ok(Array.isArray(exportado.stores.periodicTaxes), "stores vazios devem aparecer como array vazio, não em falta");
+    assert.equal(exportado.stores.periodicTaxes.length, 0);
+    const settingRegiao = exportado.stores.userSettings.find((s) => s.key === "region");
+    assert.equal(settingRegiao.value, "continente");
+  });
+
+  test("validarDadosImportacao rejeita um ficheiro que não é uma exportação desta app", () => {
+    const r1 = validarDadosImportacao({ algo: "aleatorio" });
+    assert.equal(r1.ok, false);
+    const r2 = validarDadosImportacao(null);
+    assert.equal(r2.ok, false);
+    const r3 = validarDadosImportacao("texto");
+    assert.equal(r3.ok, false);
+  });
+
+  test("validarDadosImportacao aceita uma exportação válida e resume as contagens", async () => {
+    await saveInvoice(invoiceValida());
+    await savePeriodicTax({ id: "t1", type: "IMI", amount: 300, date: "2026-01-01", recurrence: "annual" });
+    const exportado = await exportarTodosDados();
+
+    const validado = validarDadosImportacao(exportado);
+    assert.equal(validado.ok, true);
+    assert.equal(validado.resumo.invoices, 1);
+    assert.equal(validado.resumo.periodicTaxes, 1);
+  });
+
+  test("importarTodosDados substitui os dados atuais pelos do ficheiro (round-trip completo)", async () => {
+    await saveInvoice(invoiceValida({ id: "original" }));
+    const exportado = await exportarTodosDados();
+
+    // Simula "outro dispositivo": limpa tudo e confirma que fica vazio.
+    await dbClear("invoices");
+    const { dbGetAll } = await import(`../data/db.js?t=${Date.now()}-${Math.random()}`);
+    assert.equal((await dbGetAll("invoices")).length, 0);
+
+    const resumo = await importarTodosDados(exportado);
+    assert.equal(resumo.invoices, 1);
+    const restauradas = await dbGetAll("invoices");
+    assert.equal(restauradas.length, 1);
+    assert.equal(restauradas[0].id, "original");
+  });
+
+  test("importarTodosDados rejeita um ficheiro inválido sem escrever nada", async () => {
+    await saveInvoice(invoiceValida());
+    await assert.rejects(() => importarTodosDados({ formato: "outra-coisa" }));
+    const { dbGetAll } = await import(`../data/db.js?t=${Date.now()}-${Math.random()}`);
+    assert.equal((await dbGetAll("invoices")).length, 1, "os dados originais não deviam ter sido tocados");
+  });
 });

@@ -198,9 +198,8 @@ export function render(container) {
     }
 
     if (state.erro) {
-      const erroEl = el("p", null, state.erro);
+      const erroEl = el("p", "form-error", state.erro);
       erroEl.setAttribute("role", "alert");
-      erroEl.style.color = "var(--color-danger)";
       form.append(erroEl);
     }
 

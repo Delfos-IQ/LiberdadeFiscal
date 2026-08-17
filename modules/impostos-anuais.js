@@ -241,9 +241,8 @@ export function render(container) {
     form.append(tipoField, concelhoField, valorField);
 
     if (state.erro) {
-      const erroEl = el("p", null, state.erro);
+      const erroEl = el("p", "form-error", state.erro);
       erroEl.setAttribute("role", "alert");
-      erroEl.style.color = "var(--color-danger)";
       form.append(erroEl);
     }
 

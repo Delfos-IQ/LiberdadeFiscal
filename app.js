@@ -82,6 +82,12 @@ const ROUTE_MODULES = {
   // a partir do link "Comparar com a OCDE" no ecrã de resultado do Dia
   // da Liberdade Fiscal (Fase 8, spec §6.6).
   "benchmark-ocde": () => import("./modules/benchmark-ocde.js"),
+  // Rota secundária (Auditoria 2026-08, hallazgo B-1: exportação de
+  // dados) — acede-se a partir do link "Os teus dados" no footer, que
+  // sobrevive a todas as trocas de rota. Fora do nav principal pelo
+  // mesmo motivo que benchmark-ocde: 5 itens já é o limite confortável
+  // a 320px (ver AUDITORIA-2026-08.md, hallazgo B-13 herdado).
+  dados: () => import("./modules/dados.js"),
 };
 
 let currentModuleInstance = null;
@@ -146,6 +152,18 @@ function initNav() {
   document.querySelectorAll("[data-route]").forEach((button) => {
     button.addEventListener("click", () => {
       const route = button.dataset.route;
+      if (!Object.prototype.hasOwnProperty.call(ROUTE_MODULES, route)) return;
+      window.location.hash = route;
+    });
+  });
+
+  // Links secundários fora da navegação principal (ex.: "Os teus
+  // dados" no footer) — mesmo mecanismo, atributo diferente para não
+  // entrarem no destaque de aria-current de updateNavCurrent(), que só
+  // deve marcar os 5 itens da navegação principal.
+  document.querySelectorAll("[data-route-link]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const route = button.dataset.routeLink;
       if (!Object.prototype.hasOwnProperty.call(ROUTE_MODULES, route)) return;
       window.location.hash = route;
     });

@@ -1,0 +1,33 @@
+name: Testes
+
+# Auditoria 2026-08 — roadmap P0-4: até agora a qualidade dependia de
+# alguém se lembrar de correr `npm test` à mão antes de cada push. Isto
+# corre a suite completa (node --test) em cada push e pull request,
+# para qualquer branch, e falha visivelmente no GitHub se algum dos 234
+# testes partir.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependências (jsdom, fake-indexeddb — só para testes)
+        run: npm install
+
+      - name: Correr a suite de testes
+        run: npm test
+
+      - name: Verificar sintaxe de todos os ficheiros .js do projeto
+        run: |
+          for f in $(find . -name "*.js" -not -path "./node_modules/*" -not -path "./.git/*"); do
+            node --check "$f" || exit 1
+          done

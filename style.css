@@ -181,6 +181,30 @@ a {
   text-decoration-thickness: 2px;
 }
 
+/* Botão com aparência de link — usado para navegação secundária fora
+   do fluxo principal (ex.: "Os teus dados" no footer). É um <button>,
+   não um <a>, porque não navega para um URL — troca a hash da rota via
+   JS, tal como os itens do nav principal. */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-green-text);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+  min-height: var(--tap-target-min);
+}
+
+.link-button:hover {
+  color: var(--color-navy);
+}
+
+.app-footer__links {
+  margin-top: var(--space-2);
+}
+
 /* -----------------------------
    3. Acessibilidade — foco, motion, tátil
    ----------------------------- */
@@ -591,6 +615,19 @@ p {
   border-color: var(--color-green-text);
   border-width: 3px;
   background-color: color-mix(in srgb, var(--color-mint) 30%, white);
+}
+
+/* Mensagens de erro de validação (role="alert") — antes definidas via
+   estilo inline (erroEl.style.color = ...), movidas para uma classe
+   para permitir uma CSP sem 'unsafe-inline' em style-src onde possível
+   (Auditoria 2026-08, hallazgo M-2). */
+.form-error {
+  color: var(--color-danger);
+}
+
+/* Idem para o <noscript> de index.html. */
+.card--noscript {
+  margin: var(--space-5);
 }
 
 .quiz-option--incorrect {

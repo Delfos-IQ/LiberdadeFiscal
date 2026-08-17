@@ -3,6 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <!-- Content-Security-Policy (Auditoria 2026-08, hallazgo M-2).
+       GitHub Pages não permite configurar cabeçalhos HTTP próprios, por
+       isso esta meta tag é a única via possível para uma CSP aqui.
+       Restritiva ao máximo dado que a app não carrega NADA de origem
+       externa hoje (zero scripts/fontes/imagens de terceiros — ver
+       AUDITORIA-2026-08.md secção 2.1):
+         - script-src 'self': nenhum script externo, nenhum inline,
+           nenhum eval — a diretiva que mais protege na prática.
+         - style-src inclui 'unsafe-inline' porque uma barra de
+           progresso (benchmark-ocde.js) define a sua largura via JS
+           (percentagem calculada em tempo real); não há outro inline
+           style na app (os restantes foram movidos para a classe
+           .form-error). Risco aceite e documentado — muito menor do
+           que permitir scripts inline.
+         - connect-src inclui *.workers.dev: preparação para o worker
+           de OCR (Fase 5, ainda não desplegado), o único ponto de
+           saída de dados previsto (spec §6.3/§9). Ajustar ao domínio
+           final assim que o worker for desplegado.
+         - object-src/base-uri 'none', frame-ancestors 'none': esta app
+           nunca precisa de plugins, de mudar a <base>, nem de correr
+           dentro de uma <iframe> de outro site. -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    font-src 'self';
+    manifest-src 'self';
+    connect-src 'self' https://*.workers.dev;
+    object-src 'none';
+    base-uri 'none';
+    frame-ancestors 'none';
+  " />
+
   <title>Liberdade Fiscal — Descobre quanto do teu trabalho fica realmente contigo</title>
   <meta name="description" content="Simulador educativo da carga fiscal real em Portugal: IRS, Segurança Social, IVA, impostos especiais e patrimoniais — até ao teu Dia da Liberdade Fiscal." />
 
@@ -65,6 +100,9 @@
         jurídico e não substitui o cálculo oficial da Autoridade
         Tributária.
       </p>
+      <p class="app-footer__links">
+        <button class="link-button" type="button" data-route-link="dados">Os teus dados (exportar/importar/apagar)</button>
+      </p>
     </footer>
 
     <nav class="app-nav" aria-label="Navegação principal">
@@ -122,7 +160,7 @@
   </div>
 
   <noscript>
-    <div class="card" style="margin: var(--space-5);">
+    <div class="card card--noscript">
       <h1>É necessário JavaScript</h1>
       <p>
         O Liberdade Fiscal é um simulador que corre inteiramente no teu

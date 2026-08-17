@@ -92,9 +92,8 @@ export function render(container, { regiao, onDadosLidos, onCancelar }) {
   });
 
   function mostrarErro(msg) {
-    erroEl = el("p", null, msg);
+    erroEl = el("p", "form-error", msg);
     erroEl.setAttribute("role", "alert");
-    erroEl.style.color = "var(--color-danger)";
     form.append(erroEl);
   }
 

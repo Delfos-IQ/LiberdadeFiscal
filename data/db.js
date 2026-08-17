@@ -16,6 +16,40 @@ const DB_NAME = "liberdade-fiscal";
 // Rendimentos → Gastos → Taxas → Dia da Liberdade Fiscal.
 const DB_VERSION = 2;
 
+// Auditoria 2026-08 (hallazgo M-5/B-2): até agora `onupgradeneeded` só
+// cria stores que ainda não existem — nunca houve uma migração que
+// TRANSFORMASSE registos já guardados quando a forma de um registo
+// muda (ex.: se um campo obrigatório passasse a ter outro nome). Isto
+// não era um problema enquanto não havia utilizadores reais com dados
+// para perder; deixa de ser seguro assim que houver.
+//
+// Padrão adotado a partir de agora: cada migração de dados (não de
+// esquema — criar stores continua a tratar-se à parte, acima) é uma
+// função `{ versaoAlvo, executar(db, tx) }` nesta lista, executada por
+// ordem crescente apenas quando `event.oldVersion < versaoAlvo`.
+// Migrações têm de ser idempotentes (seguras de correr mais do que uma
+// vez) porque `onupgradeneeded` pode, em teoria, ser interrompido a
+// meio (falha de energia, fecho do browser) e retomado depois.
+//
+// Exemplo (ainda não usado — fica como referência para a próxima vez
+// que a forma de um registo mudar):
+//   {
+//     versaoAlvo: 3,
+//     executar(db, tx) {
+//       const store = tx.objectStore("periodicTaxes");
+//       store.openCursor().onsuccess = (e) => {
+//         const cursor = e.target.result;
+//         if (!cursor) return;
+//         const registo = cursor.value;
+//         if (registo.novoCampo === undefined) {
+//           cursor.update({ ...registo, novoCampo: valorPorOmissao });
+//         }
+//         cursor.continue();
+//       };
+//     },
+//   }
+const MIGRACOES_DE_DADOS = [];
+
 /** @type {Record<string, string>} nome lógico -> keyPath */
 export const STORES = {
   invoices: "id", // Invoice[]
@@ -49,6 +83,7 @@ function openDb() {
 
     request.onupgradeneeded = (event) => {
       const db = request.result;
+      const tx = request.transaction;
 
       for (const [storeName, keyPath] of Object.entries(STORES)) {
         if (!db.objectStoreNames.contains(storeName)) {
@@ -63,6 +98,15 @@ function openDb() {
             store.createIndex("by_type", "type");
             store.createIndex("by_date", "date");
           }
+        }
+      }
+
+      // Migrações de dados (ver MIGRACOES_DE_DADOS acima) — só correm
+      // para quem está a atualizar de uma versão anterior, nunca numa
+      // instalação nova (event.oldVersion === 0).
+      for (const migracao of MIGRACOES_DE_DADOS) {
+        if (event.oldVersion > 0 && event.oldVersion < migracao.versaoAlvo) {
+          migracao.executar(db, tx);
         }
       }
     };
@@ -283,6 +327,17 @@ export async function atualizarPeriodoAtual(patch) {
  * Fecha o período atual: guarda uma cópia no histórico
  * (`periodosFechados`, com o resultado final do Dia da Liberdade
  * Fiscal anexado) e reinicia o período atual para um novo, vazio.
+ *
+ * Auditoria 2026-08 (hallazgo B-3): as duas escritas (guardar no
+ * histórico + reiniciar o período atual) fazem-se numa ÚNICA
+ * transação IndexedDB span­ning os dois stores envolvidos
+ * (`periodosFechados` e `userSettings`), em vez de duas chamadas
+ * `dbPut`/`setSetting` separadas. Isto elimina a janela em que uma
+ * interrupção a meio (fecho abrupto do browser, queda de energia)
+ * podia deixar o período fechado duplicado no histórico sem reiniciar,
+ * ou reiniciado sem ficar no histórico — as duas escritas agora
+ * sucedem ou falham em bloco.
+ *
  * @param {object} resultadoDiaLiberdade
  */
 export async function fecharPeriodoAtual(resultadoDiaLiberdade) {
@@ -293,8 +348,16 @@ export async function fecharPeriodoAtual(resultadoDiaLiberdade) {
     fechadoEm: new Date().toISOString(),
     resultadoDiaLiberdade,
   };
-  await dbPut("periodosFechados", fechado);
-  await setSetting(PERIODO_ATUAL_KEY, periodoVazio());
+
+  const db = await openDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(["periodosFechados", "userSettings"], "readwrite");
+    tx.objectStore("periodosFechados").put(fechado);
+    tx.objectStore("userSettings").put({ key: PERIODO_ATUAL_KEY, value: periodoVazio() });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+
   return fechado;
 }
 
@@ -302,4 +365,106 @@ export async function fecharPeriodoAtual(resultadoDiaLiberdade) {
 export async function getHistoricoPeriodos() {
   const todos = await dbGetAll("periodosFechados");
   return todos.sort((a, b) => (b.fechadoEm ?? "").localeCompare(a.fechadoEm ?? ""));
+}
+
+/* -----------------------------
+   Exportação / importação (Auditoria 2026-08, hallazgo B-1)
+   -----------------------------
+   Local-first significa que o utilizador é o único guardião dos seus
+   dados — e por isso também tem de poder tirar uma cópia. Sem isto,
+   limpar os dados do browser, mudar de telemóvel, ou o próprio browser
+   a purgar armazenamento (o Safari é conhecido por apagar IndexedDB ao
+   fim de dias sem uso em certas condições) significa perder um ano
+   inteiro de dados introduzidos à mão, sem qualquer recurso.
+
+   Ficheiro de exportação: um único JSON, com todos os stores, mais um
+   cabeçalho com a versão do esquema e a data de exportação — para que
+   uma futura migração de dados (ver MIGRACOES_DE_DADOS acima) também
+   saiba como interpretar um ficheiro exportado por uma versão antiga
+   da app.
+*/
+
+const FORMATO_EXPORTACAO = "liberdade-fiscal-export";
+const VERSAO_EXPORTACAO = 1;
+
+/**
+ * Exporta todos os stores para um único objeto serializável em JSON.
+ * Não sai do dispositivo por si só — quem chama decide o que fazer com
+ * o resultado (ex.: transformar em ficheiro para download).
+ * @returns {Promise<object>}
+ */
+export async function exportarTodosDados() {
+  const stores = {};
+  for (const storeName of Object.keys(STORES)) {
+    stores[storeName] = await dbGetAll(storeName);
+  }
+  return {
+    formato: FORMATO_EXPORTACAO,
+    versaoExportacao: VERSAO_EXPORTACAO,
+    versaoEsquema: DB_VERSION,
+    exportadoEm: new Date().toISOString(),
+    stores,
+  };
+}
+
+/**
+ * Valida a forma de um objeto de exportação sem escrever nada — usado
+ * pelo ecrã de importação para mostrar um resumo ("isto tem N faturas,
+ * M taxas...") antes de o utilizador confirmar a substituição dos
+ * dados atuais.
+ * @param {unknown} dados
+ * @returns {{ ok: true, resumo: Record<string, number> } | { ok: false, erro: string }}
+ */
+export function validarDadosImportacao(dados) {
+  if (!dados || typeof dados !== "object") {
+    return { ok: false, erro: "O ficheiro não contém um objeto JSON válido." };
+  }
+  if (dados.formato !== FORMATO_EXPORTACAO) {
+    return { ok: false, erro: "Este ficheiro não parece ser uma exportação do Liberdade Fiscal." };
+  }
+  if (!dados.stores || typeof dados.stores !== "object") {
+    return { ok: false, erro: "O ficheiro não contém dados (campo 'stores' em falta)." };
+  }
+
+  const resumo = {};
+  for (const storeName of Object.keys(STORES)) {
+    const registos = dados.stores[storeName];
+    resumo[storeName] = Array.isArray(registos) ? registos.length : 0;
+  }
+  return { ok: true, resumo };
+}
+
+/**
+ * Substitui TODOS os dados atuais pelos do objeto de exportação — cada
+ * store envolvido é limpo e depois repovoado, numa única transação por
+ * store (não entre stores, por simplicidade; um ficheiro de importação
+ * mal formado é detetado por validarDadosImportacao() antes de chegar
+ * aqui, por isso o risco de uma escrita parcial é baixo).
+ *
+ * Destrutivo por design — quem chama tem de confirmar com o utilizador
+ * antes de invocar isto (ver modules/dados.js).
+ * @param {object} dados — validado previamente com validarDadosImportacao()
+ */
+export async function importarTodosDados(dados) {
+  const validacao = validarDadosImportacao(dados);
+  if (!validacao.ok) {
+    throw new Error(validacao.erro);
+  }
+
+  const db = await openDb();
+  for (const storeName of Object.keys(STORES)) {
+    const registos = Array.isArray(dados.stores[storeName]) ? dados.stores[storeName] : [];
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      const store = tx.objectStore(storeName);
+      store.clear();
+      for (const registo of registos) {
+        store.put(registo);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  return validacao.resumo;
 }

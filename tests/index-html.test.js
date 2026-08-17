@@ -66,4 +66,13 @@ describe("Estrutura de index.html", () => {
     const noscript = document.querySelector("noscript");
     assert.ok(noscript);
   });
+
+  test("o link 'Os teus dados' existe no footer, fora da navegação principal (hallazgo B-1)", () => {
+    const footer = document.querySelector("footer.app-footer");
+    const link = footer.querySelector('[data-route-link="dados"]');
+    assert.ok(link, "o link para a rota 'dados' devia existir no footer");
+    // Não deve ser um dos 5 botões de navegação principal — evita
+    // comprimir o nav a 320px (hallazgo B-13 herdado da Fase 1).
+    assert.equal(link.dataset.route, undefined);
+  });
 });
