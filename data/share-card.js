@@ -18,7 +18,7 @@
  */
 export function buildShareText(resultado) {
   const dataFormatada = formatarDataPT(resultado.date);
-  const percentagem = Math.round(resultado.percentage * 1000) / 10; // 1 casa decimal
+  const percentagem = formatarPercentagemPT(resultado.percentage);
 
   return (
     `Liberdade Fiscal — Portugal ${resultado.ano}\n` +
@@ -157,10 +157,12 @@ export function desenharCartaoCanvas(canvas, resultado) {
   const heroY = pillY + pillH + 140;
   const heroFimY = quebrarTexto(ctx, dataFormatada, centerX, heroY, cardW * 0.85, 122);
 
-  // Sub-linha: dias do ano + percentagem.
+  // Sub-linha: dias do ano + percentagem. Formatada em pt-PT (vírgula
+  // decimal), como o resto da app — o Number.toString() do JS usa
+  // ponto, o que destoava do "30,6%" já mostrado no ecrã de resultado.
   ctx.fillStyle = NAVY_MUTED;
   ctx.font = "500 38px Poppins, sans-serif";
-  const percentagem = Math.round(resultado.percentage * 1000) / 10;
+  const percentagem = formatarPercentagemPT(resultado.percentage);
   const subLineY = heroFimY + 100;
   ctx.fillText(`${resultado.dayOfYear} dias do ano · ≈${percentagem}%`, centerX, subLineY);
 
@@ -241,4 +243,11 @@ function formatarDataPT(isoDate) {
   const [ano, mes, dia] = isoDate.split("-").map(Number);
   const data = new Date(Date.UTC(ano, mes - 1, dia));
   return new Intl.DateTimeFormat("pt-PT", { day: "numeric", month: "long", timeZone: "UTC" }).format(data);
+}
+
+// Uma casa decimal, vírgula em vez de ponto — para bater certo com o
+// "30,6%" já mostrado no ecrã de Dia da Liberdade (Number.toString()
+// do JS usa sempre ponto, independentemente do locale).
+function formatarPercentagemPT(percentage) {
+  return (Math.round(percentage * 1000) / 10).toFixed(1).replace(".", ",");
 }
