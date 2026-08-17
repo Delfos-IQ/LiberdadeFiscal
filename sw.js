@@ -2,7 +2,7 @@
 // Versionamento explícito: sobe o CACHE_VERSION em cada release que
 // altere o shell ou os assets estáticos em cache.
 
-const CACHE_VERSION = "liberdade-fiscal-v0.13";
+const CACHE_VERSION = "liberdade-fiscal-v0.14";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Base do scope do service worker — funciona tanto em GitHub Pages de
@@ -64,11 +64,29 @@ const STATIC_ASSETS = [
 ].map((path) => new URL(path, SCOPE).pathname);
 
 // --- Instalação: pré-cacheia o shell ---
+// IMPORTANTE: usar { cache: "reload" } em vez de cache.addAll() puro.
+// cache.addAll() faz fetch() em modo "default", que pode reutilizar o
+// cache HTTP do próprio browser — no GitHub Pages os assets têm
+// Cache-Control: max-age=600, por isso um deploy feito há menos de 10
+// minutos podia ficar pré-cacheado com uma versão desatualizada de um
+// ficheiro (ex.: style.css) mesmo já tendo bytes novos na origem,
+// enquanto outros ficheiros (ex.: um módulo .js pedido por import()
+// fora do SW) chegavam frescos — sintoma: UI com JS novo mas CSS
+// antigo a coexistir. { cache: "reload" } força bypass do cache HTTP
+// em cada pré-cache, garantindo que o SW nunca herda uma cópia stale.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) =>
+        Promise.all(
+          STATIC_ASSETS.map((url) =>
+            fetch(url, { cache: "reload" }).then((response) => {
+              if (response && response.ok) return cache.put(url, response);
+            })
+          )
+        )
+      )
       .then(() => self.skipWaiting())
   );
 });
