@@ -114,6 +114,17 @@
 /* -----------------------------
    2. Reset base
    ----------------------------- */
+/* O atributo [hidden] tem a mesma especificidade que uma classe (ex.:
+   .taximetro-field { display: flex }) — sem !important, uma classe
+   com display definido no MESMO elemento pode "ganhar" ao hidden e o
+   elemento continua visível apesar do atributo (bug real encontrado
+   no seletor de concelho do IMI: escondia-o com .hidden = true, mas
+   .taximetro-field { display: flex } sobrepunha-se). Esta regra
+   garante que [hidden] esconde sempre, em qualquer elemento. */
+[hidden] {
+  display: none !important;
+}
+
 *,
 *::before,
 *::after {

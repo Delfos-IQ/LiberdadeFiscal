@@ -25,6 +25,7 @@ import { getSetting, atualizarPeriodoAtual } from "../data/db.js";
 import { CATEGORIAS_GASTOS_PT } from "../data/categorias-gastos-pt.js";
 import { decomporIVADeTotal, calcularITCigarros } from "../data/tax-engine.js";
 import { IMPOSTOS_ESPECIAIS_2026 } from "../data/tax-rules/2026/impostos-especiais.js";
+import { IVA_2026 } from "../data/tax-rules/2026/iva.js";
 import { render as renderOnboarding } from "./onboarding.js";
 
 // Ícones por categoria — puramente decorativos (aria-hidden), mesmo
@@ -322,40 +323,58 @@ function renderGastosApp(container, regiao) {
   function atualizarDesgloseCategoria(cat, wrap) {
     wrap.id = `desglose-${cat.id}`;
     wrap.innerHTML = "";
+
+    // A taxa de IVA aplicável não depende do valor introduzido — por
+    // isso mostramo-la sempre, mesmo com o campo vazio ou a 0€, em vez
+    // de só aparecer depois de já teres escrito um número. Pedido
+    // explícito: "em todas as categorias tem de estar escrito qual é
+    // o % de IVA pago", não só nas que já têm valor.
+    const nivelIva = cat.tipo === "combustivel" ? "normal" : cat.tipo;
+    const taxaIva = IVA_2026.taxas[regiao][nivelIva];
+    const percentagemIva = Math.round(taxaIva * 100);
+
     const valor = Number(valores[cat.id]);
-    if (!Number.isFinite(valor) || valor <= 0) return;
+    const temValor = Number.isFinite(valor) && valor > 0;
+    let especial = null;
 
-    const { desglose, especial } = calcularDesgloseCategoria(cat, valor);
+    if (temValor) {
+      const resultado = calcularDesgloseCategoria(cat, valor);
+      const desglose = resultado.desglose;
+      especial = resultado.especial;
 
-    // O IVA mostrado NÃO é "23% de 100€" (isso seriam 23€) — é os 23%
-    // já embutidos nos 100€ que indicaste, porque o valor que
-    // introduzes é o preço final que pagaste, já com IVA incluído (o
-    // preço de prateleira/talão), não o preço antes de imposto. Por
-    // isso: base = 100 / 1,23 = 81,30€, e o IVA é a diferença
-    // (100 − 81,30 = 18,70€), não 23% × 100. Mostramos sempre o "Preço
-    // sem impostos" para quem quiser confirmar a conta à mão.
-    const precoSemImpostos = especial
-      ? round2(desglose.baseTributavel - especial.valor)
-      : desglose.baseTributavel;
+      // O IVA mostrado NÃO é "23% de 100€" (isso seriam 23€) — é os
+      // 23% já embutidos nos 100€ que indicaste, porque o valor que
+      // introduzes é o preço final que pagaste, já com IVA incluído
+      // (o preço de prateleira/talão), não o preço antes de imposto.
+      // Por isso: base = 100 / 1,23 = 81,30€, e o IVA é a diferença
+      // (100 − 81,30 = 18,70€), não 23% × 100. Mostramos sempre o
+      // "Preço sem impostos" para quem quiser confirmar a conta à mão.
+      const precoSemImpostos = especial
+        ? round2(desglose.baseTributavel - especial.valor)
+        : desglose.baseTributavel;
 
-    const dl = el("dl", "taximetro-cadeia");
-    appendItem(dl, "Preço sem impostos", formatEUR(precoSemImpostos));
-    if (especial) {
-      appendItem(dl, `Imposto especial (${especial.tipo})`, formatEUR(especial.valor));
+      const dl = el("dl", "taximetro-cadeia");
+      appendItem(dl, "Preço sem impostos", formatEUR(precoSemImpostos));
+      if (especial) {
+        appendItem(dl, `Imposto especial (${especial.tipo})`, formatEUR(especial.valor));
+      }
+      appendItem(dl, "IVA (estimado)", formatEUR(desglose.imposto));
+      appendItem(dl, "= Total que indicaste", formatEUR(valor));
+      wrap.append(dl);
     }
-    appendItem(dl, "IVA (estimado)", formatEUR(desglose.imposto));
-    appendItem(dl, "= Total que indicaste", formatEUR(valor));
-    wrap.append(dl);
 
     // Percentagem de IVA explícita — pedido para aparecer em todas as
     // categorias, não só o valor em euros.
-    const percentagemIva = Math.round(desglose.taxa * 100);
     const fonte = el(
       "p",
       "disclaimer",
-      `Taxa de IVA aplicada: ${percentagemIva}% (${labelNivel(cat.tipo === "combustivel" ? "normal" : cat.tipo)}, ${labelRegiao(regiao)}). O IVA já está incluído no valor que indicaste — por isso não é ${percentagemIva}% × ${formatEUR(valor)}, é a parte de IVA já embutida nesse valor (preço sem impostos × ${percentagemIva}%). Fonte: Código do IVA (CIVA), Art. 18.º e Listas I/II anexas.`
+      temValor
+        ? `Taxa de IVA aplicada: ${percentagemIva}% (${labelNivel(nivelIva)}, ${labelRegiao(regiao)}). O IVA já está incluído no valor que indicaste — por isso não é ${percentagemIva}% × ${formatEUR(valor)}, é a parte de IVA já embutida nesse valor (preço sem impostos × ${percentagemIva}%). Fonte: Código do IVA (CIVA), Art. 18.º e Listas I/II anexas.`
+        : `Taxa de IVA aplicada: ${percentagemIva}% (${labelNivel(nivelIva)}, ${labelRegiao(regiao)}). Fonte: Código do IVA (CIVA), Art. 18.º e Listas I/II anexas.`
     );
     wrap.append(fonte);
+
+    if (!temValor) return;
 
     if (cat.duplaTributacao === "combustivel" && !especial) {
       wrap.append(
