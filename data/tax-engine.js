@@ -362,6 +362,115 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
   };
 }
 
+/**
+ * Cadeia salarial para declaração conjunta de IRS com DOIS rendimentos
+ * distintos (roadmap P3-15, "agregado familiar") — cobre o caso que
+ * `calcularCadeiaSalarial(..., { estadoCivil: "conjunta" })` não cobre
+ * bem: quando há duas pessoas do agregado com salário próprio, o
+ * quociente familiar (Art. 69.º CIRS) tem de dividir a SOMA dos dois
+ * rendimentos coletáveis por 2, não o rendimento de uma pessoa só. Se
+ * só há um rendimento no agregado, continua a fazer mais sentido usar
+ * `calcularCadeiaSalarial` diretamente.
+ *
+ * A Segurança Social NÃO é conjunta — cada pessoa desconta sobre o seu
+ * próprio salário, por isso esta função calcula a TSU de cada pessoa
+ * separadamente e só junta os dois rendimentos coletáveis para o IRS.
+ * Ambas as pessoas são assumidas como trabalhadoras por conta de
+ * outrem (regime geral) — não cobre o caso de uma delas ser
+ * independente, para não multiplicar a combinatória de casos numa
+ * primeira versão (ver `notes` da resposta).
+ *
+ * @param {number} salarioBrutoMensalA
+ * @param {number} salarioBrutoMensalB
+ * @param {object} [opcoes]
+ * @param {"continente"|"acores"|"madeira"} [opcoes.regiao]
+ * @param {Array<{idade: number}>} [opcoes.dependentes]
+ * @returns {{
+ *   modo: "conjunta-dois-rendimentos",
+ *   tipoTrabalhador: "dependente",
+ *   custoTotalEmpregadorMensal: number,
+ *   salarioBrutoMensal: number,
+ *   descontoSSMensal: number,
+ *   irsAnualAntesDeDeducoes: number,
+ *   deducaoAnualPorDependentes: number,
+ *   irsEstimadoMensal: number,
+ *   salarioLiquidoMensal: number,
+ *   detalheAnual: { rendimentoBrutoAnual: number, rendimentoColetavelAnual: number, irs: object },
+ *   pessoaA: object, pessoaB: object,
+ *   metodologia: string,
+ * }}
+ */
+export function calcularCadeiaSalarialConjunta(salarioBrutoMensalA, salarioBrutoMensalB, opcoes = {}) {
+  const { regiao = "continente", dependentes = [] } = opcoes;
+
+  if (typeof salarioBrutoMensalA !== "number" || salarioBrutoMensalA < 0) {
+    throw new RangeError("salarioBrutoMensalA deve ser um número >= 0.");
+  }
+  if (typeof salarioBrutoMensalB !== "number" || salarioBrutoMensalB < 0) {
+    throw new RangeError("salarioBrutoMensalB deve ser um número >= 0.");
+  }
+
+  // Cada pessoa calcula a sua própria TSU/SS e dedução específica da
+  // Categoria A (Art. 25.º CIRS é por sujeito passivo, não por
+  // agregado) — chamamos a cadeia individual só até esse ponto,
+  // "individual" aqui é só para não aplicar o quociente familiar duas
+  // vezes (aplicamo-lo uma única vez, a seguir, sobre a soma).
+  const cadeiaA = calcularCadeiaSalarial(salarioBrutoMensalA, {
+    tipoTrabalhador: "dependente",
+    estadoCivil: "individual",
+    regiao,
+  });
+  const cadeiaB = calcularCadeiaSalarial(salarioBrutoMensalB, {
+    tipoTrabalhador: "dependente",
+    estadoCivil: "individual",
+    regiao,
+  });
+
+  const rendimentoColetavelAnual = round2(
+    cadeiaA.detalheAnual.rendimentoColetavelAnual + cadeiaB.detalheAnual.rendimentoColetavelAnual
+  );
+  const quocienteFamiliar = IRS_2026.quocienteFamiliar.declaracaoConjuntaCasadosOuUnidoFacto;
+  const irs = calculateIRS(rendimentoColetavelAnual, { regiao, quocienteFamiliar });
+
+  const deducaoDependentes =
+    dependentes.length > 0 ? calcularDeducaoDependentes(dependentes) : { totalDeducao: 0 };
+  const irsAnualAposDeducoes = Math.max(0, irs.imposto - deducaoDependentes.totalDeducao);
+  const irsMensal = irsAnualAposDeducoes / 12;
+
+  const rendimentoBrutoMensal = round2(salarioBrutoMensalA + salarioBrutoMensalB);
+  const descontoSSMensal = round2(cadeiaA.descontoSSMensal + cadeiaB.descontoSSMensal);
+  const custoTotalEmpregadorMensal = round2(cadeiaA.custoTotalEmpregadorMensal + cadeiaB.custoTotalEmpregadorMensal);
+  const rendimentoBrutoAnual = round2(cadeiaA.detalheAnual.rendimentoBrutoAnual + cadeiaB.detalheAnual.rendimentoBrutoAnual);
+  const liquidoMensal = round2(rendimentoBrutoMensal - descontoSSMensal - irsMensal);
+
+  return {
+    modo: "conjunta-dois-rendimentos",
+    tipoTrabalhador: "dependente",
+    custoTotalEmpregadorMensal,
+    salarioBrutoMensal: rendimentoBrutoMensal,
+    descontoSSMensal,
+    irsAnualAntesDeDeducoes: irs.imposto,
+    deducaoAnualPorDependentes: deducaoDependentes.totalDeducao,
+    irsEstimadoMensal: round2(irsMensal),
+    salarioLiquidoMensal: liquidoMensal,
+    detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs },
+    pessoaA: {
+      salarioBrutoMensal: cadeiaA.salarioBrutoMensal,
+      descontoSSMensal: cadeiaA.descontoSSMensal,
+      custoTotalEmpregadorMensal: cadeiaA.custoTotalEmpregadorMensal,
+      rendimentoColetavelAnual: cadeiaA.detalheAnual.rendimentoColetavelAnual,
+    },
+    pessoaB: {
+      salarioBrutoMensal: cadeiaB.salarioBrutoMensal,
+      descontoSSMensal: cadeiaB.descontoSSMensal,
+      custoTotalEmpregadorMensal: cadeiaB.custoTotalEmpregadorMensal,
+      rendimentoColetavelAnual: cadeiaB.detalheAnual.rendimentoColetavelAnual,
+    },
+    metodologia:
+      "Declaração conjunta com dois rendimentos: somámos o rendimento coletável de cada pessoa (cada uma com a sua própria dedução específica da Categoria A) e só depois aplicámos o quociente familiar (divisor 2, Art. 69.º CIRS) sobre o total — dividimos, aplicámos os escalões, e multiplicámos o imposto de volta por 2. A Segurança Social não é conjunta: cada pessoa desconta sobre o seu próprio salário, por isso somámos os dois descontos sem os passar pelo quociente familiar. Assumimos as duas pessoas como trabalhadoras por conta de outrem (regime geral) — não cobre ainda o caso de uma delas ser trabalhadora independente. Tal como no Modo Rápido individual, assumimos 12 pagamentos mensais iguais e só aplicamos a dedução dos dependentes, mais nenhuma outra dedução à coleta.",
+  };
+}
+
 /* ============================================================
    4. IVA
    ============================================================ */

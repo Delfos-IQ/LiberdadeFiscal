@@ -243,6 +243,82 @@ describe("Taxímetro — Modo Avançado", () => {
   });
 });
 
+describe("Taxímetro — agregado familiar / declaração conjunta com dois rendimentos (roadmap P3-15)", () => {
+  test("o campo do rendimento do cônjuge só aparece quando 'conjunta' está selecionado", () => {
+    const container = getContainer();
+    render(container);
+    assert.equal(container.querySelector("#salario-bruto-conjuge"), null);
+
+    setSelect(container, "estado-civil", "conjunta");
+    assert.ok(container.querySelector("#salario-bruto-conjuge"));
+
+    setSelect(container, "estado-civil", "individual");
+    assert.equal(container.querySelector("#salario-bruto-conjuge"), null);
+  });
+
+  test("sem preencher o rendimento do cônjuge, 'conjunta' continua a comportar-se como antes (um só rendimento)", () => {
+    const container = getContainer();
+    render(container);
+    setInput(container, "salario-bruto", 2000);
+    setSelect(container, "estado-civil", "conjunta");
+    submitForm(container);
+
+    assert.ok(container.querySelector("#taximetro-result-heading"));
+    assert.match(container.textContent, /Salário bruto/);
+    assert.doesNotMatch(container.textContent, /Rendimento bruto combinado do agregado/);
+  });
+
+  test("preenchendo os dois rendimentos, mostra o resultado combinado e a repartição por pessoa", () => {
+    const container = getContainer();
+    render(container);
+    setInput(container, "salario-bruto", 2000);
+    setSelect(container, "estado-civil", "conjunta");
+    setInput(container, "salario-bruto-conjuge", 1500);
+    submitForm(container);
+
+    assert.ok(container.querySelector("#taximetro-result-heading"));
+    assert.match(container.textContent, /Rendimento bruto combinado do agregado/);
+    assert.match(container.textContent, /Pessoa A — rendimento bruto/);
+    assert.match(container.textContent, /Pessoa B — rendimento bruto/);
+    // 2000 + 1500 = 3500€ combinados
+    assert.match(container.textContent, /3\s?500,00\s?€|3.500,00\s?€/);
+  });
+
+  test("rendimento do cônjuge inválido (negativo) mostra erro em vez de calcular", () => {
+    const container = getContainer();
+    render(container);
+    setInput(container, "salario-bruto", 2000);
+    setSelect(container, "estado-civil", "conjunta");
+    setInput(container, "salario-bruto-conjuge", -100);
+    submitForm(container);
+
+    const erro = container.querySelector('[role="alert"]');
+    assert.ok(erro);
+    assert.match(erro.textContent, /cônjuge/);
+    assert.equal(container.querySelector("#taximetro-result-heading"), null);
+  });
+
+  test("'Guardar e avançar' persiste o resultado conjunto e a rehidratação volta a mostrá-lo", async () => {
+    window.location.hash = "";
+    const container = getContainer();
+    render(container);
+    setInput(container, "salario-bruto", 2200);
+    setSelect(container, "estado-civil", "conjunta");
+    setInput(container, "salario-bruto-conjuge", 1800);
+    submitForm(container);
+    await waitFor(() => container.querySelector("#taximetro-result-heading"));
+
+    const avancarBtn = [...container.querySelectorAll("button")].find((b) => b.textContent.includes("Guardar e avançar"));
+    avancarBtn.click();
+    await waitFor(() => window.location.hash === "#faturas");
+
+    const periodo = await getPeriodoAtual();
+    assert.equal(periodo.rendimentos.modo, "conjunta-dois-rendimentos");
+    assert.equal(periodo.rendimentos.pessoaA.salarioBrutoMensal, 2200);
+    assert.equal(periodo.rendimentos.pessoaB.salarioBrutoMensal, 1800);
+  });
+});
+
 describe("Taxímetro — acessibilidade e ciclo de vida", () => {
   test("o heading principal recebe foco ao carregar o formulário", () => {
     const container = getContainer();

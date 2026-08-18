@@ -15,6 +15,7 @@ import {
   calcularRendimentoColetavelCategoriaA,
   calculateTSU,
   calcularCadeiaSalarial,
+  calcularCadeiaSalarialConjunta,
   calculateIVA,
   decomporIVADeTotal,
   decomporCombustivel,
@@ -158,6 +159,70 @@ describe("calcularCadeiaSalarial", () => {
     const c = calcularCadeiaSalarial(2500);
     const esperado = round2(c.salarioBrutoMensal - c.descontoSSMensal - c.irsEstimadoMensal);
     assert.equal(c.salarioLiquidoMensal, esperado);
+  });
+});
+
+describe("calcularCadeiaSalarialConjunta (roadmap P3-15 — agregado familiar)", () => {
+  test("rejeita salários negativos", () => {
+    assert.throws(() => calcularCadeiaSalarialConjunta(-1, 2000), RangeError);
+    assert.throws(() => calcularCadeiaSalarialConjunta(2000, -1), RangeError);
+  });
+
+  test("soma os rendimentos brutos e os custos de ambas as pessoas", () => {
+    const c = calcularCadeiaSalarialConjunta(2000, 1500);
+    assert.equal(c.salarioBrutoMensal, 3500);
+    assert.equal(c.pessoaA.salarioBrutoMensal, 2000);
+    assert.equal(c.pessoaB.salarioBrutoMensal, 1500);
+    assert.equal(
+      round2(c.custoTotalEmpregadorMensal),
+      round2(c.pessoaA.custoTotalEmpregadorMensal + c.pessoaB.custoTotalEmpregadorMensal)
+    );
+  });
+
+  test("a Segurança Social é a soma simples dos dois descontos individuais (não passa pelo quociente familiar)", () => {
+    const c = calcularCadeiaSalarialConjunta(2000, 1500);
+    const individualA = calcularCadeiaSalarial(2000);
+    const individualB = calcularCadeiaSalarial(1500);
+    assert.equal(c.descontoSSMensal, round2(individualA.descontoSSMensal + individualB.descontoSSMensal));
+  });
+
+  test("um casal com rendimentos muito assimétricos paga MENOS IRS conjunto do que a soma dos IRS individuais (efeito do quociente familiar)", () => {
+    // Este é precisamente o cenário que calcularCadeiaSalarial(x, {estadoCivil: "conjunta"})
+    // não conseguia capturar bem: com um só rendimento alto e outro
+    // baixo/zero, dividir a SOMA por 2 (quociente familiar real) dá
+    // uma taxa marginal mais baixa do que somar dois cálculos
+    // individuais separados.
+    const salarioAltoA = 4000;
+    const salarioBaixoB = 900;
+
+    const conjunto = calcularCadeiaSalarialConjunta(salarioAltoA, salarioBaixoB);
+    const individualA = calcularCadeiaSalarial(salarioAltoA);
+    const individualB = calcularCadeiaSalarial(salarioBaixoB);
+    const somaIndividuais = round2(individualA.irsAnualAntesDeDeducoes + individualB.irsAnualAntesDeDeducoes);
+
+    assert.ok(
+      conjunto.irsAnualAntesDeDeducoes < somaIndividuais,
+      "o IRS conjunto (quociente sobre a soma) devia ser menor que a soma dos IRS individuais quando os rendimentos são assimétricos"
+    );
+  });
+
+  test("com dois rendimentos iguais, o IRS conjunto é igual ao dobro do IRS de cada um individualmente (quociente neutro)", () => {
+    const conjunto = calcularCadeiaSalarialConjunta(2000, 2000);
+    const individual = calcularCadeiaSalarial(2000);
+    assert.equal(conjunto.irsAnualAntesDeDeducoes, round2(individual.irsAnualAntesDeDeducoes * 2));
+  });
+
+  test("líquido mensal = bruto combinado - SS combinado - IRS mensal conjunto", () => {
+    const c = calcularCadeiaSalarialConjunta(2200, 1700);
+    const esperado = round2(c.salarioBrutoMensal - c.descontoSSMensal - c.irsEstimadoMensal);
+    assert.equal(c.salarioLiquidoMensal, esperado);
+  });
+
+  test("aplica a dedução por dependentes ao IRS conjunto", () => {
+    const semDependentes = calcularCadeiaSalarialConjunta(2200, 1700);
+    const comDependentes = calcularCadeiaSalarialConjunta(2200, 1700, { dependentes: [{ idade: 8 }] });
+    assert.ok(comDependentes.deducaoAnualPorDependentes > 0);
+    assert.ok(comDependentes.irsEstimadoMensal < semDependentes.irsEstimadoMensal);
   });
 });
 

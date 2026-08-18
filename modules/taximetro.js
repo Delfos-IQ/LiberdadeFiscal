@@ -15,7 +15,7 @@
 // enganar o utilizador a pensar que influencia o resultado. Fica
 // registado aqui para não parecer um esquecimento.
 
-import { calcularCadeiaSalarial } from "../data/tax-engine.js";
+import { calcularCadeiaSalarial, calcularCadeiaSalarialConjunta } from "../data/tax-engine.js";
 import { atualizarPeriodoAtual, getPeriodoAtual } from "../data/db.js";
 
 const REGIOES = [
@@ -29,6 +29,7 @@ export function render(container) {
     phase: "form",
     modo: "rapido",
     salarioBruto: "",
+    salarioBrutoConjuge: "", // roadmap P3-15 — só usado quando estadoCivil === "conjunta"
     estadoCivil: "individual",
     tipoTrabalhador: "dependente",
     regiao: "continente",
@@ -83,13 +84,35 @@ export function render(container) {
     // (dedução de 600€/ano cada) como simplificação conservadora —
     // comunicado explicitamente no ecrã de resultado, nunca escondido.
 
+    // Roadmap P3-15 (agregado familiar): se o utilizador escolheu
+    // declaração conjunta E preencheu um segundo rendimento, usamos a
+    // cadeia de dois rendimentos (soma os coletáveis antes de aplicar
+    // o quociente familiar — Art. 69.º CIRS). Se deixou o campo do
+    // cônjuge em branco, mantemos o comportamento anterior (quociente
+    // aplicado a um único rendimento) — não obrigamos ninguém a
+    // preencher um segundo salário só porque assinalou "conjunta".
+    const salarioConjuge = Number(state.salarioBrutoConjuge);
+    const temSegundoRendimento =
+      state.estadoCivil === "conjunta" && state.salarioBrutoConjuge !== "" && Number.isFinite(salarioConjuge);
+
+    if (state.estadoCivil === "conjunta" && state.salarioBrutoConjuge !== "" && (!Number.isFinite(salarioConjuge) || salarioConjuge < 0)) {
+      state.erro = "O rendimento do cônjuge/unido de facto tem de ser um número válido, maior ou igual a zero (ou deixa o campo em branco).";
+      draw();
+      return;
+    }
+
     try {
-      const resultado = calcularCadeiaSalarial(salario, {
-        tipoTrabalhador: state.tipoTrabalhador,
-        estadoCivil: state.estadoCivil,
-        dependentes,
-        regiao: state.regiao,
-      });
+      const resultado = temSegundoRendimento
+        ? calcularCadeiaSalarialConjunta(salario, salarioConjuge, {
+            regiao: state.regiao,
+            dependentes,
+          })
+        : calcularCadeiaSalarial(salario, {
+            tipoTrabalhador: state.tipoTrabalhador,
+            estadoCivil: state.estadoCivil,
+            dependentes,
+            regiao: state.regiao,
+          });
       state.erro = null;
       state.resultado = resultado;
       state.usouSimplificacaoDependentes = state.modo === "rapido" && dependentes.length > 0;
@@ -174,12 +197,39 @@ export function render(container) {
         state.estadoCivil,
         (v) => {
           state.estadoCivil = v;
+          draw();
         }
       ),
       fieldSelect("regiao", "Região", REGIOES, state.regiao, (v) => {
         state.regiao = v;
       })
     );
+
+    if (state.estadoCivil === "conjunta") {
+      // Roadmap P3-15: campo opcional para o rendimento do
+      // cônjuge/unido de facto. Se ficar em branco, mantemos o
+      // comportamento anterior (quociente familiar sobre um único
+      // rendimento) — só ativamos a cadeia de dois rendimentos quando
+      // este campo tem um valor.
+      form.append(
+        fieldNumber(
+          "salario-bruto-conjuge",
+          "Rendimento bruto mensal do cônjuge/unido de facto (opcional)",
+          state.salarioBrutoConjuge,
+          (v) => {
+            state.salarioBrutoConjuge = v;
+          },
+          { euro: true }
+        )
+      );
+      form.append(
+        el(
+          "p",
+          "stat-label",
+          "Se preencheres este campo, somamos os dois rendimentos coletáveis antes de aplicar o quociente familiar (Art. 69.º CIRS) — mais rigoroso do que assumir que só há um rendimento no agregado. A Segurança Social continua a ser calculada em separado para cada pessoa."
+        )
+      );
+    }
 
     if (state.modo === "rapido") {
       form.append(
@@ -260,17 +310,32 @@ export function render(container) {
     heading.id = "taximetro-result-heading";
     heading.tabIndex = -1;
 
+    const ehAgregado = r.modo === "conjunta-dois-rendimentos";
+
     const liquido = el("p", "stat-hero stat-hero--green", formatEUR(r.salarioLiquidoMensal));
-    const liquidoLabel = el("p", "stat-label", "Salário líquido mensal estimado");
+    const liquidoLabel = el(
+      "p",
+      "stat-label",
+      ehAgregado ? "Rendimento líquido mensal estimado do agregado" : "Salário líquido mensal estimado"
+    );
 
     // Cadeia completa e explícita — nunca um único número sem dizer o
     // que representa (spec §6.2).
     const cadeia = el("dl", "taximetro-cadeia");
     appendCadeiaItem(cadeia, "Custo total para o empregador", r.custoTotalEmpregadorMensal, r.tipoTrabalhador === "independente");
-    appendCadeiaItem(cadeia, "Salário bruto", r.salarioBrutoMensal);
+    appendCadeiaItem(cadeia, ehAgregado ? "Rendimento bruto combinado do agregado" : "Salário bruto", r.salarioBrutoMensal);
     appendCadeiaItem(cadeia, "Segurança Social", -r.descontoSSMensal);
     appendCadeiaItem(cadeia, "IRS estimado", -r.irsEstimadoMensal);
-    appendCadeiaItem(cadeia, "Salário líquido", r.salarioLiquidoMensal, false, true);
+    appendCadeiaItem(cadeia, ehAgregado ? "Rendimento líquido combinado" : "Salário líquido", r.salarioLiquidoMensal, false, true);
+
+    let porPessoa = null;
+    if (ehAgregado) {
+      porPessoa = el("dl", "taximetro-cadeia");
+      appendCadeiaItem(porPessoa, "Pessoa A — rendimento bruto", r.pessoaA.salarioBrutoMensal);
+      appendCadeiaItem(porPessoa, "Pessoa A — Segurança Social", -r.pessoaA.descontoSSMensal);
+      appendCadeiaItem(porPessoa, "Pessoa B — rendimento bruto", r.pessoaB.salarioBrutoMensal);
+      appendCadeiaItem(porPessoa, "Pessoa B — Segurança Social", -r.pessoaB.descontoSSMensal);
+    }
 
     let perguntasCusto = null;
     if (r.tipoTrabalhador !== "independente") {
@@ -368,6 +433,16 @@ export function render(container) {
     );
 
     card.append(heading, liquido, liquidoLabel, cadeia);
+    if (porPessoa) {
+      card.append(
+        el(
+          "p",
+          "stat-label",
+          "Por pessoa (a Segurança Social é sempre individual — só o IRS é calculado em conjunto):"
+        ),
+        porPessoa
+      );
+    }
     if (perguntasCusto) card.append(perguntasCusto);
     card.append(detalhes, privacidade, botoes);
     container.append(card);

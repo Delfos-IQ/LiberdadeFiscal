@@ -78,6 +78,7 @@ condições abaixo.
 | `calcularRendimentoColetavelCategoriaA(bruto, ssAnual)` | IRS — dedução específica Cat. A (Art. 25.º) | ✅ Verified |
 | `calculateTSU(salarioBrutoMensal)` | Segurança Social — TSU regime geral | ✅ Verified |
 | `calcularCadeiaSalarial(salarioBrutoMensal, opcoes)` | Cadeia bruto→líquido completa (orquestra IRS+SS) | mista, ver campos individuais |
+| `calcularCadeiaSalarialConjunta(salarioBrutoMensalA, salarioBrutoMensalB, opcoes)` | Cadeia bruto→líquido para declaração conjunta com DOIS rendimentos (roadmap P3-15) | mista; soma coletáveis antes do quociente familiar, SS sempre por pessoa |
 | `calculateIVA(baseTributavel, regiao, nivel)` | IVA, a partir da base | ✅ Verified |
 | `decomporIVADeTotal(valorTotal, regiao, nivel)` | IVA, a partir do total já pago | ✅ Verified |
 | `decomporCombustivel(valorTotalPago, tipo, regiao)` | ISP + IVA sobre combustível | ESTIMATE, ISP muda por portaria semanal/mensal |

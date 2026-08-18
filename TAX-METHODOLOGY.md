@@ -105,6 +105,24 @@ rendimento coletável por 2 antes de aplicar os escalões, multiplica o
 imposto de volta por 2 no fim. Declaração individual: quociente 1
 (sem efeito). Implementado em `calculateIRS(rendimento, { quocienteFamiliar })`.
 
+**Dois rendimentos no mesmo agregado (roadmap P3-15, `calcularCadeiaSalarialConjunta()`)**:
+`calcularCadeiaSalarial(x, { estadoCivil: "conjunta" })` aplica o
+quociente familiar a um ÚNICO rendimento — correto só se esse for
+mesmo o único rendimento do agregado. Quando há dois rendimentos
+distintos (ex.: um casal em que ambos trabalham), o cálculo correto
+soma primeiro os dois rendimentos coletáveis (cada um já com a sua
+própria dedução específica da Categoria A, Art. 25.º CIRS, que é por
+sujeito passivo) e só depois aplica o quociente 2 sobre a SOMA — não
+sobre um rendimento sozinho. `calcularCadeiaSalarialConjunta(salarioA,
+salarioB, opcoes)` implementa isto; a UI de Rendimentos usa-a
+automaticamente quando o utilizador preenche o campo opcional do
+rendimento do cônjuge. A Segurança Social nunca é conjunta — cada
+pessoa desconta sobre o seu próprio salário, por isso os dois
+descontos de SS são só somados, nunca passados pelo quociente
+familiar. Esta função assume as duas pessoas como trabalhadoras por
+conta de outrem (regime geral); não cobre ainda o caso de uma delas
+ser trabalhadora independente.
+
 ### Dedução à coleta por dependente (Art. 78.º-A CIRS) — ✅ Verificado (Fase 4)
 
 Subtrai-se **diretamente ao imposto já calculado**, nunca ao
