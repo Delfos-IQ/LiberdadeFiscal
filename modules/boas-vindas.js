@@ -17,6 +17,13 @@
 // próprio init() em app.js já trata esse caso (modo efémero) — aqui
 // basta não deixar a app presa: um erro ao gravar a flag não deve
 // impedir onComplete().
+//
+// Propósito/valor (18/08/2026, a pedido do autor): o ecrã passou a
+// abrir com um parágrafo de propósito antes da explicação do símbolo
+// — "porque existe esta app", não só "o que significa o logótipo".
+// Escrito deliberadamente para motivar literacia fiscal e pensamento
+// crítico sem sugerir qualquer conclusão política; ver a mesma
+// disciplina reforçada no ecrã de resultado (modules/dia-liberdade.js).
 
 import { setSetting } from "../data/db.js";
 
@@ -71,10 +78,22 @@ export function render(container, { onComplete }) {
   heading.id = "welcome-hero-heading";
   heading.tabIndex = -1;
 
+  // Propósito do produto — vem antes da explicação do símbolo de
+  // propósito. Escrito para dar "gancho" sem tomar partido: o objetivo
+  // é motivar literacia fiscal e participação crítica no debate
+  // público, nunca sugerir uma conclusão política (CLAUDE.md §1, §10 —
+  // neutralidade e proibição de linguagem partidária são não
+  // negociáveis neste projeto).
+  const proposito = el(
+    "p",
+    "welcome-hero__proposito",
+    "Sabes mesmo quanto do teu trabalho fica contigo depois de todos os impostos — diretos, indiretos, especiais e patrimoniais? A maioria das pessoas nunca fez essa conta. Esta app existe para tornar essa resposta clara, verificável e tua, para que possas formar a tua própria opinião sobre os temas fiscais que moldam o debate público — com dados, não com slogans."
+  );
+
   const lead = el(
     "p",
     "welcome-hero__lead",
-    "Escolhemos uma ave para símbolo — voa livre, sem depender de ninguém. As barras de crescimento na base representam dados: claros, verificáveis, teus. Antes de começares, os quatro princípios que guiam este projeto."
+    "Escolhemos uma ave para símbolo — voa livre, sem depender de ninguém. Antes de começares, os quatro princípios que guiam este projeto."
   );
 
   const list = el("div", "welcome-promises");
@@ -118,7 +137,7 @@ export function render(container, { onComplete }) {
     onComplete();
   });
 
-  section.append(logo, heading, lead, list, naoMostrarWrap, cta);
+  section.append(logo, heading, proposito, lead, list, naoMostrarWrap, cta);
   container.append(section);
   heading.focus({ preventScroll: false });
 }

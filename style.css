@@ -903,6 +903,13 @@ p {
   margin: 0 0 var(--space-3);
 }
 
+.welcome-hero__proposito {
+  color: var(--color-text);
+  max-width: 52ch;
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-base);
+}
+
 .welcome-hero__lead {
   color: var(--color-text-muted);
   max-width: 46ch;

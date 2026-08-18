@@ -203,7 +203,7 @@ export function render(container) {
     const pensarCritico = el(
       "p",
       null,
-      "Um número como este só ganha sentido quando percebes a fórmula por trás dele — e é exatamente por isso que este resultado vem sempre acompanhado da sua metodologia, nunca sozinho. Quanto mais claro o método, mais informada é a tua opinião sobre ele."
+      "Agora já sabes o número. O que fazes com ele é contigo — mas sabê-lo com precisão, em vez de por intuição ou por slogan, é o que te permite avaliar por ti próprio/a as propostas e os debates fiscais que ouves, venham de onde vierem. Um número como este só ganha sentido quando percebes a fórmula por trás dele, por isso vem sempre acompanhado da sua metodologia, nunca sozinho."
     );
     pensarCritico.className = "disclaimer";
 
