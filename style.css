@@ -68,6 +68,12 @@
   --color-text-on-navy: var(--color-white);
   --color-text-on-navy-muted: #AEB6C4;
 
+  /* Base usada nas mesclas color-mix() de fundos "tintados" (cartões de
+     estado, destaques). Em modo claro é branco; o bloco de modo escuro
+     abaixo troca-a por uma superfície escura, para que estes fundos
+     tintados continuem a fazer sentido sem inverter (P2-12). */
+  --surface-tint: var(--color-white);
+
   /* Tipografía */
   --font-family-base: "Poppins", "Segoe UI", system-ui, -apple-system,
     Roboto, sans-serif;
@@ -109,6 +115,43 @@
   /* Layout */
   --content-max-width: 640px;
   --transition-base: 160ms ease;
+}
+
+/* -----------------------------
+   1b. Modo escuro (P2-12, prefers-color-scheme)
+   ----------------------------- */
+/* Segue a preferência do sistema operativo do utilizador — não há
+   comutador manual na app (menos um estado para gerir e testar; a
+   generalidade dos utilizadores já define isto ao nível do SO/browser).
+   Reaproveita a mesma paleta da identidade (navy/green/mint/gold), só
+   troca os papéis de fundo/superfície/texto — os tokens semânticos
+   (--color-text, --color-border, etc.) garantem que os componentes não
+   precisam de saber que há um modo escuro, só os tokens mudam. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0B0F17;
+    --color-white: #161C28; /* "branco" semântico = superfície de cartão em modo escuro */
+    --color-text: #EDEFF2;
+    --color-text-muted: #A7AFBC;
+    --color-border: #2B3444;
+    --color-danger: #FF6B6E; /* aclarado — #E5484D não cumpre 4,5:1 sobre fundo escuro */
+    --color-focus-ring: #6EA8FE; /* aclarado — mesma razão */
+    --color-green-text: #4ADE80; /* aclarado — #15803D fica sub-contrastado sobre fundo escuro */
+
+    --color-text-on-navy: var(--color-white);
+    --color-text-on-navy-muted: #AEB6C4;
+
+    --surface-tint: #1D2534;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.28);
+    --shadow-md: 0 8px 20px -6px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 16px 36px -12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.4);
+  }
+
+  /* .app-header e outros blocos que usam var(--color-navy) como fundo
+     fixo (não var(--color-background)) mantêm-se escuros nos dois
+     modos por desenho — já eram escuros em modo claro, por isso não
+     precisam de ajuste aqui. */
 }
 
 /* -----------------------------
@@ -198,7 +241,7 @@ a {
 }
 
 .link-button:hover {
-  color: var(--color-navy);
+  color: var(--color-text);
 }
 
 .app-footer__links {
@@ -278,7 +321,7 @@ h4 {
   font-weight: var(--font-weight-semibold);
   line-height: 1.2;
   margin: 0 0 var(--space-3);
-  color: var(--color-navy);
+  color: var(--color-text);
 }
 
 h1 {
@@ -303,7 +346,7 @@ p {
 .stat-hero {
   font-size: var(--font-size-hero);
   font-weight: var(--font-weight-bold);
-  color: var(--color-navy);
+  color: var(--color-text);
   line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -450,7 +493,7 @@ p {
 }
 
 .app-nav__item[aria-current="page"] .app-nav__icon-wrap {
-  background-color: color-mix(in srgb, var(--color-green) 20%, white);
+  background-color: color-mix(in srgb, var(--color-green) 20%, var(--surface-tint));
 }
 
 .app-nav__item:hover {
@@ -458,11 +501,11 @@ p {
 }
 
 .app-nav__item:hover .app-nav__icon-wrap {
-  background-color: color-mix(in srgb, var(--color-navy) 6%, white);
+  background-color: color-mix(in srgb, var(--color-navy) 6%, var(--surface-tint));
 }
 
 .app-nav__item[aria-current="page"]:hover .app-nav__icon-wrap {
-  background-color: color-mix(in srgb, var(--color-green) 26%, white);
+  background-color: color-mix(in srgb, var(--color-green) 26%, var(--surface-tint));
 }
 
 /* -----------------------------
@@ -515,13 +558,13 @@ p {
 
 .btn--secondary {
   background-color: var(--color-white);
-  color: var(--color-navy);
+  color: var(--color-text);
   border: 2px solid var(--color-border);
   box-shadow: var(--shadow-sm);
 }
 
 .btn--secondary:hover {
-  border-color: var(--color-navy);
+  border-color: var(--color-text);
   background-color: var(--color-background);
   transform: translateY(-1px);
 }
@@ -572,7 +615,7 @@ p {
   font-size: var(--font-size-xs);
   line-height: 1.55;
   color: var(--color-text-muted);
-  background-color: color-mix(in srgb, var(--color-mint) 16%, white);
+  background-color: color-mix(in srgb, var(--color-mint) 16%, var(--surface-tint));
   border-left: 3px solid var(--color-green-text);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: var(--space-2) var(--space-3);
@@ -614,7 +657,7 @@ p {
 .quiz-option--correct {
   border-color: var(--color-green-text);
   border-width: 3px;
-  background-color: color-mix(in srgb, var(--color-mint) 30%, white);
+  background-color: color-mix(in srgb, var(--color-mint) 30%, var(--surface-tint));
 }
 
 /* Mensagens de erro de validação (role="alert") — antes definidas via
@@ -636,8 +679,8 @@ p {
 }
 
 .quiz-feedback--incorrect {
-  background-color: color-mix(in srgb, var(--color-danger) 15%, white);
-  color: var(--color-navy);
+  background-color: color-mix(in srgb, var(--color-danger) 15%, var(--surface-tint));
+  color: var(--color-text);
 }
 
 /* -----------------------------
@@ -778,7 +821,7 @@ p {
 }
 
 .taximetro-escaloes tbody tr:nth-child(even) {
-  background-color: color-mix(in srgb, var(--color-background) 55%, white);
+  background-color: color-mix(in srgb, var(--color-background) 55%, var(--surface-tint));
 }
 
 .taximetro-escaloes tbody tr:last-child th,
@@ -926,7 +969,7 @@ p {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
-  background-color: color-mix(in srgb, var(--color-mint) 35%, white);
+  background-color: color-mix(in srgb, var(--color-mint) 35%, var(--surface-tint));
   color: var(--color-green-text);
 }
 
