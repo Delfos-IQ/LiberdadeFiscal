@@ -67,7 +67,7 @@ export function render(container) {
     const desc = el(
       "p",
       null,
-      `Testa o que sabes sobre impostos em Portugal. Cada sessão tem ${QUESTIONS_PER_SESSION} perguntas escolhidas aleatoriamente de um banco de ${QUIZ_QUESTIONS.length}, com explicação a seguir a cada resposta.`
+      `Testa o que sabes sobre impostos em Portugal. Cada sessão tem ${QUESTIONS_PER_SESSION} perguntas, com explicação a seguir a cada resposta.`
     );
 
     const startBtn = el("button", "btn btn--primary", "Começar o quiz");
