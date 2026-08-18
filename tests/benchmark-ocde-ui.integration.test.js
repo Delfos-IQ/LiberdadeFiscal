@@ -2,9 +2,13 @@
 // Internacional OCDE (Fase 8)
 // Executar: node --test tests/
 
-import { test, describe, before } from "node:test";
+import "fake-indexeddb/auto";
+import { test, describe, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
+
+import { dbClear, atualizarPeriodoAtual, setSetting } from "../data/db.js";
+import { calcularCadeiaSalarial, calcularCadeiaSalarialConjunta } from "../data/tax-engine.js";
 
 let render;
 
@@ -18,10 +22,26 @@ before(async () => {
   ({ render } = await import("../modules/benchmark-ocde.js"));
 });
 
+beforeEach(async () => {
+  // O período atual (incluindo rendimentos) e a região guardada vivem
+  // ambos em userSettings (ver data/db.js) — limpar este store chega
+  // para isolar os testes de pré-preenchimento uns dos outros.
+  await dbClear("userSettings");
+});
+
 function getContainer() {
   const container = document.createElement("div");
   document.body.appendChild(container);
   return container;
+}
+
+async function waitFor(predicate, { timeout = 1000, interval = 5 } = {}) {
+  const inicio = Date.now();
+  while (Date.now() - inicio < timeout) {
+    if (predicate()) return true;
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return predicate();
 }
 
 function setInput(container, id, value) {
@@ -105,6 +125,62 @@ describe("Benchmark OCDE — navegação", () => {
     );
     voltarBtn.click();
     assert.equal(window.location.hash, "#dia-liberdade");
+  });
+});
+
+describe("Benchmark OCDE — pré-preenchimento a partir do período (18/08/2026)", () => {
+  test("sem período preenchido, o campo de salário continua vazio", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => true, { timeout: 20 }); // dá tempo às promises resolverem
+    const input = container.querySelector("#bm-salario-bruto");
+    assert.equal(input.value, "");
+    assert.equal(container.querySelectorAll(".disclaimer").length, 1, "só o aviso de metodologia, sem nota de pré-preenchimento");
+  });
+
+  test("em modo individual, pré-preenche com o salário bruto de Rendimentos", async () => {
+    const r = calcularCadeiaSalarial(2500, { tipoTrabalhador: "dependente", estadoCivil: "individual", regiao: "continente" });
+    await atualizarPeriodoAtual({ rendimentos: r });
+    await setSetting("region", "madeira");
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#bm-salario-bruto").value !== "");
+
+    assert.equal(container.querySelector("#bm-salario-bruto").value, "2500");
+    assert.equal(container.querySelector("#bm-regiao").value, "madeira");
+    const nota = [...container.querySelectorAll(".disclaimer")].find((d) => /Pré-preenchido/.test(d.textContent));
+    assert.ok(nota, "devia explicar que o valor veio de Rendimentos");
+    assert.match(nota.textContent, /salário bruto que introduziste em Rendimentos/);
+  });
+
+  test("em modo agregado (dois rendimentos), pré-preenche só com o salário da Pessoa A, nunca a soma", async () => {
+    const r = calcularCadeiaSalarialConjunta(2000, 3000, { regiao: "continente" });
+    await atualizarPeriodoAtual({ rendimentos: r });
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#bm-salario-bruto").value !== "");
+
+    // Pessoa A ganha 2000 — NUNCA os 5000 combinados, que distorceriam
+    // o cálculo do tax wedge (ver nota de cabeçalho do módulo).
+    assert.equal(container.querySelector("#bm-salario-bruto").value, "2000");
+    const nota = [...container.querySelectorAll(".disclaimer")].find((d) => /Pré-preenchido/.test(d.textContent));
+    assert.ok(nota, "devia explicar que só um dos dois salários foi usado");
+    assert.match(nota.textContent, /pessoas solteiras/);
+    assert.match(nota.textContent, /nunca a soma/);
+  });
+
+  test("o valor pré-preenchido continua editável pelo utilizador", async () => {
+    const r = calcularCadeiaSalarial(2500, { tipoTrabalhador: "dependente", estadoCivil: "individual", regiao: "continente" });
+    await atualizarPeriodoAtual({ rendimentos: r });
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#bm-salario-bruto").value !== "");
+
+    setInput(container, "bm-salario-bruto", 999);
+    assert.equal(container.querySelector("#bm-salario-bruto").value, "999");
   });
 });
 

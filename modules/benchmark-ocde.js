@@ -8,9 +8,23 @@
 // resultado do Dia da Liberdade Fiscal (Fase 7), que inclui mais
 // figuras tributárias e por isso NÃO é diretamente comparável a este
 // benchmark (aviso obrigatório, mostrado sempre nesta secção).
+//
+// Pré-preenchimento (18/08/2026, a pedido do autor): se Rendimentos já
+// foi preenchido no período atual, evitamos pedir o mesmo salário outra
+// vez. Em modo individual, copiamos o salário bruto diretamente. Em
+// modo agregado familiar (declaração conjunta, roadmap P3-15) NÃO
+// copiamos a soma dos dois salários — o benchmark da OCDE é
+// explicitamente "pessoa solteira, sem filhos"; aplicar os escalões de
+// IRS de uma só pessoa ao rendimento combinado do casal inflacionaria
+// artificialmente o resultado e produziria um número sem correspondência
+// real. Em vez disso usamos só o salário da Pessoa A, com uma nota a
+// explicar a escolha — continua a ser uma aproximação (a pessoa real não
+// é solteira), mas metodologicamente defensável, ao contrário de somar
+// os dois rendimentos.
 
 import { calcularCadeiaSalarial } from "../data/tax-engine.js";
 import { OECD_BENCHMARK_2025 } from "../data/oecd-benchmark-2025.js";
+import { getPeriodoAtual, getSetting } from "../data/db.js";
 
 const REGIOES = [
   { value: "continente", label: "Continente" },
@@ -19,6 +33,7 @@ const REGIOES = [
 ];
 
 export function render(container) {
+  let destroyed = false;
   let state = {
     salarioBruto: "",
     tipoTrabalhador: "dependente",
@@ -26,7 +41,37 @@ export function render(container) {
     regiao: "continente",
     erro: null,
     taxWedgeUtilizador: null,
+    prefillNota: null, // "individual" | "agregado" | null
   };
+
+  // Pré-preenchimento a partir do período atual — ver nota de cabeçalho.
+  // Falha em silêncio se o IndexedDB não estiver disponível: o
+  // formulário vazio já desenhado continua a funcionar.
+  Promise.all([getPeriodoAtual(), getSetting("region")])
+    .then(([periodo, regiaoGuardada]) => {
+      if (destroyed) return;
+      let mudou = false;
+
+      if (regiaoGuardada) {
+        state.regiao = regiaoGuardada;
+        mudou = true;
+      }
+
+      const r = periodo.rendimentos;
+      if (r && r.modo === "conjunta-dois-rendimentos" && r.pessoaA) {
+        state.salarioBruto = String(r.pessoaA.salarioBrutoMensal);
+        state.prefillNota = "agregado";
+        mudou = true;
+      } else if (r && typeof r.salarioBrutoMensal === "number") {
+        state.salarioBruto = String(r.salarioBrutoMensal);
+        if (r.tipoTrabalhador) state.tipoTrabalhador = r.tipoTrabalhador;
+        state.prefillNota = "individual";
+        mudou = true;
+      }
+
+      if (mudou) draw();
+    })
+    .catch(() => {});
 
   function draw() {
     container.innerHTML = "";
@@ -114,6 +159,17 @@ export function render(container) {
     salarioInput.addEventListener("input", (e) => (state.salarioBruto = e.target.value));
     salarioField.append(salarioLabel, salarioInput);
 
+    let notaPrefill = null;
+    if (state.prefillNota === "agregado") {
+      notaPrefill = el(
+        "p",
+        "disclaimer",
+        "Pré-preenchido com o salário bruto da Pessoa A em Rendimentos — este benchmark compara pessoas solteiras, por isso usamos só um dos dois salários do agregado, nunca a soma dos dois. Podes alterar o valor."
+      );
+    } else if (state.prefillNota === "individual") {
+      notaPrefill = el("p", "disclaimer", "Pré-preenchido com o salário bruto que introduziste em Rendimentos. Podes alterar o valor.");
+    }
+
     const regiaoField = el("div", "taximetro-field");
     const regiaoLabel = document.createElement("label");
     regiaoLabel.htmlFor = "bm-regiao";
@@ -130,7 +186,9 @@ export function render(container) {
     regiaoSelect.addEventListener("change", (e) => (state.regiao = e.target.value));
     regiaoField.append(regiaoLabel, regiaoSelect);
 
-    form.append(salarioField, regiaoField);
+    form.append(salarioField);
+    if (notaPrefill) form.append(notaPrefill);
+    form.append(regiaoField);
 
     if (state.erro) {
       const erroEl = el("p", "form-error", state.erro);
@@ -201,6 +259,7 @@ export function render(container) {
 
   return {
     destroy() {
+      destroyed = true;
       container.innerHTML = "";
     },
   };
