@@ -97,6 +97,17 @@ function renderGastosApp(container, regiao) {
   });
   let destroyed = false;
 
+  // Se Rendimentos foi preenchido em modo agregado familiar (declaração
+  // conjunta com os dois salários, roadmap P3-15), os valores aqui
+  // introduzidos representam necessariamente o gasto do agregado como
+  // um todo — não há forma de os separar por pessoa, e a app nunca
+  // pediu esse detalhe. Isto só é assumido implicitamente pelo cálculo
+  // (dia-liberdade.js soma ivaEEspeciais ao total do agregado); sem
+  // avisar, o utilizador podia continuar a pensar em termos individuais
+  // ao preencher esta secção. Avisado explicitamente no desc quando
+  // aplicável (ver draw()).
+  let ehAgregado = false;
+
   // Tal como em Rendimentos: se o período atual já tiver gastos
   // guardados (o utilizador está só a voltar a este ecrã), voltamos a
   // desenhar com os valores por categoria já preenchidos assim que o
@@ -106,7 +117,12 @@ function renderGastosApp(container, regiao) {
   // — ficou persistido desde guardarEAvancar() precisamente para isto.
   getPeriodoAtual()
     .then((periodo) => {
-      if (destroyed || !periodo.gastosMensal) return;
+      if (destroyed) return;
+      ehAgregado = periodo.rendimentos?.modo === "conjunta-dois-rendimentos";
+      if (!periodo.gastosMensal) {
+        if (ehAgregado) draw();
+        return;
+      }
       periodo.gastosMensal.categorias.forEach((c) => {
         if (c.valorMensal > 0) valores[c.id] = String(c.valorMensal);
         if (c.detalhe) Object.assign(detalhes[c.id], c.detalhe);
@@ -133,13 +149,25 @@ function renderGastosApp(container, regiao) {
       `Estima quanto gastas por mês em cada categoria (região: ${labelRegiao(regiao)}). Não precisas de guardar faturas — é uma estimativa tua, arredondada é suficiente. Cada categoria mostra depois quanto disso é, em média, IVA (e outros impostos, quando aplicável).`
     );
 
+    const elementos = [heading, desc];
+
+    if (ehAgregado) {
+      const avisoAgregado = el(
+        "p",
+        "disclaimer",
+        "Preencheste Rendimentos em modo de declaração conjunta com dois salários. Os valores desta secção são tratados como o gasto de todo o agregado (não é possível separá-los por pessoa) — a app não pede esse detalhe."
+      );
+      elementos.push(avisoAgregado);
+    }
+
     const privacidade = el(
       "p",
       "stat-label",
       "🔒 Estes valores ficam só neste dispositivo. Nada é enviado para nenhum servidor."
     );
+    elementos.push(privacidade);
 
-    card.append(heading, desc, privacidade);
+    card.append(...elementos);
     container.append(card);
 
     const totalCard = el("section", "card");
