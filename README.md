@@ -7,8 +7,11 @@ em Portugal — impostos diretos, indiretos, especiais e patrimoniais —
 culminando no "Dia da Liberdade Fiscal" pessoal do utilizador.
 
 Ver `CLAUDE.md` para a especificação completa do produto,
-`AUDITORIA-FASE-1.md` para a auditoria de qualidade da Fase 1, e
-`QA-FASE-9.md` para o relatório final de QA e limitações conhecidas.
+`AUDITORIA-FASE-1.md` para a auditoria de qualidade da Fase 1,
+`AUDITORIA-2026-08.md` para a auditoria de segurança/SWOT/roadmap de
+agosto de 2026, `SECURITY.md` para decisões de segurança documentadas
+(ex.: porque não há cifragem/PIN local), e `QA-FASE-9.md` para o
+relatório final de QA e limitações conhecidas.
 
 ## Stack
 
