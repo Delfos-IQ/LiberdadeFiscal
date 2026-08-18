@@ -137,7 +137,11 @@ export function render(container) {
     }
 
     try {
-      const irsAnual = Math.max(0, cadeia.irsAnualAntesDeDeducoes - cadeia.deducaoAnualPorDependentes);
+      // Inclui a taxa adicional de solidariedade (Art. 68.º-A CIRS,
+      // 🟡 ESTIMATE, cablada em 18/08/2026) quando aplicável.
+      const irsAnual =
+        Math.max(0, cadeia.irsAnualAntesDeDeducoes - cadeia.deducaoAnualPorDependentes) +
+        (cadeia.taxaSolidariedadeAnual || 0);
       const ssTrabalhadorAnual = round2(cadeia.descontoSSMensal * 12);
       const custoTotalEmpregadorAnual = round2(cadeia.custoTotalEmpregadorMensal * 12);
 

@@ -395,6 +395,15 @@ export function render(container) {
       );
     }
 
+    if (r.taxaSolidariedadeAnual > 0) {
+      const avisoSolidariedade = el(
+        "p",
+        "disclaimer",
+        `Este cálculo inclui a Taxa Adicional de Solidariedade (Art. 68.º-A do CIRS), que incide sobre rendimentos coletáveis mais elevados: ${formatEUR(r.taxaSolidariedadeAnual)}/ano, já somados ao IRS estimado acima. Aplicámos o quociente familiar e a redução regional confirmada para os Açores, mas a forma exata como esta taxa interage com a dedução por dependentes ainda não está totalmente esclarecida na fonte legal — trata este valor como uma estimativa nossa (🟡 ESTIMATE), não como um valor oficial.`
+      );
+      explicacao.append(avisoSolidariedade);
+    }
+
     if (r.detalheAnual.irs.diferencialRegionalAplicado) {
       const avisoRegional = el(
         "p",

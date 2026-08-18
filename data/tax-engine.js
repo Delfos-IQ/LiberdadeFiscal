@@ -176,37 +176,61 @@ export function calcularDeducaoDependentes(dependentes) {
 
 /**
  * Taxa adicional de solidariedade (Art. 68.º-A CIRS) — cumulativa com
- * o IRS normal, incide só sobre a fração acima de cada limiar.
+ * o IRS normal, incide só sobre a fração do rendimento coletável acima
+ * de cada limiar (80.000€ e 250.000€/ano). 🟡 ESTIMATE — ver nota
+ * completa em irs.js#taxaSolidariedade sobre o diferencial regional
+ * (só Açores, segundo a única fonte que temos) e a interação incerta
+ * com a dedução por dependentes.
+ *
+ * Aplica o mesmo padrão de quociente familiar do IRS normal (Art. 69.º
+ * CIRS, tal como confirmado pela fonte para este artigo): divide o
+ * rendimento antes de aplicar os tramos, multiplica o imposto de volta
+ * no fim.
  *
  * @param {number} rendimentoColetavel
+ * @param {object} [opcoes]
+ * @param {"continente"|"acores"|"madeira"} [opcoes.regiao]
+ * @param {1|2} [opcoes.quocienteFamiliar]
  * @returns {{ imposto: number, decomposicao: Array<object> }}
  */
-export function calculateTaxaSolidariedade(rendimentoColetavel) {
+export function calculateTaxaSolidariedade(rendimentoColetavel, opcoes = {}) {
+  const { regiao = "continente", quocienteFamiliar = 1 } = opcoes;
+
   if (typeof rendimentoColetavel !== "number" || rendimentoColetavel < 0) {
     throw new RangeError("rendimentoColetavel deve ser um número >= 0.");
   }
+  if (quocienteFamiliar !== 1 && quocienteFamiliar !== 2) {
+    throw new RangeError("quocienteFamiliar deve ser 1 (individual) ou 2 (conjunta).");
+  }
 
+  const reducaoRegional = IRS_2026.taxaSolidariedade.reducaoRegional[regiao];
+  if (reducaoRegional === undefined) {
+    throw new RangeError(`Região desconhecida: ${regiao}. Use continente, acores ou madeira.`);
+  }
+
+  const rendimentoParaTramos = rendimentoColetavel / quocienteFamiliar;
   const decomposicao = [];
-  let total = 0;
+  let totalPorQuociente = 0;
 
-  for (const tramo of IRS_2026.taxaSolidariedade) {
-    if (rendimentoColetavel <= tramo.min) continue;
-    const tetoTramo = Math.min(rendimentoColetavel, tramo.max);
+  for (const tramo of IRS_2026.taxaSolidariedade.tramos) {
+    if (rendimentoParaTramos <= tramo.min) continue;
+    const tetoTramo = Math.min(rendimentoParaTramos, tramo.max);
     const valorTributado = tetoTramo - tramo.min;
     if (valorTributado <= 0) continue;
 
-    const imposto = valorTributado * tramo.taxa;
-    total += imposto;
+    const taxaAplicada = tramo.taxa * (1 - reducaoRegional);
+    const imposto = valorTributado * taxaAplicada;
+    totalPorQuociente += imposto;
     decomposicao.push({
       min: tramo.min,
       max: tramo.max,
-      taxa: tramo.taxa,
+      taxa: round4(taxaAplicada),
       valorTributado: round2(valorTributado),
       imposto: round2(imposto),
     });
   }
 
-  return { imposto: round2(total), decomposicao };
+  return { imposto: round2(totalPorQuociente * quocienteFamiliar), decomposicao };
 }
 
 /**
@@ -343,9 +367,19 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
 
   const irs = calculateIRS(rendimentoColetavelAnual, { regiao, quocienteFamiliar });
 
+  // Taxa adicional de solidariedade (Art. 68.º-A CIRS, 🟡 ESTIMATE) —
+  // cablada em 18/08/2026: só se aplica quando o rendimento coletável
+  // ultrapassa 80.000€/ano, o que raramente acontece no Modo Rápido.
+  // Somada DEPOIS da dedução por dependentes, nunca reduzida por ela —
+  // ver a ressalva completa em irs.js#taxaSolidariedade sobre esta
+  // decisão (o mecanismo de ajuste por dependentes do Art. 68.º-A foi
+  // revogado em 2016, e não há confirmação de como a dedução do
+  // Art. 78.º-A interage com o que resta do artigo).
+  const solidariedade = calculateTaxaSolidariedade(rendimentoColetavelAnual, { regiao, quocienteFamiliar });
+
   const deducaoDependentes =
     dependentes.length > 0 ? calcularDeducaoDependentes(dependentes) : { totalDeducao: 0 };
-  const irsAnualAposDeducoes = Math.max(0, irs.imposto - deducaoDependentes.totalDeducao);
+  const irsAnualAposDeducoes = Math.max(0, irs.imposto - deducaoDependentes.totalDeducao) + solidariedade.imposto;
   const irsMensal = irsAnualAposDeducoes / 12;
 
   const liquidoMensal = salarioBrutoMensal - descontoSSMensal - irsMensal;
@@ -357,11 +391,12 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     descontoSSMensal,
     irsAnualAntesDeDeducoes: irs.imposto,
     deducaoAnualPorDependentes: deducaoDependentes.totalDeducao,
+    taxaSolidariedadeAnual: solidariedade.imposto,
     irsEstimadoMensal: round2(irsMensal),
     salarioLiquidoMensal: round2(liquidoMensal),
-    detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs },
+    detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs, solidariedade },
     metodologia:
-      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente.",
+      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente. Se o rendimento coletável ultrapassar 80.000€/ano, soma-se ainda a taxa adicional de solidariedade (Art. 68.º-A CIRS) — também uma estimativa, ver metodologia completa.",
   };
 }
 
@@ -396,9 +431,10 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
  *   descontoSSMensal: number,
  *   irsAnualAntesDeDeducoes: number,
  *   deducaoAnualPorDependentes: number,
+ *   taxaSolidariedadeAnual: number,
  *   irsEstimadoMensal: number,
  *   salarioLiquidoMensal: number,
- *   detalheAnual: { rendimentoBrutoAnual: number, rendimentoColetavelAnual: number, irs: object },
+ *   detalheAnual: { rendimentoBrutoAnual: number, rendimentoColetavelAnual: number, irs: object, solidariedade: object },
  *   pessoaA: object, pessoaB: object,
  *   metodologia: string,
  * }}
@@ -435,9 +471,15 @@ export function calcularCadeiaSalarialConjunta(salarioBrutoMensalA, salarioBruto
   const quocienteFamiliar = IRS_2026.quocienteFamiliar.declaracaoConjuntaCasadosOuUnidoFacto;
   const irs = calculateIRS(rendimentoColetavelAnual, { regiao, quocienteFamiliar });
 
+  // Taxa adicional de solidariedade (Art. 68.º-A CIRS, 🟡 ESTIMATE) —
+  // ver a mesma nota em calcularCadeiaSalarial(). Aplicada sobre o
+  // rendimento coletável COMBINADO do casal, com o mesmo quociente
+  // familiar (divisor 2) usado para o IRS normal.
+  const solidariedade = calculateTaxaSolidariedade(rendimentoColetavelAnual, { regiao, quocienteFamiliar });
+
   const deducaoDependentes =
     dependentes.length > 0 ? calcularDeducaoDependentes(dependentes) : { totalDeducao: 0 };
-  const irsAnualAposDeducoes = Math.max(0, irs.imposto - deducaoDependentes.totalDeducao);
+  const irsAnualAposDeducoes = Math.max(0, irs.imposto - deducaoDependentes.totalDeducao) + solidariedade.imposto;
   const irsMensal = irsAnualAposDeducoes / 12;
 
   const rendimentoBrutoMensal = round2(salarioBrutoMensalA + salarioBrutoMensalB);
@@ -454,9 +496,10 @@ export function calcularCadeiaSalarialConjunta(salarioBrutoMensalA, salarioBruto
     descontoSSMensal,
     irsAnualAntesDeDeducoes: irs.imposto,
     deducaoAnualPorDependentes: deducaoDependentes.totalDeducao,
+    taxaSolidariedadeAnual: solidariedade.imposto,
     irsEstimadoMensal: round2(irsMensal),
     salarioLiquidoMensal: liquidoMensal,
-    detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs },
+    detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs, solidariedade },
     pessoaA: {
       salarioBrutoMensal: cadeiaA.salarioBrutoMensal,
       descontoSSMensal: cadeiaA.descontoSSMensal,

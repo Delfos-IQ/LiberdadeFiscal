@@ -108,6 +108,41 @@ describe("calculateTaxaSolidariedade", () => {
     const r = calculateTaxaSolidariedade(300000);
     assert.equal(r.imposto, 6750);
   });
+
+  test("Açores: redução de 30% sobre a taxa (🟡 ESTIMATE, confirmada apenas para a tabela de solidariedade)", () => {
+    const continente = calculateTaxaSolidariedade(100000, { regiao: "continente" });
+    const acores = calculateTaxaSolidariedade(100000, { regiao: "acores" });
+    assert.equal(continente.imposto, 500);
+    assert.equal(acores.imposto, Math.round(500 * 0.7 * 100) / 100);
+  });
+
+  test("Madeira: sem redução (diferente do mecanismo principal do IRS, que reduz nas duas regiões)", () => {
+    const continente = calculateTaxaSolidariedade(100000, { regiao: "madeira" });
+    assert.equal(continente.imposto, 500);
+  });
+
+  test("quociente familiar: tributação conjunta divide por 2 antes de aplicar os tramos", () => {
+    // 160.000€ ÷ 2 = 80.000€ por sujeito — abaixo do primeiro tramo, logo 0€.
+    const conjunta = calculateTaxaSolidariedade(160000, { quocienteFamiliar: 2 });
+    assert.equal(conjunta.imposto, 0);
+
+    // 200.000€ ÷ 2 = 100.000€ por sujeito → 500€ cada, × 2 = 1.000€.
+    const conjunta2 = calculateTaxaSolidariedade(200000, { quocienteFamiliar: 2 });
+    assert.equal(conjunta2.imposto, 1000);
+  });
+
+  test("rejeita região desconhecida", () => {
+    assert.throws(() => calculateTaxaSolidariedade(100000, { regiao: "espanha" }), RangeError);
+  });
+
+  test("rejeita quociente familiar inválido", () => {
+    assert.throws(() => calculateTaxaSolidariedade(100000, { quocienteFamiliar: 3 }), RangeError);
+  });
+
+  test("rejeita rendimento coletável negativo ou não numérico", () => {
+    assert.throws(() => calculateTaxaSolidariedade(-1), RangeError);
+    assert.throws(() => calculateTaxaSolidariedade("100000"), RangeError);
+  });
 });
 
 describe("calcularRendimentoColetavelCategoriaA", () => {
@@ -159,6 +194,30 @@ describe("calcularCadeiaSalarial", () => {
     const c = calcularCadeiaSalarial(2500);
     const esperado = round2(c.salarioBrutoMensal - c.descontoSSMensal - c.irsEstimadoMensal);
     assert.equal(c.salarioLiquidoMensal, esperado);
+  });
+
+  test("rendimentos baixos/médios não pagam taxa adicional de solidariedade", () => {
+    const c = calcularCadeiaSalarial(2500);
+    assert.equal(c.taxaSolidariedadeAnual, 0);
+  });
+
+  test("rendimento muito elevado (🟡 ESTIMATE: cablado 18/08/2026) paga taxa adicional de solidariedade, incluída no IRS mensal", () => {
+    // Salário bruto mensual suficientemente alto para gerar rendimento
+    // coletável anual > 80.000€ mesmo após a dedução específica.
+    const c = calcularCadeiaSalarial(15000);
+    assert.ok(c.taxaSolidariedadeAnual > 0);
+    assert.equal(c.detalheAnual.solidariedade.imposto, c.taxaSolidariedadeAnual);
+
+    const irsAnualEsperado = round2(
+      Math.max(0, c.irsAnualAntesDeDeducoes - c.deducaoAnualPorDependentes) + c.taxaSolidariedadeAnual
+    );
+    // Tolerância de poucos cêntimos: irsEstimadoMensal já vem arredondado
+    // a 2 casas antes de multiplicar por 12, o que acumula um desvio
+    // residual face ao valor anual "puro".
+    assert.ok(
+      Math.abs(round2(c.irsEstimadoMensal * 12) - irsAnualEsperado) < 0.1,
+      `esperado ~${irsAnualEsperado}, obtido ${round2(c.irsEstimadoMensal * 12)}`
+    );
   });
 });
 
@@ -216,6 +275,12 @@ describe("calcularCadeiaSalarialConjunta (roadmap P3-15 — agregado familiar)",
     const c = calcularCadeiaSalarialConjunta(2200, 1700);
     const esperado = round2(c.salarioBrutoMensal - c.descontoSSMensal - c.irsEstimadoMensal);
     assert.equal(c.salarioLiquidoMensal, esperado);
+  });
+
+  test("agregado com rendimento coletável combinado muito elevado paga taxa adicional de solidariedade (🟡 ESTIMATE)", () => {
+    const c = calcularCadeiaSalarialConjunta(15000, 15000);
+    assert.ok(c.taxaSolidariedadeAnual > 0);
+    assert.equal(c.detalheAnual.solidariedade.imposto, c.taxaSolidariedadeAnual);
   });
 
   test("aplica a dedução por dependentes ao IRS conjunto", () => {

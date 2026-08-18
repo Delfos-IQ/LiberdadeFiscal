@@ -152,7 +152,13 @@ export function render(container) {
     const r = p.rendimentos;
 
     try {
-      const irsAnual = round2(Math.max(0, r.irsAnualAntesDeDeducoes - r.deducaoAnualPorDependentes));
+      // Inclui a taxa adicional de solidariedade (Art. 68.º-A CIRS,
+      // 🟡 ESTIMATE, cablada em 18/08/2026) quando aplicável — só
+      // afeta rendimentos coletáveis acima de 80.000€/ano. Ver
+      // r.taxaSolidariedadeAnual, calculado em data/tax-engine.js.
+      const irsAnual = round2(
+        Math.max(0, r.irsAnualAntesDeDeducoes - r.deducaoAnualPorDependentes) + (r.taxaSolidariedadeAnual || 0)
+      );
       const ssTrabalhadorAnual = round2(r.descontoSSMensal * 12);
       const rendimentoBrutoAnual = r.detalheAnual.rendimentoBrutoAnual;
 

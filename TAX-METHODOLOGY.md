@@ -76,15 +76,53 @@ mesmo resultado. Optámos pelo cálculo por fatias porque é mais fácil
 de auditar e explicar ao utilizador — coerente com o objetivo do
 produto de tornar o método visível, não só o resultado.
 
-### Taxa adicional de solidariedade (Art. 68.º-A) — ✅ Verificado
+### Taxa adicional de solidariedade (Art. 68.º-A) — 🟡 ESTIMATE (cablada 18/08/2026)
 
 Aplica-se **cumulativamente** ao IRS normal, apenas sobre a parte do
-rendimento coletável acima de cada limiar:
+rendimento coletável acima de cada limiar. Os próprios limiares e taxas
+estão ✅ verificados (exemplos oficiais documentados: 100.000€ → 500€;
+300.000€ → 6.750€):
 
 | Rendimento coletável | Taxa de solidariedade |
 |---|---|
 | 80.000 € – 250.000 € | 2,5% |
 | superior a 250.000 € | 5,0% |
+
+Até 18/08/2026, `calculateTaxaSolidariedade()` existia no motor mas
+nunca era chamada pela cadeia salarial real (`calcularCadeiaSalarial`/
+`calcularCadeiaSalarialConjunta`) — a app não aplicava esta sobretaxa a
+ninguém, independentemente do rendimento. Nesta ronda foi cablada,
+somada ao IRS anual **depois** da dedução por dependentes (nunca
+reduzida por ela — ver justificação abaixo) e refletida em
+`irsEstimadoMensal`, `taxaSolidariedadeAnual` e `detalheAnual.solidariedade`
+no resultado de `calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`,
+propagado a Rendimentos, Dia da Liberdade Fiscal e Comparação OCDE. O
+conjunto foi marcado `status: "ESTIMATE"` em vez de `"verified"` por
+duas ambiguidades não resolvidas:
+
+1. **Redução regional só confirmada para os Açores.** A tabela da PwC
+   mostra a redução de 30% (2,5%→1,75%; 5%→3,5%) só para os Açores —
+   ao contrário do mecanismo principal de IRS (Art. 68.º), que reduz
+   também para a Madeira. Sem uma fonte equivalente para a Madeira
+   nesta sobretaxa específica, aplicamos redução 0% à Madeira
+   (`reducaoRegional: { continente: 0, madeira: 0, acores: 0.3 }` em
+   `irs.js`).
+2. **Interação com a dedução por dependentes é ambígua.** O Art.
+   68.º-A CIRS, nos seus n.os 4 a 6 originais, prevIA um mecanismo de
+   atenuação para agregados com dependentes — mas esses números foram
+   **revogados pela Lei n.º 7-A/2016** (Orçamento do Estado 2016) sem
+   substituição clara equivalente localizada nesta pesquisa. Por
+   precaução, optámos por **não** deixar a dedução por dependentes
+   reduzir esta sobretaxa (é somada à parte do IRS já líquida de
+   dependentes, não à base tributável da sobretaxa).
+
+Quociente familiar (Art. 69.º) aplica-se normalmente — divide o
+rendimento coletável combinado por 2 antes de aplicar os tramos,
+multiplica o resultado de volta por 2. Cobertura de testes em
+`tests/tax-engine.test.js` (`describe("calculateTaxaSolidariedade")` e
+os testes de regressão em `calcularCadeiaSalarial`/
+`calcularCadeiaSalarialConjunta`). Fonte: [PwC Portugal, Guia Fiscal
+2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
 ### Mínimo de existência — ✅ Verificado
 
@@ -183,14 +221,11 @@ República diretamente (página exige JavaScript, inacessível a partir
 deste ambiente de pesquisa) — a confirmação assenta em duas fontes
 convergentes (tabela numérica + citação textual do artigo), não no
 diploma em bruto. Ainda assim, é uma base mais sólida do que a hipótese
-anterior. **Achado relacionado, não corrigido nesta ronda:** a mesma
-tabela da PwC mostra a Taxa Adicional de Solidariedade (Art. 68.º-A
-CIRS) também reduzida em 30% nos Açores (2,5%→1,75%; 5%→3,5%), mas
-`calculateTaxaSolidariedade()` nunca é chamada pela cadeia salarial
-real (`calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`) — a
-app não aplica esta sobretaxa a ninguém atualmente, independentemente
-da região. Afeta só rendimentos coletáveis acima de 80.000€/ano;
-documentado para decisão do autor sobre se vale a pena corrigir.
+anterior. **Achado relacionado, cablado nesta mesma ronda (18/08/2026):**
+a mesma tabela da PwC mostra a Taxa Adicional de Solidariedade (Art.
+68.º-A CIRS) também reduzida em 30% nos Açores (2,5%→1,75%; 5%→3,5%) —
+ver detalhe completo mais acima, na subsecção "Taxa adicional de
+solidariedade".
 Fonte: [PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
 ### Coeficiente do regime simplificado (trabalhadores independentes) — 🟡 ESTIMATE
@@ -598,12 +633,17 @@ dezembro), e o mais tardar antes de 31 de janeiro.
       confirmação atual assenta em duas fontes secundárias convergentes
       (tabela numérica da PwC + citação textual via pesquisa), não no
       diploma em bruto.
-- [ ] Decidir se vale a pena aplicar a Taxa Adicional de Solidariedade
-      (Art. 68.º-A CIRS) na cadeia salarial real — `calculateTaxaSolidariedade()`
-      existe mas nunca é chamada por `calcularCadeiaSalarial`/
-      `calcularCadeiaSalarialConjunta`; afeta só rendimentos coletáveis
-      acima de 80.000€/ano, mas é uma omissão real, não só um ESTIMATE
-      (achado de 18/08/2026, ver secção 1)
+- [x] Cablar a Taxa Adicional de Solidariedade (Art. 68.º-A CIRS) na
+      cadeia salarial real — 🟡 ESTIMATE (cablada 18/08/2026):
+      `calculateTaxaSolidariedade()` já é chamada por
+      `calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`, com
+      quociente familiar e redução regional só para Açores (30%,
+      confirmada), sem redução para Madeira (não confirmada), e sem
+      deixar a dedução por dependentes reduzir a sobretaxa (Art. 68.º-A
+      n.os 4-6, que previam essa atenuação, foram revogados pela Lei
+      7-A/2016) — ver secção 1. **Continua por confirmar**: redução
+      regional da Madeira nesta sobretaxa específica (0% assumido por
+      precaução, pode estar incorreto).
 - [ ] Obter a tabela completa de pesos de categorias de consumo do INE
       (Inquérito às Despesas das Famílias 2022/2023) — só se
       confirmaram os três maiores blocos (Habitação, Alimentação,

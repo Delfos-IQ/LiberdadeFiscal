@@ -40,11 +40,48 @@ export const IRS_2026 = {
    * Taxa adicional de solidariedade — Art. 68.º-A CIRS. Incide apenas
    * sobre a parte do rendimento coletável que excede cada limiar,
    * cumulativa com o IRS normal.
+   *
+   * 🟡 ESTIMATE (cablado em 18/08/2026, ronda seguinte a "vamos a por
+   * los estimates"): esta figura estava definida e tinha uma função de
+   * cálculo (`calculateTaxaSolidariedade` em tax-engine.js), mas nunca
+   * era chamada pela cadeia salarial real — a app não cobrava esta
+   * sobretaxa a ninguém, independentemente do rendimento. Corrigido
+   * para ser aplicada sempre que o rendimento coletável ultrapassa
+   * 80.000€/ano (só afeta rendimentos altos). Duas partes ficam
+   * ESTIMATE, não ✅ Verified:
+   * (1) **Diferencial regional**: a tabela numérica da PwC Guia Fiscal
+   *     2026 mostra esta sobretaxa reduzida em 30% só nos Açores
+   *     (1,75%/3,5% em vez de 2,5%/5%) — Madeira aparece agrupada com
+   *     o Continente, SEM redução, ao contrário do que acontece nos
+   *     escalões normais de IRS (onde Madeira também tem 30%). Isto é
+   *     modelado abaixo em `reducaoRegional`, mas só temos esta única
+   *     fonte a confirmá-lo — não foi cruzado contra o texto do
+   *     Art. 68.º-A diretamente.
+   * (2) **Interação com a dedução por dependentes**: o Art. 68.º-A
+   *     tinha originalmente um mecanismo de ajuste por dependentes
+   *     (n.os 4-6), mas foi revogado pela Lei n.º 7-A/2016. Não
+   *     confirmámos com certeza se a dedução à coleta por dependentes
+   *     (Art. 78.º-A) desconta desta sobretaxa ou só do IRS calculado
+   *     pelo Art. 68.º — por precaução, este motor NÃO deixa a dedução
+   *     por dependentes reduzir a sobretaxa (soma-a à parte, depois da
+   *     dedução já ter sido aplicada ao IRS normal). Se isto estiver
+   *     errado, o motor está a sobrestimar ligeiramente o imposto de
+   *     quem tem rendimento coletável > 80.000€/ano E dependentes.
+   * Fonte: [PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html),
+   * [Art. 68.º-A CIRS (informador.pt)](https://informador.pt/legislacao/lexit/codigos/direito-fiscal/codigo-do-irs/capitulo-iii-taxas/artigo-68-o-a-taxa-adicional-de-solidariedade/).
    */
-  taxaSolidariedade: [
-    { min: 80000, max: 250000, taxa: 0.025 },
-    { min: 250000, max: Infinity, taxa: 0.05 },
-  ],
+  taxaSolidariedade: {
+    status: "ESTIMATE",
+    tramos: [
+      { min: 80000, max: 250000, taxa: 0.025 },
+      { min: 250000, max: Infinity, taxa: 0.05 },
+    ],
+    reducaoRegional: {
+      continente: 0,
+      madeira: 0,
+      acores: 0.3,
+    },
+  },
 
   /** Mínimo de existência 2026 — abaixo deste valor não há IRS a pagar. */
   minimoExistencia: { value: 12880, unit: "EUR/ano", notes: "Atualizado para 2026." },
