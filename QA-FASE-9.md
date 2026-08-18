@@ -84,6 +84,95 @@ jsdom + fake-indexeddb, acessibilidade básica em cada ecrã).
   `npx lighthouse` e um teste manual com leitor de ecrã antes de
   publicar em produção.
 
+## 4b. Verificação técnica em browser real (18/08/2026, ronda "verificação em mundo real")
+
+Até esta ronda, tudo o que existia era verificação via jsdom/axe-core —
+um substituto razoável mas não o veredito final. Usando um browser real
+(Claude in Chrome, controlando um Chrome de verdade) contra a app já
+publicada em produção (`https://delfos-iq.github.io/LiberdadeFiscal/`),
+foi possível verificar genuinamente:
+
+- **Deploy**: `git push` estava 3 commits atrasado (produção servia
+  `liberdade-fiscal-v0.38-static`, a Açores/solidariedade/IMI desta
+  sessão nunca tinham ido a produção). Corrigido nesta ronda — a
+  produção está agora sincronizada com `master` (v0.41 confirmado ao
+  vivo).
+- **Manifest.json**: válido, servido com todos os campos obrigatórios
+  (`name`, `short_name`, `start_url`, `display: "standalone"`,
+  `background_color`, `theme_color`, ícones 192×192/512×512/maskable) —
+  lido diretamente do JSON servido em produção, não do ficheiro local.
+- **Ícones da PWA**: os três ficheiros (`icon-192.png`, `icon-512.png`,
+  `icon-maskable.png`) carregam com `200 OK` e `Content-Type: image/png`
+  a partir de produção.
+- **Service worker**: regista-se, ativa (`state: "activated"`) no scope
+  correto (`https://delfos-iq.github.io/LiberdadeFiscal/`), e o handler
+  `activate` limpa mesmo caches de versões antigas (confirmado: só
+  ficou 1 cache `liberdade-fiscal-v0.41-static` depois do deploy, a
+  v0.38 anterior foi apagada).
+- **Pré-cache do shell offline**: os 46 URLs de `STATIC_ASSETS` (lidos
+  diretamente do `sw.js` servido, não do ficheiro local) estão TODOS
+  presentes na Cache Storage real do browser — 0 em falta. Isto é o que
+  determina se o shell offline funciona, e está confirmado
+  programaticamente. **Não confirmado**: o corte de rede real (ver
+  limitações abaixo).
+- **CSP**: verificado um falso alarme — uma requisição a
+  `fonts.googleapis.com` (fonte "Inter") apareceu no separador de rede,
+  mas foi confirmado que (a) não existe no código-fonte da app, e (b) a
+  própria CSP (`font-src 'self'`) tê-la-ia bloqueado se viesse da app —
+  origem: uma extensão do Chrome instalada no browser de teste, não a
+  aplicação.
+- **Foco visível por teclado**: testado com uma tecla Tab real (não
+  `.focus()` programático, que não ativa `:focus-visible` na maioria
+  dos browsers) — o elemento seguinte na ordem de tabulação mostra
+  `:focus-visible` verdadeiro com contorno sólido de 3px. Isto é algo
+  que o jsdom não consegue verificar, porque não tem motor de CSS.
+  Ordem de tabulação inspecionada (checkbox → CTA → link de dados →
+  nav) é coerente com a ordem visual do DOM.
+- **Consola/rede**: 0 erros de consola, 0 pedidos falhados (todos os
+  assets da própria app devolveram `200`) no carregamento da página em
+  produção.
+
+### Limitações genuínas desta ronda (não simuladas, não inventadas)
+
+- **`resize_window` não altera o viewport real** neste ambiente de
+  automação — `window.innerWidth` continuou em 1920px mesmo depois de
+  pedir 375×667 e 390×844. Não foi possível verificar visualmente o
+  layout mobile num viewport de telemóvel real a partir daqui. O CSS é
+  mobile-first por construção (`style.css`) e a navegação inferior por
+  abas já está desenhada para ecrãs estreitos, mas isto **continua por
+  confirmar visualmente** num dispositivo ou emulador real.
+- **Sem alternância real de offline**: as ferramentas de automação
+  disponíveis não incluem um controlo de "cortar rede" equivalente à
+  checkbox "Offline" do painel Network do DevTools. A confirmação de
+  que o shell offline funciona assenta em prova indireta mas forte (os
+  46 assets estão mesmo em cache, e o código de `sw.js` usa
+  `caches.match()` antes de tentar a rede para esses assets) — não numa
+  desconexão de rede real e reload subsequente.
+- **Sem leitores de ecrã reais** (VoiceOver/NVDA/TalkBack): fora do
+  alcance de um browser controlado por automação — são integrações do
+  sistema operativo, não do browser.
+- **Sem instalação real como PWA** em Android/iOS: precisa de um
+  dispositivo físico ou emulador com Play Store/App Store, que este
+  ambiente não tem.
+- **Sem Lighthouse**: as ferramentas disponíveis não incluem o motor de
+  Lighthouse (Performance/SEO/Best Practices/PWA installability como
+  pontuação única) — as verificações acima cobrem manualmente os
+  critérios de instalabilidade mais importantes (manifest válido,
+  ícones corretos, SW ativo, HTTPS), mas sem o relatório consolidado.
+
+**Passos recomendados para fechar o que ficou por confirmar** (o autor
+tem de os fazer, exigem hardware/software fora deste ambiente):
+1. Abrir a app no telemóvel, testar o layout em ecrã pequeno de verdade.
+2. No Chrome desktop, DevTools → Network → marcar "Offline" → recarregar
+   → confirmar que o shell continua a funcionar.
+3. Instalar como PWA num Android (Chrome → "Adicionar ao ecrã principal")
+   e num iOS (Safari → Partilhar → "Adicionar ao ecrã principal").
+4. Ativar VoiceOver (iOS/macOS) ou TalkBack (Android) e navegar pelo
+   menos o fluxo do Quiz e do Dia da Liberdade Fiscal de ponta a ponta.
+5. Correr `npx lighthouse https://delfos-iq.github.io/LiberdadeFiscal/ --view`
+   a partir de um Chrome local, para o relatório consolidado com
+   pontuação.
+
 ## 5. Limitações conhecidas, não bloqueantes para o MVP
 
 - **Ícones e tipografia**: `icons/*.png` e `fonts/*.woff2` continuam
@@ -95,9 +184,11 @@ jsdom + fake-indexeddb, acessibilidade básica em cada ecrã).
   detalhado em `TAX-METHODOLOGY.md` secção 8. A app nunca inventa
   valores para estes casos; ou pede o dado ao utilizador (IMI), ou
   devolve `{status: "UNKNOWN"}` explicitamente.
-- **Sem deployment**: nenhum remote git configurado, GitHub Pages não
-  ativado, worker de OCR não desplegado — todos requerem credenciais/
-  contas do autor que o agente não tem.
+- **Deployment**: ~~sem deployment~~ — desde 18/08/2026 a app está em
+  produção em `https://delfos-iq.github.io/LiberdadeFiscal/` via GitHub
+  Pages, confirmado a servir a versão mais recente (ver secção 4b).
+  Continua por desplegar: o worker de OCR (Cloudflare Workers),
+  decisão de negócio deliberadamente adiada.
 - **Ano fiscal fixo**: `ANO_FISCAL = 2026` está hardcoded em
   `modules/dia-liberdade.js`; não há ainda seletor de ano fiscal
   (fora do âmbito da v1 per spec §5).
