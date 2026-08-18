@@ -2,7 +2,7 @@
 // Versionamento explícito: sobe o CACHE_VERSION em cada release que
 // altere o shell ou os assets estáticos em cache.
 
-const CACHE_VERSION = "liberdade-fiscal-v0.25";
+const CACHE_VERSION = "liberdade-fiscal-v0.26";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Base do scope do service worker — funciona tanto em GitHub Pages de
@@ -27,6 +27,7 @@ const STATIC_ASSETS = [
   "modules/taximetro.js",
   "modules/faturas.js",
   "modules/faturas-qr.js",
+  "modules/faturas-foto-ocr.js",
   "modules/onboarding.js",
   "modules/impostos-anuais.js",
   "modules/dia-liberdade.js",
@@ -38,6 +39,7 @@ const STATIC_ASSETS = [
   "data/db.js",
   "data/tax-engine.js",
   "data/qr-parser.js",
+  "data/ocr-client.js",
   "data/goods-services-pt.js",
   "data/categorias-gastos-pt.js",
   "data/tax-rules/2026/irs.js",

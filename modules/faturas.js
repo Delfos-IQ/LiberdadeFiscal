@@ -15,11 +15,17 @@
 // IVA — em vez de só mostrar o IVA e deixar o resto por explicar.
 //
 // O fluxo de fatura individual + QR (faturas-qr.js) e o fallback de
-// foto+IA continuam no código, mas ficam FORA da navegação ativa desta
-// versão — o autor pediu para os manter disponíveis como possível
-// "modo avançado" futuro, sem os apagar. Não importar faturas-qr.js
-// aqui evita que fique morto silenciosamente sem ninguém notar: ficará
-// por reativar explicitamente quando/se esse modo avançado avançar.
+// foto+IA (faturas-foto-ocr.js + data/ocr-client.js, roadmap P3-17)
+// continuam no código, mas ficam FORA da navegação ativa desta versão
+// — o autor pediu para os manter disponíveis como possível "modo
+// avançado" futuro, sem os apagar. Não importar faturas-qr.js/
+// faturas-foto-ocr.js aqui evita que fiquem mortos silenciosamente sem
+// ninguém notar: ficam por reativar explicitamente quando/se esse modo
+// avançado avançar. O fallback de foto+IA já funciona ponta-a-ponta do
+// lado do cliente (validação, conversão para base64, chamada ao
+// worker, ecrã de confirmação) mas o worker (worker/ocr-fatura.js)
+// continua por publicar — sem um workerUrl configurado, o ecrã mostra
+// isso claramente em vez de tentar e falhar um pedido de rede.
 
 import { getSetting, atualizarPeriodoAtual, getPeriodoAtual } from "../data/db.js";
 import { CATEGORIAS_GASTOS_PT } from "../data/categorias-gastos-pt.js";
