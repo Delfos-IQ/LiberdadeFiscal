@@ -38,43 +38,45 @@ Nunca inventes valores. Nunca incluas dados pessoais do comprador que não sejam
 
 export default {
   async fetch(request, env) {
+    const origin = request.headers.get("Origin");
+
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders() });
+      return new Response(null, { headers: corsHeaders(origin) });
     }
 
     if (request.method !== "POST") {
-      return jsonResponse({ error: "Método não suportado. Usa POST." }, 405);
+      return jsonResponse({ error: "Método não suportado. Usa POST." }, 405, origin);
     }
 
-    const origin = request.headers.get("Origin");
     if (origin && origin !== ALLOWED_ORIGIN && !isLocalDev(origin)) {
-      return jsonResponse({ error: "Origem não autorizada." }, 403);
+      return jsonResponse({ error: "Origem não autorizada." }, 403, origin);
     }
 
     let body;
     try {
       body = await request.json();
     } catch {
-      return jsonResponse({ error: "Corpo do pedido tem de ser JSON." }, 400);
+      return jsonResponse({ error: "Corpo do pedido tem de ser JSON." }, 400, origin);
     }
 
     const { imageBase64, mimeType } = body || {};
     if (!imageBase64 || typeof imageBase64 !== "string") {
-      return jsonResponse({ error: "Campo 'imageBase64' em falta ou inválido." }, 400);
+      return jsonResponse({ error: "Campo 'imageBase64' em falta ou inválido." }, 400, origin);
     }
     if (!mimeType || !["image/jpeg", "image/png", "image/webp"].includes(mimeType)) {
-      return jsonResponse({ error: "Campo 'mimeType' inválido. Usa image/jpeg, image/png ou image/webp." }, 400);
+      return jsonResponse({ error: "Campo 'mimeType' inválido. Usa image/jpeg, image/png ou image/webp." }, 400, origin);
     }
 
     const approxBytes = Math.ceil((imageBase64.length * 3) / 4);
     if (approxBytes > MAX_IMAGE_BYTES) {
-      return jsonResponse({ error: "Imagem demasiado grande (máx. 6 MB)." }, 413);
+      return jsonResponse({ error: "Imagem demasiado grande (máx. 6 MB)." }, 413, origin);
     }
 
     if (!env.GROQ_API_KEY) {
       return jsonResponse(
         { error: "Worker mal configurado: falta o secret GROQ_API_KEY. Ver worker/README.md." },
-        500
+        500,
+        origin
       );
     }
 
@@ -89,9 +91,36 @@ export default {
       // Resposta devolvida diretamente ao cliente — nada é persistido
       // neste worker. O cliente é que decide (ecrã de confirmação
       // manual, spec §6.3/§5) se guarda isto como Invoice.
-      return jsonResponse({ ok: true, extraido, fonte: "groq-vision", nota: "Processamento efémero — nada foi guardado no servidor." });
+      return jsonResponse(
+        { ok: true, extraido, fonte: "groq-vision", nota: "Processamento efémero — nada foi guardado no servidor." },
+        200,
+        origin
+      );
     } catch (err) {
-      return jsonResponse({ error: `Falha ao processar a imagem: ${err.message}` }, 502);
+      // Mitigação M-3 (AUDITORIA-2026-08.md, roadmap P2-11): o detalhe
+      // completo do erro upstream (que pode incluir informação interna
+      // da integração com a Groq) fica só no log do lado do worker,
+      // nunca é devolvido ao cliente. Ver chamarGroqVision() abaixo,
+      // que já limita a mensagem lançada a um resumo curto e sem a
+      // resposta bruta da API.
+      console.error("Erro ao chamar a API de visão:", err);
+
+      // Mitigação B-5: distinguir rate limit (429, esperado sob volume
+      // alto) de uma falha real — o cliente pode agir de forma
+      // diferente (tentar mais tarde vs. reportar um bug).
+      if (err.status === 429) {
+        return jsonResponse(
+          { error: "Demasiados pedidos neste momento. Tenta novamente dentro de alguns minutos." },
+          429,
+          origin
+        );
+      }
+
+      return jsonResponse(
+        { error: "Não foi possível processar a imagem. Tenta novamente ou introduz os dados manualmente." },
+        502,
+        origin
+      );
     }
   },
 };
@@ -121,8 +150,16 @@ async function chamarGroqVision({ apiKey, model, imageBase64, mimeType }) {
   });
 
   if (!response.ok) {
+    // O detalhe completo (até 300 caracteres da resposta upstream) só
+    // vai para a mensagem do erro, que o chamador (fetch handler acima)
+    // regista com console.error do lado do worker — nunca é devolvido
+    // ao cliente tal qual (mitigação M-3). O status é anexado ao erro
+    // para permitir distinguir 429 (rate limit, mitigação B-5) de
+    // outras falhas sem re-parsear a mensagem.
     const detalhe = await response.text().catch(() => "");
-    throw new Error(`API de visão respondeu ${response.status}: ${detalhe.slice(0, 300)}`);
+    const erro = new Error(`API de visão respondeu ${response.status}: ${detalhe.slice(0, 300)}`);
+    erro.status = response.status;
+    throw erro;
   }
 
   const data = await response.json();
@@ -142,18 +179,27 @@ function isLocalDev(origin) {
   return origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1");
 }
 
-function corsHeaders() {
+// Mitigação M-4 (AUDITORIA-2026-08.md, roadmap P2-11): antes,
+// corsHeaders() devolvia sempre ALLOWED_ORIGIN, mesmo quando
+// isLocalDev(origin) tinha aceitado o pedido — o browser bloqueava a
+// resposta na mesma por CORS, porque a cabecera não coincidia com o
+// origin real do pedido local. Agora aceita o origin do pedido e
+// devolve-o quando é o de produção ou de desenvolvimento local; caso
+// contrário (origin ausente ou não reconhecido) usa ALLOWED_ORIGIN como
+// fallback seguro.
+function corsHeaders(origin) {
+  const allowOrigin = origin && (origin === ALLOWED_ORIGIN || isLocalDev(origin)) ? origin : ALLOWED_ORIGIN;
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
-function jsonResponse(obj, status = 200) {
+function jsonResponse(obj, status = 200, origin) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders() },
+    headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
   });
 }
 
