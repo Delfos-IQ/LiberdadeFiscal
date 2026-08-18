@@ -17,6 +17,7 @@ import { JSDOM } from "jsdom";
 
 import { dbClear, getPeriodoAtual } from "../data/db.js";
 import { render } from "../modules/impostos-anuais.js";
+import { PATRIMONIAIS_2026 } from "../data/tax-rules/2026/patrimoniais.js";
 
 before(async () => {
   const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", { url: "http://localhost/" });
@@ -52,6 +53,47 @@ function clickByText(container, text) {
   btn.click();
   return btn;
 }
+
+describe("IMI — integridade da tabela por concelho (ronda 'verificação em mundo real', 18/08/2026)", () => {
+  const lista = PATRIMONIAIS_2026.imi.tabelaPorConcelho.lista;
+
+  test("tem um número plausível de entradas (perto de, mas não mais de, 308 concelhos de Portugal)", () => {
+    assert.ok(lista.length > 250 && lista.length <= 308, `esperado entre 251 e 308, obtido ${lista.length}`);
+  });
+
+  test("não há nomes de concelho duplicados", () => {
+    const nomes = lista.map(([, nome]) => nome.toLowerCase());
+    const unicos = new Set(nomes);
+    assert.equal(unicos.size, nomes.length, "há nomes de concelho repetidos na tabela");
+  });
+
+  test("toda taxa não-nula está dentro do intervalo legal nacional (0,3%–0,45%)", () => {
+    for (const [distrito, nome, taxa] of lista) {
+      if (taxa === null) continue;
+      assert.ok(
+        taxa >= 0.003 && taxa <= 0.0045,
+        `${nome} (${distrito}): taxa ${taxa} fora do intervalo legal [0,3%, 0,45%]`
+      );
+    }
+  });
+
+  test("os concelhos com taxa máxima (0,45%) na tabela batem com excecoesConhecidas.taxaMaxima045", () => {
+    const comTaxaMaxima = lista.filter(([, , taxa]) => taxa === 0.0045).map(([, nome]) => nome);
+    const esperados = PATRIMONIAIS_2026.imi.tabelaPorConcelho.excecoesConhecidas.taxaMaxima045;
+    assert.equal(comTaxaMaxima.length, esperados.length);
+    esperados.forEach((nome) => {
+      assert.ok(
+        comTaxaMaxima.some((n) => n.toLowerCase().includes(nome.toLowerCase().split(" ")[0].toLowerCase())),
+        `esperava encontrar ${nome} entre os concelhos com taxa máxima`
+      );
+    });
+  });
+
+  test("os 6 concelhos com taxa diferenciada por freguesia estão marcados com taxa null, não com um número inventado", () => {
+    const semTaxaUnica = lista.filter(([, , taxa]) => taxa === null).map(([, nome]) => nome);
+    assert.equal(semTaxaUnica.length, 6, `esperados 6 concelhos com taxa null, obtidos ${semTaxaUnica.length}`);
+  });
+});
 
 describe("Taxas — lista", () => {
   test("mostra ecrã inicial vazio com botão de registar", async () => {
@@ -108,6 +150,66 @@ describe("Taxas — registo manual", () => {
     const alerta = container.querySelector('[role="alert"]');
     assert.ok(alerta);
     assert.match(alerta.textContent, /valor válido/);
+  });
+
+  test("IMI: concelho conhecido mostra a taxa exata da tabela (🟡 ESTIMATE, ronda 'verificação em mundo real' 18/08/2026)", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    const concelhoInput = container.querySelector("#concelho-imi");
+    assert.ok(concelhoInput, "o campo de concelho deve existir e estar visível por omissão (IMI é o tipo por omissão)");
+
+    concelhoInput.value = "Coimbra";
+    concelhoInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    await waitFor(() => container.textContent.includes("0,3%"));
+    assert.match(container.textContent, /Coimbra/);
+  });
+
+  test("IMI: reconhece o concelho mesmo sem acentos ou com capitalização diferente", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    const concelhoInput = container.querySelector("#concelho-imi");
+    concelhoInput.value = "vila real de santo antonio";
+    concelhoInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    await waitFor(() => container.textContent.includes("0,45%"));
+    assert.match(container.textContent, /taxa máxima/);
+  });
+
+  test("IMI: concelho com taxa diferenciada por freguesia (Sesimbra) explica em vez de mostrar um número errado", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    const concelhoInput = container.querySelector("#concelho-imi");
+    concelhoInput.value = "Sesimbra";
+    concelhoInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    await waitFor(() => container.textContent.includes("freguesia"));
+  });
+
+  test("IMI: concelho fora da tabela mostra o aviso de taxa desconhecida em vez de inventar um valor", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    const concelhoInput = container.querySelector("#concelho-imi");
+    concelhoInput.value = "Concelho Inexistente XYZ";
+    concelhoInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    await waitFor(() => container.textContent.includes("Ainda não temos a taxa exata"));
   });
 
   test("cancelar volta à lista sem guardar nada", async () => {

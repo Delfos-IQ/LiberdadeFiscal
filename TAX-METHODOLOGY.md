@@ -216,12 +216,25 @@ por escalão.
 O motor foi simplificado (`irs.js` e `calculateIRS()` em
 `tax-engine.js`) para usar o mesmo campo uniforme `reducaoSobreTaxaMarginal`
 já usado pela Madeira, removendo o mecanismo diferenciado por escalão.
-Não foi possível ler a publicação original em Série I do Diário da
-República diretamente (página exige JavaScript, inacessível a partir
-deste ambiente de pesquisa) — a confirmação assenta em duas fontes
-convergentes (tabela numérica + citação textual do artigo), não no
-diploma em bruto. Ainda assim, é uma base mais sólida do que a hipótese
-anterior. **Achado relacionado, cablado nesta mesma ronda (18/08/2026):**
+
+**Confirmação direta na fonte primária (18/08/2026, ronda "verificação
+em mundo real"):** usando um browser real (via Claude in Chrome, que
+consegue renderizar JavaScript, ao contrário das ferramentas de
+pesquisa/fetch usadas nas rondas anteriores), foi lida diretamente a
+versão consolidada do DLR n.º 2/99/A em
+https://diariodarepublica.pt/dr/legislacao-consolidada/decreto-legislativo-regional/1999-164477580-164477048
+— Capítulo II, Artigo 4.º ("IRS"), texto integral: *"1 - Às taxas
+nacionais do imposto sobre o rendimento das pessoas singulares, em
+vigor em cada ano, é aplicada uma redução de 30 %."* Sem qualificação
+por escalão — confirma a hipótese uniforme. A nota de alterações no
+próprio artigo confirma também a segunda fonte já usada: *"Alterado
+pelo/a Artigo 47.º do/a Decreto Legislativo Regional n.º 15-A/2021/A -
+Diário da República n.º 105/2021, 1.º Suplemento, Série I de
+2021-05-31, em vigor a partir de 2021-06-05, produz efeitos a partir de
+2022-01-01"*. Este ponto passa de "duas fontes secundárias
+convergentes" para confirmação direta no diploma consolidado oficial —
+item retirado da checklist de produção. **Achado relacionado, cablado
+nesta mesma ronda (18/08/2026):**
 a mesma tabela da PwC mostra a Taxa Adicional de Solidariedade (Art.
 68.º-A CIRS) também reduzida em 30% nos Açores (2,5%→1,75%; 5%→3,5%) —
 ver detalhe completo mais acima, na subsecção "Taxa adicional de
@@ -414,22 +427,45 @@ Charutos, tabaco de enrolar e tabaco aquecido não foram verificados.
 Imposto de Selo.
 **Ficheiro:** `data/tax-rules/2026/patrimoniais.js`
 
-### IMI — 🟡 estrutura verificada, tabela por concelho 🟡 ESTIMATE parcial (reinvestigado 16/08/2026)
+### IMI — 🟡 estrutura verificada, tabela por concelho 🟡 ESTIMATE completa (embutida 18/08/2026)
 
 Intervalo legal nacional: 0,3%–0,45% do VPT/ano para prédios urbanos
 (até 0,5% em casos específicos — devolutos, degradados), 0,8% fixo
-para prédios rústicos. A tabela completa dos 308 municípios continua
-por embutir na app — é volumosa e muda todos os anos, câmara a câmara,
-até ao final do ano anterior — mas deixou de ser totalmente
-`UNKNOWN`. Confirmado (Doutor Finanças, 06/01/2026, dados comunicados
-à AT): mais de 200 dos 308 municípios aplicam a taxa mínima de 0,3% em
-2026; só **três** aplicam a taxa máxima de 0,45% — Vila Real de Santo
-António, Oeiras e Cartaxo; 31 municípios desceram a taxa e 6 subiram-na
-face a 2025 (destaque: Oeiras passou da taxa mínima para a máxima,
-0,3%→0,45%; Cascais subiu de 0,33% para 0,35%). O simulador usa 0,3%
-como valor sugerido por omissão (o mais comum, não necessariamente o
-do concelho do utilizador) e continua a pedir confirmação explícita —
-nunca assume silenciosamente. Fonte: [Doutor Finanças, "31 municípios descem IMI a pagar em 2026. Apenas 6 sobem."](https://www.doutorfinancas.pt/impostos/imi/31-municipios-descem-imi-a-pagar-em-2026-apenas-6-sobem/).
+para prédios rústicos.
+
+**Ronda "verificação em mundo real" (18/08/2026):** a tabela completa
+por concelho foi finalmente embutida em `data/tax-rules/2026/patrimoniais.js`
+(`imi.tabelaPorConcelho.lista`), usando um browser real (Claude in
+Chrome, capaz de renderizar JavaScript — ao contrário das ferramentas
+de pesquisa/fetch usadas em rondas anteriores) para ler o artigo da
+Economia e Finanças, "Taxas de IMI por Município a pagar em 2026"
+(02/01/2026), que por sua vez declara ter extraído os dados
+diretamente do Portal das Finanças. Cobertura: 299 dos 308 municípios
+com uma taxa exata; os 6 concelhos com taxa diferenciada por freguesia
+(Freixo de Espada à Cinta, Idanha-a-Nova, Lagos, Porto Santo, Aguiar da
+Beira, Sesimbra) ficam com `taxa: null` — a app explica isto ao
+utilizador em vez de mostrar um número inventado; os ~9 municípios
+sem informação nem nesta fonte simplesmente não aparecem na lista, e a
+app cai no aviso genérico de "taxa desconhecida" para eles.
+
+**Achado desta ronda:** a lista de exceções usada até agora ("só 3
+concelhos com taxa máxima") estava desatualizada — a leitura da tabela
+completa revela um **4.º** concelho com a taxa máxima de 0,45%:
+Nazaré, além de Vila Real de Santo António, Oeiras e Cartaxo (31
+municípios desceram a taxa e 6 subiram-na face a 2025, incluindo
+Oeiras, que passou da taxa mínima para a máxima).
+
+O simulador continua a usar 0,3% como valor sugerido apenas para
+concelhos totalmente ausentes da tabela, mostrando sempre a taxa exata
+quando o concelho está coberto, e continua a pedir confirmação
+explícita contra o Portal das Finanças ou a Câmara Municipal — nunca
+assume silenciosamente. **Continua ESTIMATE, não verified**, porque
+não houve confirmação cruzada direta com o Portal das Finanças (o
+simulador oficial de IMI corre em JavaScript e não expõe um
+endpoint/tabela pública a que esta app tenha conseguido aceder,
+mesmo com browser real) nem com a Portaria/deliberação de cada
+câmara municipal. Fonte: [Economia e Finanças, "Taxas de IMI por
+Município a pagar em 2026"](https://economiafinancas.com/2026/taxas-de-imi-por-municipio-a-pagar-em-2026/).
 
 ### ISV — 🟡 ESTIMATE (atualizado 15/08/2026)
 
@@ -615,24 +651,27 @@ dezembro), e o mais tardar antes de 31 de janeiro.
       espirituosas, produtos intermédios continuam UNKNOWN após duas
       rondas de investigação — 15/08 e 16/08/2026; vinho, espumante e
       bebidas fermentadas já ✅/🟡 — ver secção 4)
-- [ ] Resolver a tabela completa de concelhos do IMI (308 concelhos —
-      reinvestigado 16/08/2026: já não é totalmente UNKNOWN, sabe-se
-      que >200 aplicam 0,3% e só 3 aplicam 0,45%, mas a lista completa
-      dos 308 continua por embutir — ver secção 5)
-- [x] Diferencial regional de IRS dos Açores — ✅ Verified (18/08/2026):
-      corrigido de um mecanismo diferenciado por escalão (nunca
-      confirmado numericamente) para uma redução uniforme de 30%,
-      confirmada pela tabela numérica da PwC Guia Fiscal 2026 e pelo
-      texto do Art. 4.º do DLR 2/99/A (via pesquisa, corroborado pela
-      Circular 6/2025 da AT) — ver secção 1. **Continua por confirmar**:
-      o texto integral em Série I do Diário da República não foi lido
-      diretamente (página exige JavaScript, inacessível nesta pesquisa).
-- [ ] Confirmar o texto integral do Decreto Legislativo Regional
-      n.º 2/99/A diretamente na Série I do Diário da República (a
-      leitura direta falhou por a página exigir JavaScript) — a
-      confirmação atual assenta em duas fontes secundárias convergentes
-      (tabela numérica da PwC + citação textual via pesquisa), não no
-      diploma em bruto.
+- [x] Resolver a tabela completa de concelhos do IMI — 🟡 ESTIMATE
+      (embutida 18/08/2026, ronda "verificação em mundo real"): 299 dos
+      308 concelhos de Portugal com taxa exata, lidos diretamente via
+      browser real de um artigo (Economia e Finanças, 02/01/2026) que
+      declara tê-los extraído do Portal das Finanças; os 6 concelhos com
+      taxa diferenciada por freguesia ficam marcados com taxa `null` em
+      vez de um valor inventado, e ~9 concelhos continuam sem
+      informação disponível nem nesta fonte. Achado desta ronda: a
+      lista anterior de "3 concelhos com taxa máxima" estava
+      desatualizada — são 4 (falta a Nazaré). Continua ESTIMATE porque
+      não houve confirmação cruzada direta com o Portal das Finanças
+      (simulador em JavaScript, sem endpoint tabular acessível) — ver
+      secção 5.
+- [x] Diferencial regional de IRS dos Açores — ✅ Verified (confirmação
+      final 18/08/2026, ronda "verificação em mundo real"): corrigido de
+      um mecanismo diferenciado por escalão (nunca confirmado
+      numericamente) para uma redução uniforme de 30%, confirmada
+      diretamente no texto consolidado do Art. 4.º do DLR 2/99/A via
+      leitura direta em diariodarepublica.pt (browser real, JS
+      renderizado) — já não depende só de fontes secundárias. Ver
+      secção 1.
 - [x] Cablar a Taxa Adicional de Solidariedade (Art. 68.º-A CIRS) na
       cadeia salarial real — 🟡 ESTIMATE (cablada 18/08/2026):
       `calculateTaxaSolidariedade()` já é chamada por
