@@ -18,7 +18,7 @@
 // legal exigida pelo spec (secção 9): onboarding, footer, e este ecrã.
 
 import { calculateFiscalFreedomDay } from "../data/tax-engine.js";
-import { getPeriodoAtual, fecharPeriodoAtual } from "../data/db.js";
+import { getPeriodoAtual, fecharPeriodoAtual, getHistoricoPeriodos } from "../data/db.js";
 import { buildShareText, desenharCartaoCanvas } from "../data/share-card.js";
 
 // Ano fiscal ativo — tem de acompanhar data/tax-rules/2026/*.js. Não
@@ -32,12 +32,18 @@ export function render(container) {
     periodo: null,
     erro: null,
     resultado: null,
+    historico: [], // períodos que o próprio utilizador já fechou antes (roadmap P3-14)
   };
 
   async function iniciar() {
     state.periodo = await getPeriodoAtual();
     state.phase = state.periodo.rendimentos ? "pronto" : "falta-rendimentos";
     draw();
+    // Histórico carregado à parte, sem bloquear o primeiro render — só é
+    // usado no ecrã de resultado (drawResult), por isso um pequeno atraso
+    // aqui não afeta o "Modo Rápido em <60s".
+    state.historico = await getHistoricoPeriodos();
+    if (state.phase === "resultado") draw();
   }
 
   function draw() {
@@ -317,15 +323,100 @@ export function render(container) {
     fecharBtn.addEventListener("click", async () => {
       await fecharPeriodoAtual(r);
       state.periodo = await getPeriodoAtual();
+      state.historico = await getHistoricoPeriodos();
       state.phase = "falta-rendimentos";
       draw();
     });
 
+    const comparativa = desenharComparativaHistorico(r);
+
     card.append(heading, dataHero, percentagemLabel, framing, pensarCritico, breakdown);
     if (avisoFaltantes) card.append(avisoFaltantes);
-    card.append(detalhes, privacidade, acoes, notaPartilha, fecharBtn, disclaimer);
+    card.append(detalhes, privacidade, acoes, notaPartilha, fecharBtn);
+    if (comparativa) card.append(comparativa);
+    card.append(disclaimer);
     container.append(card);
     heading.focus({ preventScroll: false });
+  }
+
+  /**
+   * Comparativa entre o resultado atual e os períodos que o utilizador
+   * já fechou antes (roadmap P3-14). Só aparece quando há pelo menos
+   * um período fechado no histórico — nunca inventa outros anos: o ano
+   * fiscal (`ANO_FISCAL`) é o mesmo para todos os períodos enquanto
+   * não existir um seletor de ano (ver TAX-METHODOLOGY.md), por isso
+   * isto compara os TEUS registos ao longo do tempo, não uma mudança
+   * de legislação entre anos — a nota abaixo deixa isso explícito.
+   *
+   * @param {object} resultadoAtual
+   * @returns {HTMLElement|null}
+   */
+  function desenharComparativaHistorico(resultadoAtual) {
+    if (!state.historico || state.historico.length === 0) return null;
+
+    const secao = el("div", "dia-liberdade-comparativa");
+    const subheading = el("h2", null, "Comparativa com períodos anteriores");
+    subheading.id = "comparativa-historico-heading";
+
+    const nota = el(
+      "p",
+      "disclaimer",
+      "Isto compara os PRÓPRIOS períodos que já fechaste nesta app ao longo do tempo — não é uma comparação entre anos fiscais diferentes (o motor fiscal usa sempre os parâmetros de " +
+        ANO_FISCAL +
+        ", ver TAX-METHODOLOGY.md). Se o teu rendimento, gastos ou taxas mudaram entre períodos, é isso que vais ver refletido aqui."
+    );
+
+    // Ordem cronológica ascendente (mais antigo primeiro) para a
+    // tabela ler-se como uma linha do tempo; o resultado atual
+    // (ainda não fechado) aparece sempre na última linha.
+    const fechadosOrdenados = state.historico
+      .slice()
+      .sort((a, b) => (a.fechadoEm ?? "").localeCompare(b.fechadoEm ?? ""));
+
+    const tabela = document.createElement("table");
+    tabela.className = "taximetro-escaloes";
+    const thead = document.createElement("thead");
+    thead.innerHTML = "<tr><th>Período</th><th>Dia da Liberdade Fiscal</th><th>% do ano</th><th>Total impostos</th></tr>";
+    const tbody = document.createElement("tbody");
+
+    fechadosOrdenados.forEach((periodo) => {
+      const r = periodo.resultadoDiaLiberdade;
+      if (!r) return;
+      const tr = document.createElement("tr");
+      const dataFechado = periodo.fechadoEm ? formatarDataPT(periodo.fechadoEm.slice(0, 10)) : "—";
+      tr.innerHTML = `<td>Fechado em ${dataFechado}</td><td>${formatarDataPT(r.date)}</td><td>${formatPercentagem(r.percentage)}</td><td>${formatEUR(r.totalImpostos)}</td>`;
+      tbody.append(tr);
+    });
+
+    const trAtual = document.createElement("tr");
+    trAtual.innerHTML = `<td><strong>Atual (por fechar)</strong></td><td>${formatarDataPT(resultadoAtual.date)}</td><td>${formatPercentagem(resultadoAtual.percentage)}</td><td>${formatEUR(resultadoAtual.totalImpostos)}</td>`;
+    tbody.append(trAtual);
+
+    tabela.append(thead, tbody);
+
+    // Frase de comparação direta contra o período fechado mais
+    // recente, para não obrigar a pessoa a ler a tabela e fazer contas
+    // de cabeça.
+    const maisRecente = fechadosOrdenados[fechadosOrdenados.length - 1];
+    let fraseComparacao = null;
+    if (maisRecente?.resultadoDiaLiberdade) {
+      const rAnterior = maisRecente.resultadoDiaLiberdade;
+      const deltaDias = resultadoAtual.dayOfYear - rAnterior.dayOfYear;
+      const deltaPP = round2((resultadoAtual.percentage - rAnterior.percentage) * 100);
+      let texto;
+      if (deltaDias === 0) {
+        texto = `Face ao período fechado mais recente (${formatarDataPT(rAnterior.date)}), o resultado atual está no mesmo dia do ano.`;
+      } else if (deltaDias > 0) {
+        texto = `Face ao período fechado mais recente (${formatarDataPT(rAnterior.date)}), o resultado atual está ${deltaDias} dia${deltaDias === 1 ? "" : "s"} mais tarde no ano (${deltaPP > 0 ? "+" : ""}${deltaPP} pontos percentuais).`;
+      } else {
+        texto = `Face ao período fechado mais recente (${formatarDataPT(rAnterior.date)}), o resultado atual está ${Math.abs(deltaDias)} dia${Math.abs(deltaDias) === 1 ? "" : "s"} mais cedo no ano (${deltaPP} pontos percentuais).`;
+      }
+      fraseComparacao = el("p", null, texto);
+    }
+
+    secao.append(subheading, nota, tabela);
+    if (fraseComparacao) secao.append(fraseComparacao);
+    return secao;
   }
 
   function desenharIlustracao() {

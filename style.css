@@ -1130,6 +1130,19 @@ p {
 }
 
 /* -----------------------------
+   6h. Dia da Liberdade — comparativa com períodos anteriores (P3-14)
+   ----------------------------- */
+.dia-liberdade-comparativa {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.dia-liberdade-comparativa table {
+  margin-bottom: var(--space-3);
+}
+
+/* -----------------------------
    7. Estado offline
    ----------------------------- */
 .offline-banner {

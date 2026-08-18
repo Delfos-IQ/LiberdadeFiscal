@@ -274,6 +274,51 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
     const periodo = await getPeriodoAtual();
     assert.equal(periodo.rendimentos, null, "o período atual deve ter reiniciado");
   });
+
+  test("comparativa com períodos anteriores (roadmap P3-14): não aparece no primeiro cálculo", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    assert.equal(container.querySelector("#comparativa-historico-heading"), null);
+  });
+
+  test("comparativa com períodos anteriores: aparece depois de fechar um período e calcular de novo", async () => {
+    await preencherRendimentos(1800);
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+    clickByText(container, "Fechar este período e começar um novo");
+    await waitFor(() => container.textContent.includes("Ainda não há rendimento registado"));
+
+    await preencherRendimentos(2400);
+    // Recarrega o módulo para forçar o load() inicial a ler o histórico
+    // já com a entrada recém-fechada (o state.historico de uma
+    // instância anterior não é partilhado).
+    const container2 = getContainer();
+    render(container2);
+    await waitFor(() => container2.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container2, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container2.querySelector("#resultado-dia-heading"));
+    await waitFor(() => container2.querySelector("#comparativa-historico-heading") !== null);
+
+    const comparativa = container2.querySelector("#comparativa-historico-heading");
+    assert.ok(comparativa, "a secção de comparativa devia aparecer com um período fechado no histórico");
+
+    const tabela = container2.querySelector(".dia-liberdade-comparativa table");
+    assert.ok(tabela);
+    const linhas = tabela.querySelectorAll("tbody tr");
+    // 1 linha do período fechado + 1 linha "Atual (por fechar)"
+    assert.equal(linhas.length, 2);
+    assert.match(linhas[1].textContent, /Atual \(por fechar\)/);
+
+    assert.match(container2.textContent, /Face ao período fechado mais recente/);
+  });
 });
 
 describe("Dia da Liberdade Fiscal — acessibilidade básica", () => {
