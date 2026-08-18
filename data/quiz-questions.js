@@ -1,12 +1,23 @@
 // Liberdade Fiscal — Banco de perguntas do Quiz (Fase 3)
 //
-// 30 perguntas, cada uma com fonte rastreável. A maioria assenta nos
-// parâmetros já verificados em data/tax-rules/2026/ (Fase 2) — ver
-// TAX-METHODOLOGY.md. Perguntas de definição geral (o que é cada
-// imposto, prazos) foram confirmadas por pesquisa web adicional em
-// 15/08/2026. Nenhuma pergunta usa um valor marcado UNKNOWN ou
-// ESTIMATE nos dados da Fase 2 — isso seria ensinar um número não
-// verificado como se fosse facto.
+// 36 perguntas originais (Fase 3, 15/08/2026), cada uma com fonte
+// rastreável. A maioria assenta nos parâmetros já verificados em
+// data/tax-rules/2026/ (Fase 2) — ver TAX-METHODOLOGY.md. Perguntas de
+// definição geral (o que é cada imposto, prazos) foram confirmadas por
+// pesquisa web adicional em 15/08/2026. Nenhuma pergunta usa um valor
+// marcado UNKNOWN ou ESTIMATE nos dados da Fase 2 — isso seria ensinar
+// um número não verificado como se fosse facto.
+//
+// Tanda 2 (18/08/2026, a pedido do autor, +24 perguntas, total 60):
+// todas as perguntas novas foram extraídas diretamente dos ficheiros
+// de dados já verificados desta app (data/tax-rules/2026/*.js e
+// data/oecd-benchmark-2025.js), incluindo factos que só ficaram
+// verificados após a ronda de investigação do roadmap P1-8 (IABA,
+// ISV, IUC) — sem pesquisa nova nem uso dos PDFs enviados pelo autor
+// nessa sessão (um deles tem orientação económica declarada,
+// incompatível com a neutralidade política exigida pelo spec §1). Tal
+// como na tanda original, nenhuma pergunta usa um valor marcado
+// ESTIMATE/UNKNOWN no ficheiro de origem.
 //
 // Estrutura preparada para escalar a 200 perguntas sem mudanças de
 // arquitetura (spec §6.1): basta acrescentar objetos a este array.
@@ -437,6 +448,313 @@ export const QUIZ_QUESTIONS = [
     correct_index: 1,
     explanation_pt:
       "A retenção na fonte é um adiantamento mensal por conta do IRS anual — não é o imposto final. O valor definitivo apura-se na declaração anual, o que pode resultar em reembolso ou pagamento adicional.",
+    category: "Conceitos Gerais",
+  },
+
+  // ========== TANDA 2 (18/08/2026) ==========
+
+  // ---------- IRS (continuação) ----------
+  {
+    id: "irs-011",
+    question_pt: "Qual é o valor da dedução específica da Categoria A (trabalho dependente) em 2026?",
+    options: ["600€/ano", "920€/ano", "4.104€/ano", "12.880€/ano"],
+    correct_index: 2,
+    explanation_pt:
+      "A dedução específica da Categoria A (Art. 25.º CIRS) é de 4.104€/ano, ou o valor das contribuições efetivas para a Segurança Social, se for superior.",
+    category: "IRS",
+  },
+  {
+    id: "irs-012",
+    question_pt: "Até que valor mensal de rendimento não há retenção na fonte de IRS em 2026?",
+    options: ["537,13€", "920€", "1.695€", "2.326€"],
+    correct_index: 1,
+    explanation_pt:
+      "Abaixo de 920€/mês não há retenção na fonte de IRS — este limiar acompanha a atualização do salário mínimo nacional.",
+    category: "IRS",
+  },
+  {
+    id: "irs-013",
+    question_pt: "A taxa adicional de solidariedade tem quantos patamares, e a que taxas?",
+    options: [
+      "Um único patamar, a 5%",
+      "Dois patamares: 2,5% acima de 80.000€, e 5% acima de 250.000€",
+      "Três patamares, entre 1% e 10%",
+      "Não tem patamares — é sempre 2,5%",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "A taxa de solidariedade (Art. 68.º-A CIRS) incide só sobre a fração do rendimento coletável que excede cada limiar: 2,5% entre 80.000€ e 250.000€, e 5% acima de 250.000€.",
+    category: "IRS",
+  },
+  {
+    id: "irs-014",
+    question_pt: "Um filho de 24 anos ainda pode ser dependente no IRS dos pais se o seu rendimento anual não exceder quanto?",
+    options: [
+      "O salário mínimo nacional anual",
+      "14 vezes a Retribuição Mínima Mensal Garantida",
+      "O mínimo de existência",
+      "Não pode, o limite é sempre 18 anos",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Até aos 25 anos, um filho pode continuar a ser dependente se os seus rendimentos anuais não ultrapassarem 14 vezes a Retribuição Mínima Mensal Garantida.",
+    category: "IRS",
+  },
+
+  // ---------- Segurança Social (continuação) ----------
+  {
+    id: "ss-006",
+    question_pt: "O que é o IAS (Indexante de Apoios Sociais)?",
+    options: [
+      "Um imposto sobre apoios sociais",
+      "Um valor de referência usado como base de cálculo de várias prestações sociais",
+      "A taxa de TSU dos trabalhadores independentes",
+      "Um subsídio pago a quem está desempregado",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O IAS (537,13€/mês em 2026) não é um imposto — é um valor de referência que serve de base de cálculo a várias prestações da Segurança Social.",
+    category: "Segurança Social",
+  },
+  {
+    id: "ss-007",
+    question_pt: "Um trabalhador independente no regime simplificado contribui para a Segurança Social sobre que base?",
+    options: [
+      "O rendimento relevante, uma percentagem do que faturou (varia consoante o tipo de rendimento)",
+      "Sempre sobre o salário mínimo nacional, independentemente do que fatura",
+      "Não paga Segurança Social",
+      "Sobre o dobro do que faturou",
+    ],
+    correct_index: 0,
+    explanation_pt:
+      "No regime simplificado dos trabalhadores independentes, a base de incidência contributiva é o \"rendimento relevante\" — uma percentagem do que foi faturado, que varia consoante o tipo de rendimento (prestação de serviços ou produção/venda de bens), à qual depois se aplica a taxa contributiva.",
+    category: "Segurança Social",
+  },
+
+  // ---------- IVA (continuação) ----------
+  {
+    id: "iva-006",
+    question_pt: "A taxa intermédia de IVA (a do meio, entre a reduzida e a normal) aplica-se tipicamente a...",
+    options: [
+      "Todos os bens de luxo",
+      "Certos bens e serviços como a restauração, nem tão essenciais quanto os da taxa reduzida, nem \"normais\"",
+      "Só a serviços públicos",
+      "Só a exportações",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "A taxa intermédia (Lista II do CIVA) cobre uma categoria intermédia de bens e serviços — como a restauração — que não se enquadram nem na taxa reduzida (bens essenciais) nem ficam à taxa normal.",
+    category: "IVA",
+  },
+
+  // ---------- Impostos Especiais (continuação) ----------
+  {
+    id: "iec-007",
+    question_pt: "Qual é a taxa de IABA sobre o vinho tranquilo e o espumante em Portugal?",
+    options: ["9,64€/hl", "12,06€/hl", "87,92€/hl", "0€/hl — estão isentos"],
+    correct_index: 3,
+    explanation_pt:
+      "O vinho tranquilo e o espumante (Art.º 72.º do CIEC) estão isentos de IABA — ao contrário de outras bebidas fermentadas (como a sidra) e das bebidas espirituosas.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-008",
+    question_pt: "Sobre que base incide o IABA das bebidas espirituosas (Art.º 76.º do CIEC)?",
+    options: [
+      "Sobre o preço de venda ao público, tal como o IVA",
+      "Sobre o hectolitro de álcool contido (álcool puro, base 100% vol.)",
+      "Sobre o peso da garrafa",
+      "Não há IABA sobre bebidas espirituosas",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "As bebidas espirituosas são tributadas por hectolitro de álcool contido (1.602,51€/hl de álcool puro, base 100% vol. a 20°C) — a mesma unidade tributável e o mesmo valor do álcool etílico (Art.º 75.º).",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-009",
+    question_pt: "As pequenas cervejeiras e pequenas destilarias, em relação ao IABA, pagam...",
+    options: [
+      "A taxa normal, sem exceções",
+      "50% da taxa normal",
+      "Estão totalmente isentas",
+      "O dobro da taxa normal",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O CIEC prevê um regime especial para pequenas cervejeiras e pequenas destilarias, que pagam 50% da taxa normal de IABA — um apoio a produtores de menor escala.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-010",
+    question_pt: "Que bebida tradicional portuguesa pode beneficiar de uma redução de 75% no IABA (pagando só 25% da taxa), em concelhos elegíveis?",
+    options: ["Vinho do Porto", "Aguardente de medronho", "Cerveja artesanal", "Licor de Ginja"],
+    correct_index: 1,
+    explanation_pt:
+      "Licores/\"crème de\" e aguardentes destiladas de medronho, produzidos e destilados em concelhos elegíveis, beneficiam de um regime de redução: pagam só 25% da taxa normal de IABA (redução de 75%).",
+    category: "Impostos Especiais",
+  },
+
+  // ---------- Impostos Patrimoniais e de Veículo (continuação) ----------
+  {
+    id: "pat-008",
+    question_pt: "Em que circunstância a taxa de IMI de um prédio urbano pode ultrapassar o intervalo normal (0,3%-0,45%), chegando a 0,5%?",
+    options: [
+      "Nunca — o intervalo de 0,3% a 0,45% é sempre um limite absoluto",
+      "Prédios devolutos ou degradados",
+      "Só para imóveis de luxo acima de 1 milhão de euros",
+      "Só no primeiro ano após a compra",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O intervalo legal nacional para prédios urbanos é 0,3% a 0,45%, mas pode chegar a 0,5% em circunstâncias específicas — nomeadamente prédios devolutos ou degradados.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-009",
+    question_pt: "Um veículo híbrido plug-in (PHEV) elegível, em relação ao ISV, paga tipicamente...",
+    options: ["A taxa normal, sem desconto", "Só 25% do ISV calculado", "O dobro do ISV normal", "Está totalmente isento"],
+    correct_index: 1,
+    explanation_pt:
+      "Um híbrido plug-in elegível (com autonomia elétrica mínima e emissões dentro dos limites definidos) paga só 25% do ISV calculado — um desconto de 75%.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-010",
+    question_pt: "No ISV, o desconto por idade de um veículo usado importado...",
+    options: [
+      "Diminui à medida que o veículo é mais antigo",
+      "Aumenta à medida que o veículo é mais antigo, até um máximo de 80%",
+      "É sempre fixo em 50%, independentemente da idade",
+      "Só se aplica a veículos com menos de 1 ano",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O desconto por idade no ISV cresce por escalões: começa em 10% no primeiro ano e vai aumentando até um máximo de 80% para veículos com 10 ou mais anos.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-011",
+    question_pt: "O Imposto de Selo sobre o arrendamento (verba 2) incide, a 10%, sobre o valor de quanto tempo de renda?",
+    options: ["1 mês", "3 meses", "6 meses", "1 ano"],
+    correct_index: 0,
+    explanation_pt:
+      "A verba 2 da Tabela Geral do Imposto de Selo tributa o arrendamento a 10% sobre o valor de 1 mês de renda, cobrado no início do contrato ou em cada aumento.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-012",
+    question_pt: "Qual é a taxa de Imposto de Selo na aquisição onerosa de imóveis (verba 1.1)?",
+    options: ["0,3%", "0,8%", "5%", "10%"],
+    correct_index: 1,
+    explanation_pt:
+      "A aquisição onerosa de imóveis (verba 1.1) paga Imposto de Selo à taxa de 0,8%, sobre o maior valor entre o preço e o valor patrimonial tributário — pago em simultâneo com o IMT, nunca em vez dele.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-013",
+    question_pt: "Uma herança deixada a um filho (descendente em linha reta) está sujeita a Imposto de Selo pela transmissão gratuita?",
+    options: [
+      "Sim, sempre à taxa de 10%",
+      "Não — descendentes, ascendentes e cônjuge/unido de facto estão isentos desta verba",
+      "Só se o valor for superior a 1 milhão de euros",
+      "Só se o filho for menor de idade",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O Art. 6.º, al. e) do Código do Imposto do Selo isenta desta verba (transmissões gratuitas) o cônjuge/unido de facto, os descendentes e os ascendentes — a taxa de 10% aplica-se a outros graus de parentesco e a terceiros.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-014",
+    question_pt: "A categoria B do IUC (a mais comum) aplica-se a veículos com 1.ª matrícula a partir de quando?",
+    options: ["1 de janeiro de 2000", "1 de julho de 2007", "1 de janeiro de 2015", "1 de janeiro de 2020"],
+    correct_index: 1,
+    explanation_pt:
+      "A categoria B do IUC cobre os automóveis ligeiros de passageiros e mistos com 1.ª matrícula a partir de 1 de julho de 2007 — é a categoria mais comum, para a generalidade dos veículos atuais.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-015",
+    question_pt: "Se o IUC calculado para um veículo for inferior a 10€, o que acontece?",
+    options: [
+      "Paga-se na mesma, sem exceção",
+      "Não é cobrado — há um limiar de dispensa de cobrança",
+      "Duplica-se automaticamente",
+      "Só se aplica a motociclos",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Existe um limiar de dispensa de cobrança de 10€ no IUC: se o valor calculado for inferior a esse montante, o imposto não é cobrado.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-016",
+    question_pt: "Além dos veículos 100% elétricos, quem mais está isento de IUC?",
+    options: [
+      "Ninguém mais",
+      "Pessoas com um grau de incapacidade igual ou superior a 60%",
+      "Todos os veículos com mais de 5 anos",
+      "Só empresas com frotas grandes",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Além dos veículos elétricos, há isenção de IUC para pessoas com um grau de incapacidade igual ou superior a 60%, nas condições previstas no Código do IUC.",
+    category: "Impostos Patrimoniais",
+  },
+
+  // ---------- Comparação Internacional (nova categoria) ----------
+  {
+    id: "int-001",
+    question_pt: "Segundo a OCDE (Taxing Wages 2026), o \"tax wedge\" de Portugal em 2025 está...",
+    options: [
+      "Bem abaixo da média da OCDE",
+      "Acima da média da OCDE (39,3% vs. 35,1%)",
+      "Exatamente igual à média da OCDE",
+      "A OCDE não calcula este dado para Portugal",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O tax wedge de Portugal (39,3%) está acima da média da OCDE (35,1%) — mas este indicador só inclui IRS e contribuições de Segurança Social, não IVA nem impostos especiais ou patrimoniais.",
+    category: "Comparação Internacional",
+  },
+  {
+    id: "int-002",
+    question_pt: "Entre os países comparados no benchmark desta app (PT, ES, FR, DE, IE, NL, CH), qual tem o \"tax wedge\" mais baixo?",
+    options: ["França", "Alemanha", "Suíça", "Espanha"],
+    correct_index: 2,
+    explanation_pt:
+      "A Suíça tem o tax wedge mais baixo do grupo comparado (23,0%), bem abaixo da média da OCDE — a Alemanha tem o mais alto (49,3%).",
+    category: "Comparação Internacional",
+  },
+  {
+    id: "int-003",
+    question_pt: "O \"tax wedge\" da OCDE, ao contrário do Dia da Liberdade Fiscal desta app, NÃO inclui...",
+    options: [
+      "O IRS",
+      "As contribuições de Segurança Social",
+      "IVA, impostos especiais de consumo e impostos patrimoniais",
+      "Nada — são exatamente a mesma coisa",
+    ],
+    correct_index: 2,
+    explanation_pt:
+      "O tax wedge da OCDE mede só a carga sobre o trabalho (IRS + Segurança Social). O Dia da Liberdade Fiscal desta app é mais completo: inclui também o IVA, os impostos especiais e os patrimoniais que registares — por isso os dois números não são diretamente comparáveis.",
+    category: "Comparação Internacional",
+  },
+
+  // ---------- Conceitos gerais (continuação) ----------
+  {
+    id: "ger-004",
+    question_pt: "Onde ficam guardados os dados que introduzes nesta app (salário, gastos, etc.)?",
+    options: [
+      "Num servidor central da app, associados à tua conta",
+      "Localmente, no teu próprio dispositivo — nunca num servidor, exceto no fluxo opcional de foto+IA",
+      "Na cloud de um parceiro comercial",
+      "São partilhados automaticamente com a Autoridade Tributária",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "A app é \"local-first\": os teus dados ficam guardados só no teu dispositivo (IndexedDB do navegador), sem conta nem servidor próprio. A única exceção é o fluxo opcional de foto+IA, sempre avisado no momento em que é usado.",
     category: "Conceitos Gerais",
   },
 ];
