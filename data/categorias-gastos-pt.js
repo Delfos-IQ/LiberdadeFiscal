@@ -37,11 +37,15 @@
 // para combustível; nº de cigarros + preço do maço para tabaco) que
 // permite calcular o imposto especial com exatidão em vez de o deixar
 // por explicar — usando calcularITCigarros()/o ISP unitário já
-// verificados em data/tax-engine.js. Bebidas alcoólicas (exceto
-// cigarros) continuam sem essa exatidão possível: a tabela de IABA
-// para cerveja/espirituosas/produtos intermédios não foi encontrada em
-// nenhuma das duas rondas de investigação (15/08 e 16/08/2026) — ver
-// data/tax-rules/2026/impostos-especiais.js.
+// verificados em data/tax-engine.js. Bebidas alcoólicas continuam sem
+// essa exatidão na UI: as taxas de IABA para cerveja/espirituosas/
+// produtos intermédios já foram encontradas e verificadas (terceira
+// ronda de investigação, 18/08/2026 — ver
+// data/tax-rules/2026/impostos-especiais.js), mas calculá-las exigiria
+// perguntar ao utilizador dados que a maioria não sabe de cabeça
+// (volume exato por tipo de bebida, grau Plato da cerveja) — por isso
+// esta categoria continua, por agora, a mostrar só o IVA. Decisão de
+// UX documentada, não uma lacuna de dados.
 
 /**
  * @typedef {object} CategoriaGasto
@@ -126,7 +130,7 @@ export const CATEGORIAS_GASTOS_PT = [
     exemplos: ["Cerveja, vinho", "Bebidas espirituosas"],
     tipo: "normal",
     notes:
-      "Além do IVA, a maioria das bebidas alcoólicas tem também o IABA (Imposto sobre o Álcool) já incluído no preço — mais uma dupla tributação, tal como acontece no combustível e no tabaco. Só que, apesar de termos tentado duas vezes (em 15/08 e 16/08/2026), não conseguimos encontrar a tabela de taxas de IABA para cerveja, bebidas espirituosas e produtos intermédios — por isso, para já, só te conseguimos mostrar o IVA, não o IABA. Uma exceção que já confirmámos: o vinho tranquilo e o espumante estão isentos de IABA (taxa de 0€).",
+      "Além do IVA, a maioria das bebidas alcoólicas tem também o IABA (Imposto sobre o Álcool) já incluído no preço — mais uma dupla tributação, tal como acontece no combustível e no tabaco. Já sabemos as taxas oficiais (vinho tranquilo e espumante: isentos; outras bebidas fermentadas como sidra: 12,06€/hl; produtos intermédios: 87,92€/hl; bebidas espirituosas: 1.602,51€/hl de álcool puro), mas para já continuamos a mostrar-te só o IVA, não o IABA: calculá-lo exigiria perguntar-te coisas que a maioria de nós não sabe de cabeça sobre o que compra — o volume exato, o tipo de bebida, e no caso da cerveja até o grau Plato do mosto — e preferimos não arriscar um número errado a partir de dados incompletos.",
   },
 ];
 

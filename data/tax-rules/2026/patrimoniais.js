@@ -45,26 +45,28 @@ export const PATRIMONIAIS_2026 = {
   // ---------------------------------------------------------------
   // ISV — Imposto sobre Veículos (pago uma única vez, na matrícula)
   // ---------------------------------------------------------------
-  // Fonte: EcoImport, "ISV 2026: Novas Regras, Tabelas Oficiais e o Que
-  // Realmente Mudou" (https://ecoimport.pt/isv-2026-novas-regras/),
-  // artigo publicado 17/02/2026, atualizado 21/04/2026, consultado
-  // 15/08/2026. O artigo confirma explicitamente que "o Orçamento do
-  // Estado para 2026 não aumentou as taxas do ISV" e que "as tabelas
-  // de cilindrada e CO2 mantêm-se iguais às de 2025" — corroborado
-  // independentemente pela PwC (pwc.pt/pt/pwcinforfisco/orcamentoestado/
-  // impostos-indiretos.html), que só regista uma alteração à regra dos
-  // híbridos plug-in (norma Euro 6e-bis) para 2026, sem mexer nas
-  // tabelas de cilindrada/CO2. Os dois exemplos numéricos do artigo
-  // EcoImport foram reproduzidos manualmente e batem certo com a
-  // fórmula (cilindrada×taxa−parcela) + (CO2×taxa−parcela), o que dá
-  // confiança adicional — mas o valor não foi confirmado diretamente
-  // contra o texto do Código do ISV (que devolveu uma página vazia/
-  // sem conteúdo acessível nesta pesquisa), por isso mantém-se
-  // ESTIMATE, não ✅ Verified.
+  // Fonte original: EcoImport, "ISV 2026: Novas Regras, Tabelas
+  // Oficiais e o Que Realmente Mudou" (ecoimport.pt/isv-2026-novas-
+  // regras/), consultado 15/08/2026, confirmando que o OE2026 não
+  // alterou as tabelas de cilindrada/CO2 face a 2025.
+  //
+  // Verificação direta (18/08/2026, roadmap P1-8): a tabela completa de
+  // componenteCilindrada e componenteCO2Wltp abaixo foi cruzada,
+  // número a número, contra o folheto oficial da Autoridade Tributária
+  // "Sistema Fiscal Português — Taxas Aplicáveis 2025"
+  // (info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/
+  // Folhetos_informativos/Documents/SFP-Taxas-2025.pdf), secção 4 (ISV)
+  // — todos os valores (taxa/cm3, taxa/grama CO2, parcela a abater)
+  // batem exatamente. Como o OE2026 não alterou estas tabelas (fonte
+  // EcoImport acima), esta confirmação de 2025 vale para 2026. Por
+  // isso passa de ESTIMATE a ✅ Verified — mesmo padrão já aplicado ao
+  // Imposto de Selo nesta secção.
   isv: {
-    status: "ESTIMATE",
-    source: "EcoImport (ecoimport.pt/isv-2026-novas-regras/), consultado 15/08/2026",
-    sourceUrl: "https://ecoimport.pt/isv-2026-novas-regras/",
+    status: "verified",
+    source:
+      "EcoImport (estrutura e confirmação de ausência de alteração no OE2026) + Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção ISV (valores numéricos, cruzados um a um), consultado 18/08/2026",
+    sourceUrl:
+      "https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf",
     formula:
       "ISV = componente cilindrada + componente ambiental (CO2, tabela WLTP) [+ 500€ se gasóleo] [× 0,25 se PHEV elegível] × (1 - desconto por idade, se usado importado). Só as tabelas WLTP foram recolhidas — veículos homologados em NEDC (normalmente pré-2018) continuam UNKNOWN nesta app.",
     // Componente cilindrada — igual para gasolina/GPL/GN, aplicável à generalidade
@@ -127,19 +129,31 @@ export const PATRIMONIAIS_2026 = {
   // ---------------------------------------------------------------
   // IUC — Imposto Único de Circulação (pago anualmente)
   // ---------------------------------------------------------------
-  // Fonte: DECO PROteste, "Tabelas IUC 2026: quanto paga e até quando"
-  // (deco.proteste.pt/dinheiro/impostos/noticias/tabelas-iuc-quanto-paga),
-  // publicado 06/01/2026, consultado 15/08/2026. Associação de defesa
-  // do consumidor (não é a AT, por isso ESTIMATE e não ✅ Verified),
-  // mas os dois exemplos numéricos do artigo foram reproduzidos
-  // manualmente e batem certo com a fórmula documentada, o que dá
-  // confiança adicional à tabela.
+  // Fonte original: DECO PROteste, "Tabelas IUC 2026: quanto paga e até
+  // quando" (deco.proteste.pt/dinheiro/impostos/noticias/tabelas-iuc-
+  // quanto-paga), consultado 15/08/2026.
+  //
+  // Verificação direta (18/08/2026, roadmap P1-8): categoriaB (cilindrada,
+  // CO2 NEDC/WLTP, coeficientes por ano de matrícula) e categoriaAPre2007
+  // (gasóleo 1996-2007/1990-1995/1981-1989 completo; gasolina/GPL/
+  // elétrico só 1996-2007) foram cruzadas número a número contra o
+  // mesmo folheto oficial da AT usado para o ISV acima, secção 3
+  // (IUC) — todos os valores batem exatamente, incluindo o adicional
+  // de gasóleo. Confirmado também que as taxas de IUC de 2026 são
+  // iguais às de 2024/2025 (sem alteração no OE2026). categoriaB e
+  // categoriaAPre2007 passam por isso a ✅ Verified. categoriaEMotociclos
+  // não foi re-cruzada nesta ronda — mantém-se como estava. Categorias
+  // C/D (mercadorias, por peso bruto) e F (potência em kW), e as
+  // colunas de gasolina 1990-1995/1981-1989, continuam sem tabela
+  // recolhida.
   iuc: {
-    status: "ESTIMATE",
-    source: "DECO PROteste, consultado 15/08/2026",
-    sourceUrl: "https://www.deco.proteste.pt/dinheiro/impostos/noticias/tabelas-iuc-quanto-paga",
+    status: "verified",
+    source:
+      "DECO PROteste (estrutura) + Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção IUC (valores numéricos de categoriaB e categoriaAPre2007, cruzados um a um), consultado 18/08/2026",
+    sourceUrl:
+      "https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf",
     notes:
-      "Estrutura de 6 categorias (A-F) mencionada no spec original; esta atualização cobre em detalhe a categoria B (ligeiros de passageiros/mistos, 1ª matrícula desde 1/7/2007 — a mais comum), os automóveis matriculados até 30/6/2007 (categoria A) e os motociclos/triciclos/quadriciclos (categoria E). Categorias C/D (mercadorias, por peso bruto) e F (potência em kW) continuam sem tabela numérica recolhida.",
+      "Estrutura de 6 categorias (A-F) mencionada no spec original. categoriaB (ligeiros de passageiros/mistos, 1.ª matrícula desde 1/7/2007 — a mais comum) e categoriaAPre2007 (gasóleo completo; gasolina/GPL/elétrico só 1996-2007) verificadas diretamente contra a AT nesta ronda — ver nota acima. categoriaEMotociclos (triciclos/quadriciclos) mantém-se ESTIMATE, fonte DECO PROteste, não re-cruzada. Categorias C/D (mercadorias, por peso bruto) e F (potência em kW) continuam sem tabela numérica recolhida.",
     isencaoVeiculosEletricos: true,
     isencaoDeficiencia60PorCento: true,
     limiarDispensaCobranca: 10, // se o imposto calculado for < 10€, não é cobrado

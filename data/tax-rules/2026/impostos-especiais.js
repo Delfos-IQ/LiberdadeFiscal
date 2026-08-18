@@ -27,31 +27,69 @@ export const IMPOSTOS_ESPECIAIS_2026 = {
   },
 
   /**
-   * IABA — atualizado após ronda de investigação adicional (15/08/2026).
-   * Vinho tranquilo/espumante e bebidas fermentadas (sidras) têm taxas
-   * confirmadas. Cerveja, bebidas espirituosas e produtos intermédios
-   * continuam UNKNOWN: encontrou-se apenas a variação percentual de um
-   * aumento de 2017 (+3%), não o valor absoluto em vigor em 2026 — sem
-   * o valor base não é possível reconstruir o valor atual, por isso
-   * mantém-se UNKNOWN em vez de estimado a partir de uma variação
-   * percentual desatualizada (regra do spec §8: nunca inventar).
+   * IABA — atualizado após terceira ronda de investigação (18/08/2026,
+   * roadmap P1-8 da AUDITORIA-2026-08.md). As duas rondas anteriores
+   * (15/08 e 16/08/2026) não tinham conseguido aceder à tabela oficial
+   * da AT — só fontes secundárias incompatíveis entre si para a
+   * cerveja, e nenhum valor absoluto para espirituosas/intermédios.
+   *
+   * Esta ronda encontrou e leu diretamente o folheto oficial da AT
+   * "Sistema Fiscal Português — Taxas Aplicáveis", que tem uma secção
+   * IABA completa com todas as figuras antes UNKNOWN. É a mesma fonte
+   * (info.portaldasfinancas.gov.pt) e o mesmo tipo de documento já
+   * usado para o Imposto de Selo (✅ Verified nesta mesma secção). A
+   * edição encontrada está datada de 2025 — não se encontrou ainda uma
+   * edição 2026 do próprio folheto — mas o OE2026 não alterou as taxas
+   * base do IABA (confirmado de forma independente via PwC Portugal e
+   * Observador, ambos já citados abaixo): a única mudança de 2026 é a
+   * prorrogação do regime de redução do medronho, já refletida aqui.
+   * Por isso as taxas ficam ✅ Verified (fonte primária direta), com a
+   * ressalva textual da edição.
    */
   iaba: {
-    status: "ESTIMATE",
-    source: "PwC Portugal, Impostos Indiretos no OE 2026 (confirma ausência de alteração de taxas base) + AEVC (valores de vinho/sidra, herdados de 2017, sem alteração assinalada desde então)",
-    sourceUrl: "https://www.pwc.pt/pt/pwcinforfisco/orcamentoestado/impostos-indiretos.html",
+    status: "verified",
+    source:
+      "Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\" (info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf), secção IABA, consultado diretamente 18/08/2026 — reconfirma art.os 71.º a 76.º do CIEC. Ausência de alteração das taxas base para 2026 corroborada por PwC Portugal (Impostos Indiretos no OE 2026) e por imprensa (Observador, 10/10/2025, sobre o congelamento da taxa de espirituosas).",
+    sourceUrl:
+      "https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf",
     notes:
-      "Confirmado: (1) regime de redução de 75% do IABA para licores/'crème de' e aguardentes de medronho de certos municípios, prorrogado até 31/12/2026 (fonte PwC, análise ao OE2026); (2) vinho tranquilo e espumante mantêm taxa de €0/hl; (3) bebidas fermentadas (sidras) tributadas a €10,30/hl — valor de 2017, sem alteração legislativa encontrada desde então, mas não confirmado diretamente contra a tabela 2026 do Portal das Finanças. Cerveja, bebidas espirituosas e produtos intermédios continuam UNKNOWN — só se encontrou a variação percentual de um aumento de 2017 (+3%), não o valor absoluto atual, e extrapolar a partir de uma variação de 9 anos atrás violaria a regra de nunca inventar dados. Reinvestigação (16/08/2026): confirmado via imprensa (Observador, 10/10/2025) que o setor de bebidas espirituosas 'se congratula com o congelamento' da respetiva taxa de IABA no OE2026 — ou seja, não houve aumento de taxa para espirituosas em 2026, o que é consistente com (mas não substitui) um valor absoluto. Também se encontraram, em fontes não oficiais e não verificadas contra o Portal das Finanças, valores candidatos para a cerveja (ex.: 21,10€/hl nalgumas fontes, 9,96€/hl 'desde 2005' noutras — os dois valores são incompatíveis entre si, o que é por si só um sinal de que nenhum dos dois deve ser usado sem confirmação direta contra a AT). Mantém-se UNKNOWN para cerveja/espirituosas/intermédios — o texto integral do CIEC (Anexo I / Art. 66.º) e a tabela oficial da AT não foram acessíveis nesta ronda de pesquisa.",
+      "Vinho tranquilo e espumante (Art.º 72.º do CIEC): €0/hl. Outras bebidas fermentadas, tranquilas e espumantes — ex.: sidras (Art.º 73.º): €12,06/hl — CORRIGE o valor anterior desta app (€10,30/hl, herdado de uma fonte de 2017 sem confirmação); o valor correto e atual é 12,06€. Produtos intermédios (Art.º 74.º): €87,92/hl. Álcool etílico (Art.º 75.º): €1.602,51/hl de álcool contido (base 100% vol., 20°C). Bebidas espirituosas (Art.º 76.º): mesma base e mesmo valor do álcool etílico, €1.602,51/hl de álcool contido — confirmado tanto pela estrutura da tabela oficial (a linha de bebidas espirituosas remete para o mesmo tipo de unidade tributável) como por uma fonte jurídica independente (informador.pt, compilação do texto do Art.º 76.º do CIEC). Regime de redução de 75% (paga-se 25% da taxa) para licores/'crème de' e aguardentes de medronho de concelhos elegíveis, prorrogado até 31/12/2026. Regimes especiais adicionais confirmados nesta ronda: pequenas destilarias e pequenas cervejeiras pagam 50% da taxa normal; pequenos produtores independentes pagam 50% da taxa normal de produtos intermédios/outras bebidas fermentadas (Art.os 79.º/80.º/80.º-A do CIEC) — não modelados nesta app (afetam produtores, não o consumidor final que é quem usa este simulador). Regras específicas dos Açores (25%/50% da taxa continental consoante produção/consumo) e da Madeira (taxa própria de €1.253,70/hl para espirituosas/álcool etílico) também confirmadas mas não implementadas — esta app assume sempre a taxa do Continente para IABA, tal como já documentado para o IVA.",
     vinhoTranquiloEEspumante: { value: 0, unit: "EUR/hl" },
-    bebidasFermentadas: { value: 10.3, unit: "EUR/hl", notes: "Inclui sidras. Valor de 2017, não reconfirmado para 2026." },
+    bebidasFermentadas: {
+      value: 12.06,
+      unit: "EUR/hl",
+      notes: "Inclui sidras (Art.º 73.º do CIEC). Corrigido nesta ronda — o valor anterior (10,30€) vinha de 2017 e estava desatualizado.",
+    },
+    produtosIntermedios: { value: 87.92, unit: "EUR/hl", notes: "Art.º 74.º do CIEC." },
+    alcoolEtilico: {
+      value: 1602.51,
+      unit: "EUR/hl de álcool contido (base 100% vol., 20°C)",
+      notes: "Art.º 75.º do CIEC.",
+    },
+    bebidasEspirituosas: {
+      value: 1602.51,
+      unit: "EUR/hl de álcool contido (base 100% vol., 20°C)",
+      notes: "Art.º 76.º do CIEC — mesma unidade e valor do álcool etílico.",
+    },
+    cerveja: {
+      unit: "EUR/hl de produto acabado",
+      fonte: "Art.º 71.º do CIEC",
+      notes:
+        "A unidade tributável combina volume (hectolitro) com o teor alcoólico OU o grau Plato (uma medida da densidade do mosto antes da fermentação, que a maioria dos consumidores não sabe de cabeça) — por isso, ao contrário do combustível (só litros) ou do tabaco (nº de cigarros + preço), esta app ainda não pede ao utilizador dados suficientes para escolher o escalão certo com confiança. Tabela completa documentada aqui para referência futura; a UI de Gastos continua a mostrar só o IVA para a categoria de álcool, não o IABA da cerveja.",
+      escaloes: [
+        { min: 0.5, max: 3.5, unidade: "% vol. de álcool adquirido", taxa: 9.64 },
+        { descricao: "> 3,5% vol. e ≤ 7° Plato", taxa: 12.06 },
+        { descricao: "> 3,5% vol. e > 7° e ≤ 11° Plato", taxa: 19.29 },
+        { descricao: "> 3,5% vol. e > 11° e ≤ 13° Plato", taxa: 24.13 },
+        { descricao: "> 3,5% vol. e > 13° e ≤ 15° Plato", taxa: 28.95 },
+        { descricao: "> 3,5% vol. e > 15° Plato", taxa: 33.85 },
+      ],
+    },
     reducaoMedronho: {
       percentagemPago: 0.25,
       aplicavelA: "Licores e 'crème de', aguardentes destiladas e aguardente de frutos do medronheiro, produzidos e destilados em concelhos elegíveis",
       prorrogadoAte: "2026-12-31",
     },
-    cerveja: { status: "UNKNOWN" },
-    bebidasEspirituosas: { status: "UNKNOWN" },
-    produtosIntermedios: { status: "UNKNOWN" },
     taxas: null,
   },
 
