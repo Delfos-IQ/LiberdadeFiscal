@@ -942,6 +942,21 @@ p {
   margin: 0;
 }
 
+.welcome-hero__opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.welcome-hero__opcao input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 .welcome-hero__cta {
   width: 100%;
   max-width: 320px;

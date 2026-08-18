@@ -4,14 +4,19 @@
 // é um requisito funcional (spec §6.3, precisa-se para calcular o IVA
 // certo). Este ecrã não pede nada — existe só para apresentar o
 // símbolo e os valores do produto (CLAUDE.md §4, brand board do
-// autor) a quem abre a app pela primeira vez.
+// autor).
 //
-// Mostra-se uma única vez, antes de qualquer rota (ver app.js,
-// showBrandIntro), e fica persistido via setSetting("introVista",
-// true) para nunca mais interromper o arranque depois disso. Se o
-// armazenamento local falhar, o próprio init() em app.js já trata
-// esse caso (modo efémero) — aqui basta não deixar a app presa: um
-// erro ao gravar a flag não deve impedir onComplete().
+// Comportamento (revisto a pedido do autor, 18/08/2026): mostra-se
+// SEMPRE ao abrir a app, antes de qualquer rota (ver app.js,
+// showBrandIntro) — não só na primeira visita. Só deixa de aparecer se
+// a própria pessoa marcar explicitamente a opção "Não mostrar esta
+// introdução da próxima vez", que persiste via
+// setSetting("introVista", true). Sem essa marcação, o valor
+// guardado é sempre `false`/ausente, por isso o ecrã volta a
+// aparecer em cada arranque. Se o armazenamento local falhar, o
+// próprio init() em app.js já trata esse caso (modo efémero) — aqui
+// basta não deixar a app presa: um erro ao gravar a flag não deve
+// impedir onComplete().
 
 import { setSetting } from "../data/db.js";
 
@@ -84,21 +89,36 @@ export function render(container, { onComplete }) {
     list.append(item);
   });
 
+  // Opção explícita para deixar de ver este ecrã — desmarcada por
+  // omissão, porque o comportamento por defeito passou a ser mostrar
+  // sempre (ver nota de cabeçalho). Só quando a pessoa marca isto é
+  // que gravamos introVista=true.
+  const naoMostrarWrap = el("div", "welcome-hero__opcao");
+  const naoMostrarCheckbox = document.createElement("input");
+  naoMostrarCheckbox.type = "checkbox";
+  naoMostrarCheckbox.id = "welcome-nao-mostrar";
+  const naoMostrarLabel = document.createElement("label");
+  naoMostrarLabel.htmlFor = "welcome-nao-mostrar";
+  naoMostrarLabel.textContent = "Não mostrar esta introdução da próxima vez";
+  naoMostrarWrap.append(naoMostrarCheckbox, naoMostrarLabel);
+
   const cta = el("button", "btn btn--primary welcome-hero__cta", "Vamos começar");
   cta.type = "button";
   cta.addEventListener("click", async () => {
-    try {
-      await setSetting("introVista", true);
-    } catch (err) {
-      // Armazenamento indisponível — não bloqueia a navegação, apenas
-      // significa que este ecrã pode voltar a aparecer numa próxima
-      // visita. app.js já trata a falha de armazenamento em geral.
-      console.error("Não foi possível guardar que a introdução já foi vista:", err);
+    if (naoMostrarCheckbox.checked) {
+      try {
+        await setSetting("introVista", true);
+      } catch (err) {
+        // Armazenamento indisponível — não bloqueia a navegação, apenas
+        // significa que este ecrã pode voltar a aparecer numa próxima
+        // visita. app.js já trata a falha de armazenamento em geral.
+        console.error("Não foi possível guardar que a introdução não deve voltar a aparecer:", err);
+      }
     }
     onComplete();
   });
 
-  section.append(logo, heading, lead, list, cta);
+  section.append(logo, heading, lead, list, naoMostrarWrap, cta);
   container.append(section);
   heading.focus({ preventScroll: false });
 }
