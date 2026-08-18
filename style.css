@@ -1168,3 +1168,45 @@ p {
     min-width: 96px;
   }
 }
+
+/* -----------------------------
+   8. Impressão / exportação PDF (roadmap P3-16)
+   ----------------------------- */
+/* Sem nova dependência: usa "Guardar como PDF" nativo do diálogo de
+   impressão do browser. .no-print esconde o chrome da app (cabeçalho,
+   navegação inferior, rodapé, banner offline, skip-link) e qualquer
+   ação/botão que não faça sentido num documento estático — usada em
+   qualquer ecrã, não só no Dia da Liberdade Fiscal, para que a
+   impressão de qualquer página fique sempre limpa. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: var(--color-white);
+  }
+
+  .app-main {
+    padding: 0;
+  }
+
+  .card {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+
+  /* Garante que a metodologia ("Como chegámos a este número?") sai
+     sempre impressa, mesmo que o <details> não tenha sido clicado —
+     dia-liberdade.js já força .open = true antes de chamar
+     window.print(), isto é um reforço via CSS para qualquer outro
+     <details> que apareça num ecrã impresso no futuro. */
+  details:not([open]) summary ~ * {
+    display: block;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

@@ -253,7 +253,7 @@ export function render(container) {
       "Esta aplicação fornece estimativas para fins informativos e educativos. Não constitui aconselhamento fiscal, financeiro ou jurídico e não substitui o cálculo oficial da Autoridade Tributária."
     );
 
-    const acoes = el("div", "faturas-actions");
+    const acoes = el("div", "faturas-actions no-print");
 
     const voltarBtn = el("button", "btn btn--secondary", "Recalcular");
     voltarBtn.type = "button";
@@ -281,6 +281,25 @@ export function render(container) {
       acoes.append(descarregarBtn);
     }
 
+    // Informe PDF exportável (roadmap P3-16): sem nenhuma dependência
+    // nova — usa a funcionalidade nativa de impressão do browser
+    // ("Guardar como PDF" já vem de fábrica em qualquer navegador
+    // moderno) contra uma folha de estilo @media print dedicada (ver
+    // style.css, secção "Impressão / exportação PDF"), que esconde o
+    // cabeçalho/navegação/rodapé e as próprias ações desta página,
+    // deixando só o resultado + metodologia. Abre a <details> da
+    // metodologia antes de imprimir para que aaparece sempre no PDF,
+    // mesmo que o utilizador nunca a tenha clicado.
+    if (typeof window !== "undefined" && typeof window.print === "function") {
+      const exportarBtn = el("button", "btn btn--secondary", "Exportar relatório (PDF)");
+      exportarBtn.type = "button";
+      exportarBtn.addEventListener("click", () => {
+        detalhes.open = true;
+        window.print();
+      });
+      acoes.append(exportarBtn);
+    }
+
     const compararLink = document.createElement("a");
     compararLink.href = "#benchmark-ocde";
     compararLink.className = "btn btn--secondary";
@@ -289,11 +308,11 @@ export function render(container) {
 
     const notaPartilha = el(
       "p",
-      "stat-label",
+      "stat-label no-print",
       "Se o WhatsApp não aparecer no menu de partilha do teu telemóvel, usa \"Descarregar imagem\" e anexa-a manualmente numa conversa."
     );
 
-    const fecharBtn = el("button", "btn btn--secondary", "Fechar este período e começar um novo");
+    const fecharBtn = el("button", "btn btn--secondary no-print", "Fechar este período e começar um novo");
     fecharBtn.type = "button";
     fecharBtn.addEventListener("click", async () => {
       await fecharPeriodoAtual(r);

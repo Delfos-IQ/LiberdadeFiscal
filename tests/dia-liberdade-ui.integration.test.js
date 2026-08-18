@@ -198,6 +198,54 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
     assert.match(container.textContent, /Descarregar imagem/);
   });
 
+  test("botão 'Exportar relatório (PDF)' (roadmap P3-16): abre a metodologia e chama window.print()", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    const exportarBtn = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Exportar relatório (PDF)")
+    );
+    assert.ok(exportarBtn, "devia existir um botão para exportar o relatório em PDF");
+
+    const detalhes = container.querySelector("details");
+    assert.equal(detalhes.open, false, "a metodologia começa fechada");
+
+    let printChamado = false;
+    const printOriginal = window.print;
+    window.print = () => {
+      printChamado = true;
+    };
+    try {
+      exportarBtn.click();
+    } finally {
+      window.print = printOriginal;
+    }
+
+    assert.equal(printChamado, true, "window.print() devia ter sido chamado");
+    assert.equal(detalhes.open, true, "a metodologia deve abrir-se automaticamente antes de imprimir");
+  });
+
+  test("as ações interativas (Recalcular, Partilhar, Fechar período) têm a classe no-print", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    const acoes = container.querySelector(".faturas-actions");
+    assert.ok(acoes.classList.contains("no-print"));
+
+    const fecharBtn = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Fechar este período")
+    );
+    assert.ok(fecharBtn.classList.contains("no-print"));
+  });
+
   test("Recalcular volta ao ecrã de resumo/Calcular (não pede dados outra vez)", async () => {
     await preencherRendimentos();
     const container = getContainer();
