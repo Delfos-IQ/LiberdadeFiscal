@@ -78,6 +78,14 @@ describe("Benchmark OCDE — conteúdo estático", () => {
     const algumFalaDeMetodologia = [...disclaimers].some((d) => /Não inclui IVA/.test(d.textContent));
     assert.ok(algumFalaDeMetodologia, "devia explicar que o tax wedge da OCDE não inclui IVA/patrimoniais");
   });
+
+  test("destaca em destaque próprio que a comparação é sempre pessoa solteira, sem filhos", () => {
+    const container = getContainer();
+    render(container);
+    const disclaimers = container.querySelectorAll(".disclaimer");
+    const algumDestacaSolteiro = [...disclaimers].some((d) => /pessoa solteira, sem filhos e sem declaração conjunta/.test(d.textContent));
+    assert.ok(algumDestacaSolteiro, "devia ter um aviso próprio e destacado sobre o critério pessoa solteira");
+  });
 });
 
 describe("Benchmark OCDE — cálculo da posição do utilizador", () => {
@@ -97,6 +105,17 @@ describe("Benchmark OCDE — cálculo da posição do utilizador", () => {
     submitForm(container);
     assert.ok(container.querySelector(".benchmark-linha--utilizador"));
     assert.match(container.querySelector(".benchmark-linha--utilizador").textContent, /A tua situação/);
+  });
+
+  test("junto a 'A tua situação' explica que assume solteiro/a e sem filhos", () => {
+    const container = getContainer();
+    render(container);
+    setInput(container, "bm-salario-bruto", 2000);
+    submitForm(container);
+    const disclaimers = container.querySelectorAll(".disclaimer");
+    const notaSituacao = [...disclaimers].find((d) => /"A tua situação" foi calculada/.test(d.textContent));
+    assert.ok(notaSituacao, "devia explicar a hipótese assumida no cálculo de 'A tua situação'");
+    assert.match(notaSituacao.textContent, /Dia da Liberdade Fiscal.*ecrã anterior/);
   });
 });
 
@@ -135,7 +154,10 @@ describe("Benchmark OCDE — pré-preenchimento a partir do período (18/08/2026
     await waitFor(() => true, { timeout: 20 }); // dá tempo às promises resolverem
     const input = container.querySelector("#bm-salario-bruto");
     assert.equal(input.value, "");
-    assert.equal(container.querySelectorAll(".disclaimer").length, 1, "só o aviso de metodologia, sem nota de pré-preenchimento");
+    // Aviso "pessoa solteira" + aviso de metodologia da OCDE — nenhuma
+    // nota de pré-preenchimento nem de "A tua situação" (não há período
+    // nem cálculo submetido).
+    assert.equal(container.querySelectorAll(".disclaimer").length, 2);
   });
 
   test("em modo individual, pré-preenche com o salário bruto de Rendimentos", async () => {

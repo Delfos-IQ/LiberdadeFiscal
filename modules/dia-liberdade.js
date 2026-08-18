@@ -16,6 +16,12 @@
 //
 // Esta é também a terceira e última presença obrigatória do disclaimer
 // legal exigida pelo spec (secção 9): onboarding, footer, e este ecrã.
+//
+// Inferência gastos vs. rendimento (18/08/2026, a pedido do autor): ver
+// calcular() — quando os gastos registados excedem claramente o
+// rendimento líquido registado, mostra-se um aviso neutro (não
+// pressupõe o motivo) a explicar que o resultado reflete só o
+// rendimento registado, não a capacidade real do agregado.
 
 import { calculateFiscalFreedomDay } from "../data/tax-engine.js";
 import { getPeriodoAtual, fecharPeriodoAtual, getHistoricoPeriodos } from "../data/db.js";
@@ -167,6 +173,26 @@ export function render(container) {
       state.erro = null;
       state.resultado = resultado;
       state.phase = "resultado";
+
+      // Inferência (18/08/2026, a pedido do autor): se o total de gastos
+      // registados ultrapassa claramente o rendimento líquido registado,
+      // é sinal de que o agregado pode ter mais fontes de rendimento do
+      // que as introduzidas em Rendimentos (ex.: só se registou o
+      // salário de uma pessoa, mas o agregado gasta mais do que isso —
+      // "família numerosa, um só rendimento declarado") — ou
+      // poupanças/outras receitas não salariais. Não presumimos qual é
+      // o motivo, só avisamos: este resultado reflete sempre o
+      // rendimento REGISTADO, nunca a capacidade real do agregado.
+      // Limiar de 15% acima do líquido para não gerar ruído com a
+      // imprecisão normal de valores autorreportados e arredondados.
+      state.avisoGastosVsRendimento = null;
+      if (p.gastosMensal && typeof r.salarioLiquidoMensal === "number") {
+        const gastosAnualTotal = round2((p.gastosMensal.totalMensal || 0) * 12);
+        const rendimentoLiquidoAnual = round2(r.salarioLiquidoMensal * 12);
+        if (rendimentoLiquidoAnual > 0 && gastosAnualTotal > rendimentoLiquidoAnual * 1.15) {
+          state.avisoGastosVsRendimento = { gastosAnualTotal, rendimentoLiquidoAnual };
+        }
+      }
     } catch (err) {
       state.erro = `Não foi possível calcular: ${err.message}`;
     }
@@ -233,6 +259,16 @@ export function render(container) {
         "p",
         "disclaimer",
         `⚠️ Este resultado NÃO inclui: ${faltantes.join("; ")} — porque ainda não preencheste essa secção neste período. O teu Dia da Liberdade Fiscal real é, com estes dados incluídos, mais tarde no ano do que o mostrado aqui.`
+      );
+    }
+
+    let avisoGastosVsRendimento = null;
+    if (state.avisoGastosVsRendimento) {
+      const { gastosAnualTotal, rendimentoLiquidoAnual } = state.avisoGastosVsRendimento;
+      avisoGastosVsRendimento = el(
+        "p",
+        "disclaimer",
+        `⚠️ Os gastos que registaste (${formatEUR(gastosAnualTotal)}/ano) são mais altos do que o rendimento líquido que registaste (${formatEUR(rendimentoLiquidoAnual)}/ano). Isto é normal se o agregado tiver mais fontes de rendimento do que as registadas em Rendimentos (por exemplo, só o salário de uma pessoa quando há mais gente a contribuir para a casa), se houver poupanças, ou outras receitas não salariais. Nesse caso, este resultado reflete só o rendimento que registaste — não a capacidade real do agregado. Se aplicável, considera preencher Rendimentos em modo de declaração conjunta.`
       );
     }
 
@@ -332,6 +368,7 @@ export function render(container) {
 
     card.append(heading, dataHero, percentagemLabel, framing, pensarCritico, breakdown);
     if (avisoFaltantes) card.append(avisoFaltantes);
+    if (avisoGastosVsRendimento) card.append(avisoGastosVsRendimento);
     card.append(detalhes, privacidade, acoes, notaPartilha, fecharBtn);
     if (comparativa) card.append(comparativa);
     card.append(disclaimer);

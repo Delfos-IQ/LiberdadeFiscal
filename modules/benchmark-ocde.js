@@ -130,6 +130,17 @@ export function render(container) {
       `Compara a carga fiscal sobre o trabalho (IRS + Segurança Social) entre Portugal e outros países, com base no relatório "${OECD_BENCHMARK_2025.source}".`
     );
 
+    // Destaque próprio para o critério "pessoa solteira, sem filhos" —
+    // antes só aparecia a meio da frase da metodologia (fácil de
+    // ignorar). A pedido do autor: isto aplica-se a TODAS as barras,
+    // incluindo "A tua situação" — ver nota específica junto a essa
+    // linha em drawConteudo, mais abaixo.
+    const avisoSolteiro = el(
+      "p",
+      "disclaimer",
+      "⚠️ Todos os valores desta comparação — incluindo o teu, se calculares — assumem sempre uma pessoa solteira, sem filhos e sem declaração conjunta. É a definição usada pela OCDE, e é a única forma de os números serem comparáveis entre países."
+    );
+
     const avisoMetodologia = el("p", "disclaimer", OECD_BENCHMARK_2025.methodologyNote);
 
     // Esta é uma rota secundária, sem botão próprio na navegação
@@ -201,7 +212,7 @@ export function render(container) {
     form.addEventListener("submit", handleSubmit);
     form.append(submitBtn);
 
-    card.append(heading, desc, avisoMetodologia, voltarBtn, form);
+    card.append(heading, desc, avisoSolteiro, avisoMetodologia, voltarBtn, form);
     container.append(card);
 
     const listaCard = el("section", "card");
@@ -217,11 +228,25 @@ export function render(container) {
     });
     listaWrapper.append(criarLinhaBarra("Média OCDE", OECD_BENCHMARK_2025.oecdAverage, false, true));
 
+    let notaSituacao = null;
     if (state.taxWedgeUtilizador !== null) {
       listaWrapper.append(criarLinhaBarra("A tua situação", state.taxWedgeUtilizador, false, false, true));
+      // Reforço a pedido do autor: mesmo quem tem dependentes ou está em
+      // declaração conjunta em Rendimentos vê aqui um número calculado
+      // como se fosse solteiro/a e sem filhos — de propósito, para ser
+      // comparável às barras dos outros países. Sem esta nota, alguém
+      // nessa situação podia ler "A tua situação" como sendo o seu
+      // Dia da Liberdade Fiscal real (que usa os dados verdadeiros e
+      // vive no ecrã anterior).
+      notaSituacao = el(
+        "p",
+        "disclaimer",
+        "\"A tua situação\" foi calculada como se fosses solteiro/a, sem filhos e sem declaração conjunta — mesmo que a tua situação real seja outra — só assim é comparável às restantes barras. O teu Dia da Liberdade Fiscal, que usa os teus dados reais, está no ecrã anterior."
+      );
     }
 
     listaCard.append(listaHeading, listaWrapper);
+    if (notaSituacao) listaCard.append(notaSituacao);
     container.append(listaCard);
 
     // Segundo botão de voltar, no fundo — a lista de países pode ser

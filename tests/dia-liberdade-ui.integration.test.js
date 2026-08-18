@@ -141,6 +141,50 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
     assert.match(container.textContent, /300,00\s?€|300\.00/);
   });
 
+  test("avisa quando os gastos registados excedem claramente o rendimento líquido registado", async () => {
+    // Salário baixo (rendimento líquido pequeno) + gastos mensais muito
+    // acima disso — cenário típico de "família numerosa com um só
+    // rendimento declarado" mencionado pelo autor.
+    await preencherRendimentos(1000);
+    await atualizarPeriodoAtual({
+      gastosMensal: {
+        regiao: "continente",
+        categorias: [{ id: "alimentacao", label: "Alimentação", valorMensal: 2000, ivaMensal: 113.2 }],
+        totalMensal: 2000,
+        totalIvaMensal: 113.2,
+      },
+    });
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    assert.match(container.textContent, /Os gastos que registaste/);
+    assert.match(container.textContent, /mais fontes de rendimento/);
+  });
+
+  test("não avisa sobre gastos vs. rendimento quando os gastos são razoáveis face ao líquido", async () => {
+    await preencherRendimentos(2000);
+    await atualizarPeriodoAtual({
+      gastosMensal: {
+        regiao: "continente",
+        categorias: [{ id: "alimentacao", label: "Alimentação", valorMensal: 100, ivaMensal: 5.66 }],
+        totalMensal: 100,
+        totalIvaMensal: 5.66,
+      },
+    });
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    assert.doesNotMatch(container.textContent, /Os gastos que registaste/);
+  });
+
   test("o ecrã de resultado nunca afirma que se deixa de pagar impostos a partir dessa data", async () => {
     await preencherRendimentos();
     const container = getContainer();
