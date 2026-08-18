@@ -176,21 +176,64 @@ describe("Benchmark OCDE — pré-preenchimento a partir do período (18/08/2026
     assert.match(nota.textContent, /salário bruto que introduziste em Rendimentos/);
   });
 
-  test("em modo agregado (dois rendimentos), pré-preenche só com o salário da Pessoa A, nunca a soma", async () => {
+  test("em modo agregado (dois rendimentos), pré-preenche os dois salários reais do agregado (A e B)", async () => {
     const r = calcularCadeiaSalarialConjunta(2000, 3000, { regiao: "continente" });
     await atualizarPeriodoAtual({ rendimentos: r });
 
     const container = getContainer();
     render(container);
-    await waitFor(() => container.querySelector("#bm-salario-bruto").value !== "");
+    await waitFor(() => container.querySelector("#bm-salario-bruto-a"));
 
-    // Pessoa A ganha 2000 — NUNCA os 5000 combinados, que distorceriam
-    // o cálculo do tax wedge (ver nota de cabeçalho do módulo).
-    assert.equal(container.querySelector("#bm-salario-bruto").value, "2000");
-    const nota = [...container.querySelectorAll(".disclaimer")].find((d) => /Pré-preenchido/.test(d.textContent));
-    assert.ok(nota, "devia explicar que só um dos dois salários foi usado");
-    assert.match(nota.textContent, /pessoas solteiras/);
-    assert.match(nota.textContent, /nunca a soma/);
+    // Já não escondemos nenhum dos dois salários — usamos os dois no
+    // cálculo conjunto (ver teste seguinte), em vez de aplicar escalões
+    // de pessoa solteira a um só ou à soma dos dois.
+    assert.equal(container.querySelector("#bm-salario-bruto-a").value, "2000");
+    assert.equal(container.querySelector("#bm-salario-bruto-b").value, "3000");
+    assert.equal(container.querySelector("#bm-salario-bruto"), null, "não deve mostrar o campo de salário único em modo agregado");
+
+    const nota = [...container.querySelectorAll(".disclaimer")].find((d) => /Pré-preenchidos/.test(d.textContent));
+    assert.ok(nota, "devia explicar a origem dos dois valores");
+    assert.match(nota.textContent, /declaração conjunta/);
+  });
+
+  test("em modo agregado, calcular usa o regime de declaração conjunta (quociente familiar), não escalões de pessoa solteira", async () => {
+    const r = calcularCadeiaSalarialConjunta(2000, 3000, { regiao: "continente" });
+    await atualizarPeriodoAtual({ rendimentos: r });
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#bm-salario-bruto-a"));
+
+    submitForm(container);
+
+    const linhaUtilizador = container.querySelector(".benchmark-linha--utilizador");
+    assert.ok(linhaUtilizador, "devia mostrar 'A tua situação' com os valores pré-preenchidos, sem precisar de os reintroduzir");
+
+    // Nota específica de modo agregado, distinta da de modo individual —
+    // não afirma "solteiro/a", alerta para a comparação de duas pessoas
+    // vs. uma.
+    const disclaimers = container.querySelectorAll(".disclaimer");
+    const notaSituacao = [...disclaimers].find((d) => /"A tua situação" foi calculada/.test(d.textContent));
+    assert.ok(notaSituacao);
+    assert.match(notaSituacao.textContent, /regime fiscal real do teu agregado/);
+    assert.doesNotMatch(notaSituacao.textContent, /solteiro\/a/);
+  });
+
+  test("em modo agregado, rejeita quando os dois salários estão em falta", async () => {
+    const r = calcularCadeiaSalarialConjunta(2000, 3000, { regiao: "continente" });
+    await atualizarPeriodoAtual({ rendimentos: r });
+
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#bm-salario-bruto-a"));
+
+    setInput(container, "bm-salario-bruto-a", 0);
+    setInput(container, "bm-salario-bruto-b", 0);
+    submitForm(container);
+
+    const alerta = container.querySelector('[role="alert"]');
+    assert.ok(alerta);
+    assert.match(alerta.textContent, /dois salários brutos mensais do agregado/);
   });
 
   test("o valor pré-preenchido continua editável pelo utilizador", async () => {
