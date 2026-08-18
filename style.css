@@ -246,6 +246,11 @@ a {
 
 .app-footer__links {
   margin-top: var(--space-2);
+  /* Mesmo tamanho do disclaimer logo acima (--font-size-xs), para os
+     dois textos do footer ficarem visualmente homogéneos — antes
+     .link-button herdava o tamanho base (1rem) do <p>, maior do que
+     o disclaimer (0,75rem), pedido do autor para igualar. */
+  font-size: var(--font-size-xs);
 }
 
 /* -----------------------------
