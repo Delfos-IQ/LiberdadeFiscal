@@ -81,29 +81,62 @@ export const IRS_2026 = {
   },
 
   /**
-   * Diferencial regional de IRS — Açores e Madeira. 🟡 ESTIMATE: fonte
-   * secundária (imprensa económica, não a Portaria/Decreto Legislativo
-   * Regional original) descreve um "diferencial de 30% que abrange a
-   * totalidade da estrutura de escalões" nas Regiões Autónomas face ao
-   * Continente, em vigor desde fevereiro de 2026 com efeitos a 1 de
-   * janeiro. Interpretamos isto como uma redução de 30% em cada taxa
-   * marginal dos escalões do Continente. Esta é uma inferência sobre
-   * o MECANISMO exato (pode ser aplicado de forma diferente na
-   * legislação primária) — confirmar contra o Decreto Legislativo
-   * Regional antes de publicar. A Madeira tem ainda uma redução
-   * adicional não quantificada para rendimentos imediatamente acima
-   * do salário mínimo regional, não modelada aqui.
+   * Diferencial regional de IRS — Açores e Madeira.
+   *
+   * ✅ Verified (18/08/2026, ronda "vamos a por los estimates"): a
+   * versão anterior desta app assumia um mecanismo diferenciado por
+   * escalão para os Açores (30% no 1.º escalão, 20% nos restantes),
+   * baseado em fontes secundárias convergentes mas nunca confirmado
+   * contra o texto legal. Esta ronda encontrou dois elementos que
+   * CORRIGEM essa hipótese:
+   * (1) PwC Portugal, "Guia Fiscal 2026 — IRS" (pwc.pt/pt/pwcinforfisco/
+   *     guia-fiscal/2026/irs.html), consultado 18/08/2026 — tabela
+   *     numérica completa dos 9 escalões para os Açores, idêntica à da
+   *     Madeira, com cada taxa marginal a corresponder exatamente à
+   *     taxa nacional × 0,7 (ex.: 12,5% → 8,75%; 48% → 33,60%) — ou
+   *     seja, uma redução UNIFORME de 30% em todos os escalões, tal
+   *     como a Madeira, não um mecanismo diferenciado por escalão.
+   * (2) O texto do Art. 4.º, n.º 1 do Decreto Legislativo Regional
+   *     n.º 2/99/A, de 20 de janeiro (na redação do Art. 47.º da DLR
+   *     n.º 15-A/2021/A, de 31 de maio), citado através de resultados
+   *     de pesquisa e corroborado pela Circular n.º 6/2025 da
+   *     Autoridade Tributária (info.portaldasfinancas.gov.pt/.../
+   *     Circular_6_2025_RF_RAA.pdf, que cita a mesma base legal para as
+   *     tabelas de retenção): "Às taxas nacionais do imposto sobre o
+   *     rendimento das pessoas singulares, em vigor em cada ano, é
+   *     aplicada uma redução de 30%." Sem qualificação por escalão.
+   * Não foi possível ler a publicação original em Série I do Diário da
+   * República diretamente (página exige JavaScript, não acessível a
+   * partir deste ambiente) — a confirmação assenta em duas fontes
+   * independentes e convergentes (tabela numérica da PwC + citação
+   * textual do artigo via pesquisa), não no diploma em bruto. Ainda
+   * assim, é uma base mais forte do que a hipótese anterior (que não
+   * tinha nenhuma tabela numérica a confirmá-la) — por isso mudamos de
+   * ESTIMATE para verified, com esta ressalva documentada.
+   *
+   * A Madeira tem ainda uma redução adicional não quantificada para
+   * rendimentos imediatamente acima do salário mínimo regional, não
+   * modelada aqui.
+   *
+   * Achado relacionado, não corrigido nesta ronda: a tabela da PwC
+   * mostra a Taxa Adicional de Solidariedade (Art. 68.º-A CIRS) também
+   * reduzida em 30% nos Açores (2,5%→1,75%; 5%→3,5%) — mas
+   * `calculateTaxaSolidariedade()` em tax-engine.js nunca é chamada
+   * por `calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`, e
+   * quando chamada não recebe região. Afeta só rendimentos coletáveis
+   * acima de 80.000€/ano — documentado para decisão do autor, não
+   * corrigido nesta ronda para não alargar o âmbito sem confirmação.
    */
   diferencialRegional: {
-    status: "ESTIMATE",
+    status: "verified",
     acores: {
-      reducaoPrimeiroEscalao: 0.3,
-      reducaoRestantesEscaloes: 0.2,
-      status: "ESTIMATE",
-      source: "Decreto Legislativo Regional n.º 2/99/A, de 20 de janeiro (na redação da DLR n.º 15-A/2021/A, de 31 de maio) — referido como base legal no Despacho n.º 1179/2026",
-      sourceUrl: "https://files.diariodarepublica.pt/2s/2026/02/023000000/0005100057.pdf",
+      reducaoSobreTaxaMarginal: 0.3,
+      status: "verified",
+      source:
+        "PwC Portugal, \"Guia Fiscal 2026 — IRS\" (tabela numérica dos 9 escalões, consultada diretamente 18/08/2026) + Art. 4.º, n.º 1 do Decreto Legislativo Regional n.º 2/99/A, de 20 de janeiro, na redação da DLR n.º 15-A/2021/A, de 31 de maio (citado via pesquisa, corroborado pela Circular n.º 6/2025 da AT)",
+      sourceUrl: "https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html",
       notes:
-        "Ronda de reinvestigação (16/08/2026): mecanismo revisto. O Despacho n.º 1179/2026 (tabelas de retenção na fonte dos Açores para 2026) cita como base legal o Decreto Legislativo Regional n.º 2/99/A — que, segundo múltiplas fontes secundárias, aplica uma redução de 30% à taxa nacional do 1.º escalão de IRS e de 20% aos restantes escalões (diferente do diferencial uniforme de 30% da Madeira). Substituímos aqui o valor uniforme herdado de uma ronda anterior por este mecanismo diferenciado por escalão. Continua ESTIMATE porque não foi possível ler o texto integral do DLR 2/99/A diretamente (fonte primária bloqueada/sem conteúdo acessível nesta pesquisa) — a leitura baseia-se em fontes secundárias convergentes, não no diploma original. Importante: as tabelas de retenção mensal do Despacho 1179/2026 são uma aproximação ao imposto devido, não o próprio imposto anual — este motor calcula o imposto ANUAL aplicando a redução por escalão diretamente às taxas marginais nacionais, o que é uma simplificação do mecanismo legal real.",
+        "Ronda de correção (18/08/2026): substitui o mecanismo diferenciado por escalão (30%/20%) de uma ronda anterior, que nunca teve confirmação numérica — a tabela oficial da PwC mostra uma redução uniforme de 30% em todos os 9 escalões, igual à Madeira. Não foi possível ler o Diário da República Série I em bruto (página exige JavaScript nesta pesquisa); a confirmação assenta em duas fontes convergentes (tabela numérica + citação textual do artigo). A Taxa Adicional de Solidariedade também parece reduzida em 30% nos Açores segundo a mesma tabela da PwC, mas isso não está modelado no motor de cálculo — ver aviso na nota geral acima.",
     },
     madeira: {
       reducaoSobreTaxaMarginal: 0.3,
@@ -115,7 +148,7 @@ export const IRS_2026 = {
     },
     continente: { reducaoSobreTaxaMarginal: 0 },
     notes:
-      "Mecanismo exato não confirmado contra fonte primária para Açores. Madeira confirmado contra fonte oficial da AT-RAM em 15/08/2026 (ver acima), mas com uma simplificação conhecida (limites de escalão não ajustados).",
+      "Açores e Madeira confirmados (18/08/2026) com o mesmo mecanismo: redução uniforme de 30% sobre a taxa marginal de cada escalão nacional. Ver notas de fonte por região para as simplificações conhecidas de cada uma.",
   },
 
   /**

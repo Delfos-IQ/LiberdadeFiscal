@@ -78,6 +78,15 @@ export function calculateIRS(rendimentoColetavel, opcoes = {}) {
   let impostoPorQuociente = 0;
 
   if (!isento) {
+    // Diferencial regional (Açores e Madeira, ambos ✅ verified em
+    // 18/08/2026): redução UNIFORME sobre a taxa marginal de cada
+    // escalão nacional — ver notas em irs.js#diferencialRegional. Uma
+    // versão anterior desta app tinha um mecanismo diferenciado por
+    // escalão só para os Açores (reducaoPrimeiroEscalao/
+    // reducaoRestantesEscaloes), baseado em fontes secundárias que uma
+    // ronda de verificação posterior (tabela numérica da PwC + texto do
+    // Art. 4.º do DLR 2/99/A) corrigiu — o mecanismo real é uniforme,
+    // igual ao da Madeira. Simplificado para um único campo.
     const reducaoRegional = diferencialInfo.reducaoSobreTaxaMarginal ?? 0;
 
     IRS_2026.escaloes.forEach((escalao, index) => {
@@ -87,23 +96,9 @@ export function calculateIRS(rendimentoColetavel, opcoes = {}) {
       const valorTributado = tetoEscalao - escalao.min;
       if (valorTributado <= 0) return;
 
-      // Diferencial regional por escalão: a maioria das regiões usa uma
-      // única percentagem uniforme (`reducaoSobreTaxaMarginal`, caso da
-      // Madeira — 30% em todos os escalões, verificado). Os Açores têm
-      // um mecanismo diferenciado por escalão (DLR n.º 2/99/A, 20/1,
-      // na redação da DLR n.º 15-A/2021/A: 30% no 1.º escalão, 20% nos
-      // restantes) — `reducaoPrimeiroEscalao`/`reducaoRestantesEscaloes`
-      // têm prioridade sobre `reducaoSobreTaxaMarginal` quando definidos.
-      const reducaoEscalao =
-        diferencialInfo.reducaoPrimeiroEscalao !== undefined
-          ? index === 0
-            ? diferencialInfo.reducaoPrimeiroEscalao
-            : diferencialInfo.reducaoRestantesEscaloes ?? 0
-          : reducaoRegional;
-
       // Taxa efetivamente aplicada, já com o diferencial regional
-      // (ESTIMATE) descontado quando aplicável.
-      const taxaAplicada = escalao.taxaMarginal * (1 - reducaoEscalao);
+      // (verified) descontado quando aplicável.
+      const taxaAplicada = escalao.taxaMarginal * (1 - reducaoRegional);
 
       // Arredondamento por escalão (a cêntimo), não só no total final
       // — ver nota em TAX-METHODOLOGY.md sobre o exemplo oficial
@@ -132,8 +127,7 @@ export function calculateIRS(rendimentoColetavel, opcoes = {}) {
     taxaEfetiva: round4(taxaEfetiva),
     decomposicaoPorEscalao,
     regiao,
-    diferencialRegionalAplicado:
-      (diferencialInfo.reducaoSobreTaxaMarginal ?? 0) > 0 || (diferencialInfo.reducaoPrimeiroEscalao ?? 0) > 0,
+    diferencialRegionalAplicado: (diferencialInfo.reducaoSobreTaxaMarginal ?? 0) > 0,
     quocienteFamiliar,
     ano: IRS_2026.year,
     fonte: IRS_2026.source,
@@ -327,12 +321,21 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
       descontoSSMensal * 12
     );
   } else {
-    // Trabalhador independente, regime simplificado — ver ESTIMATE em
-    // seguranca-social.js e irs.js (coeficiente 0.75 para prestação de
-    // serviços). Não há "entidade patronal": o custo total é o próprio
-    // rendimento bruto.
-    const taxaSS = SEGURANCA_SOCIAL_2026.trabalhadorIndependente.taxaContributiva;
-    descontoSSMensal = round2(salarioBrutoMensal * taxaSS);
+    // Trabalhador independente, regime simplificado — ver notas em
+    // seguranca-social.js (coeficiente 0.75 do regime simplificado de
+    // IRS em irs.js). Não há "entidade patronal": o custo total é o
+    // próprio rendimento bruto.
+    //
+    // Correção (18/08/2026): a Segurança Social não incide sobre a
+    // faturação bruta diretamente — incide sobre o "rendimento
+    // relevante", que para prestação de serviços é 70% da faturação
+    // (Art. 168.º CRCSPSS). Uma versão anterior desta app aplicava a
+    // taxa contributiva (21,4%) sobre o bruto inteiro, sobrestimando a
+    // contribuição em cerca de 43%. Ver nota completa em
+    // seguranca-social.js#trabalhadorIndependente.
+    const { taxaContributiva, percentagemRendimentoRelevante } = SEGURANCA_SOCIAL_2026.trabalhadorIndependente;
+    const rendimentoRelevanteMensal = salarioBrutoMensal * percentagemRendimentoRelevante.prestacaoServicos;
+    descontoSSMensal = round2(rendimentoRelevanteMensal * taxaContributiva);
     custoTotalEmpregadorMensal = round2(salarioBrutoMensal);
     const coeficiente = IRS_2026.coeficienteRegimeSimplificado.value;
     rendimentoColetavelAnual = round2(rendimentoBrutoAnual * coeficiente);

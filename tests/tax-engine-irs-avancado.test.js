@@ -53,19 +53,27 @@ describe("calculateIRS — diferencial regional (Açores/Madeira)", () => {
     });
   });
 
-  test("Açores: redução diferenciada por escalão — 30% no 1.º, 20% nos restantes (reinvestigado 16/08/2026)", () => {
+  test("Açores: redução uniforme de 30% sobre cada taxa marginal, em todos os escalões (✅ verificado 18/08/2026)", () => {
+    // Correção (18/08/2026, ronda "vamos a por los estimates"): uma
+    // ronda anterior (16/08/2026) tinha codificado um mecanismo
+    // diferenciado por escalão (30% no 1.º, 20% nos restantes) baseado
+    // em fontes secundárias nunca confirmadas numericamente. Esta ronda
+    // encontrou a tabela numérica oficial da PwC Guia Fiscal 2026 (que
+    // bate exatamente com taxa nacional × 0,7 em todos os 9 escalões)
+    // e o texto do Art. 4.º do DLR 2/99/A ("redução de 30%", sem
+    // qualificação por escalão) — o mecanismo real é uniforme, igual
+    // ao da Madeira. Ver notas em irs.js#diferencialRegional.
     const r = calculateIRS(60000, { regiao: "acores" });
-    const primeiroEscalao = r.decomposicaoPorEscalao[0];
-    assert.equal(primeiroEscalao.taxa, round4(0.125 * 0.7));
+    r.decomposicaoPorEscalao.forEach((escalao, index) => {
+      const taxaNacional = [0.125, 0.157, 0.212, 0.241, 0.311, 0.349, 0.431, 0.446, 0.48][index];
+      assert.equal(escalao.taxa, round4(taxaNacional * 0.7));
+    });
 
-    const segundoEscalao = r.decomposicaoPorEscalao[1];
-    assert.equal(segundoEscalao.taxa, round4(0.157 * 0.8));
-
-    // Confirma que o mecanismo dos Açores já não é o valor uniforme de
-    // 30% herdado de uma ronda anterior — deve divergir da Madeira a
-    // partir do 2.º escalão.
+    // Consequência direta: com o mesmo mecanismo (30% uniforme), Açores
+    // e Madeira produzem exatamente o mesmo imposto sobre o mesmo
+    // rendimento coletável.
     const madeira = calculateIRS(60000, { regiao: "madeira" });
-    assert.notEqual(r.decomposicaoPorEscalao[1].taxa, madeira.decomposicaoPorEscalao[1].taxa);
+    assert.equal(r.imposto, madeira.imposto);
   });
 
   test("rejeita região desconhecida", () => {
@@ -115,6 +123,16 @@ describe("calcularCadeiaSalarial — Modo Rápido/Avançado do Taxímetro", () =
     assert.notEqual(dependente.descontoSSMensal, independente.descontoSSMensal);
     // Independente não tem "entidade patronal" separada — custo total == bruto.
     assert.equal(independente.custoTotalEmpregadorMensal, 2000);
+  });
+
+  test("independente: SS incide sobre 70% do bruto (rendimento relevante), não sobre o bruto inteiro (bug corrigido 18/08/2026)", () => {
+    // Regressão: uma versão anterior aplicava 21,4% diretamente sobre a
+    // faturação bruta (350€ neste exemplo), sobrestimando a
+    // contribuição em ~43%. Fórmula correta (Art. 168.º CRCSPSS):
+    // SS = bruto × 0,7 (rendimento relevante) × 0,214 (taxa).
+    const r = calcularCadeiaSalarial(1000, { tipoTrabalhador: "independente" });
+    assert.equal(r.descontoSSMensal, round2(1000 * 0.7 * 0.214));
+    assert.notEqual(r.descontoSSMensal, round2(1000 * 0.214), "não deve aplicar a taxa sobre o bruto inteiro");
   });
 
   test("dependentes reduzem o IRS mensal e aumentam o líquido", () => {

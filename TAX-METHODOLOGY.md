@@ -157,35 +157,41 @@ Também não modelado: o reforço do mínimo de existência que isenta
 totalmente quem aufere o salário mínimo regional. Fonte:
 [at.madeira.gov.pt, Agenda Fiscal Janeiro 2026](https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf).
 
-**Açores — 🟡 ESTIMATE, mecanismo revisto (reinvestigado 16/08/2026).**
-Numa primeira ronda (15/08/2026) só se tinha encontrado o Despacho
-n.º 1179/2026 (tabelas de retenção na fonte para os Açores em 2026),
-que descreve um mecanismo de retenção mensal por coeficientes — sem
-deixar claro se existe também uma redução direta sobre o imposto
-anual devido. Numa reinvestigação, confirmou-se que esse despacho cita
-como base legal o **Decreto Legislativo Regional n.º 2/99/A, de 20 de
-janeiro** (na redação da DLR n.º 15-A/2021/A, de 31 de maio) — e
-múltiplas fontes secundárias convergentes descrevem esse diploma como
-aplicando uma redução de **30% ao 1.º escalão** de IRS e de **20% aos
-restantes escalões**, face às taxas nacionais — um mecanismo
-estruturalmente diferente do diferencial uniforme de 30% da Madeira.
+**Açores — ✅ Verificado, correção de mecanismo (18/08/2026, ronda
+"vamos a por los estimates").** Uma ronda anterior (16/08/2026) tinha
+codificado um mecanismo diferenciado por escalão (30% no 1.º escalão,
+20% nos restantes), baseado em múltiplas fontes secundárias
+convergentes mas sem nenhuma tabela numérica a confirmá-lo. Esta ronda
+encontrou dois elementos que corrigem essa hipótese: (1) a PwC
+Portugal, "Guia Fiscal 2026 — IRS", tem uma tabela numérica completa
+dos 9 escalões para os Açores, idêntica à da Madeira, com cada taxa a
+corresponder exatamente à taxa nacional × 0,7 (ex.: 12,5% → 8,75%; 48%
+→ 33,60%) — uma redução **uniforme** de 30%, não diferenciada; (2) o
+texto do **Art. 4.º, n.º 1 do Decreto Legislativo Regional n.º 2/99/A**
+(na redação do Art. 47.º da DLR n.º 15-A/2021/A), obtido via pesquisa e
+corroborado pela Circular n.º 6/2025 da Autoridade Tributária (que cita
+a mesma base legal para as tabelas de retenção), diz: *"Às taxas
+nacionais do imposto sobre o rendimento das pessoas singulares, em
+vigor em cada ano, é aplicada uma redução de 30%"* — sem qualificação
+por escalão.
 
-O motor foi atualizado (`irs.js` e `calculateIRS()` em
-`tax-engine.js`) para suportar reduções diferenciadas por escalão
-(`reducaoPrimeiroEscalao` / `reducaoRestantesEscaloes`), substituindo o
-valor uniforme de 0,3 herdado de uma ronda anterior. **Continua
-ESTIMATE, não ✅ Verificado**, por duas razões: (1) não foi possível
-ler o texto integral do DLR 2/99/A diretamente — a fonte primária
-devolveu conteúdo vazio nesta ronda de pesquisa, só se confirmou via
-fontes secundárias convergentes; (2) as tabelas de retenção do
-Despacho 1179/2026 são uma *aproximação* ao imposto anual devido, não
-o próprio imposto — este motor aplica a redução por escalão
-diretamente ao cálculo anual, o que é uma simplificação do mecanismo
-legal real (que passa por retenção mensal, não por uma fórmula anual
-direta). A UI do Rendimentos mostra um aviso explícito sempre que
-`diferencialRegionalAplicado` é `true`. Antes de publicar em produção,
-confirmar o texto integral do DLR 2/99/A contra o Diário da República.
-Fonte: [Despacho n.º 1179/2026 (DRE)](https://files.diariodarepublica.pt/2s/2026/02/023000000/0005100057.pdf).
+O motor foi simplificado (`irs.js` e `calculateIRS()` em
+`tax-engine.js`) para usar o mesmo campo uniforme `reducaoSobreTaxaMarginal`
+já usado pela Madeira, removendo o mecanismo diferenciado por escalão.
+Não foi possível ler a publicação original em Série I do Diário da
+República diretamente (página exige JavaScript, inacessível a partir
+deste ambiente de pesquisa) — a confirmação assenta em duas fontes
+convergentes (tabela numérica + citação textual do artigo), não no
+diploma em bruto. Ainda assim, é uma base mais sólida do que a hipótese
+anterior. **Achado relacionado, não corrigido nesta ronda:** a mesma
+tabela da PwC mostra a Taxa Adicional de Solidariedade (Art. 68.º-A
+CIRS) também reduzida em 30% nos Açores (2,5%→1,75%; 5%→3,5%), mas
+`calculateTaxaSolidariedade()` nunca é chamada pela cadeia salarial
+real (`calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`) — a
+app não aplica esta sobretaxa a ninguém atualmente, independentemente
+da região. Afeta só rendimentos coletáveis acima de 80.000€/ano;
+documentado para decisão do autor sobre se vale a pena corrigir.
+Fonte: [PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
 ### Coeficiente do regime simplificado (trabalhadores independentes) — 🟡 ESTIMATE
 
@@ -250,12 +256,27 @@ convém confirmar se o FGCT foi mesmo retomado.
 Fonte: [Lei n.º 13/2023, Art. 32.º (DRE)](https://diariodarepublica.pt/dr/detalhe/lei/13-2023-211340863),
 [Decreto-Lei n.º 115/2023 (DRE)](https://diariodarepublica.pt/dr/detalhe/decreto-lei/115-2023-261867080).
 
-### Trabalhadores independentes — 🟡 ESTIMATE
+### Trabalhadores independentes — ✅ Verificado (18/08/2026)
 
-Taxa-regra de 21,4% confirmada, mas o mecanismo de apuramento
-trimestral da base de incidência contributiva (70% do valor de
-serviços prestados, 20% de produção/venda de bens) não foi verificado
-em detalhe.
+Taxa-regra de 21,4% e o fator de 70% (rendimento relevante para
+prestação de serviços) confirmados contra o Art. 168.º do Código dos
+Regimes Contributivos (CRCSPSS), via simuladorneto.pt — fórmula
+explícita "Faturação trimestral × 70% ÷ 3 × 21,4%", com exemplos
+numéricos reproduzidos e conferidos à mão, e consistente com o IAS
+2026 (537,13€) já verificado nesta app.
+
+**Bug corrigido nesta ronda:** `data/tax-engine.js` aplicava os 21,4%
+diretamente sobre a faturação bruta do trabalhador independente, sem
+passar pelo fator de 70% do "rendimento relevante" — isto sobrestimava
+a contribuição de Segurança Social em cerca de 43% (21,4% do bruto em
+vez de 21,4% de 70% do bruto = 14,98% efetivo do bruto). Corrigido para
+`descontoSSMensal = salarioBrutoMensal × 0,7 × 0,214`. O fator de 20%
+para produção/venda de bens continua por modelar (a app só cobre
+prestação de serviços). Limites de contribuição mensal (mínimo 20€ ou
+148,36€ sem rendimento declarado; máximo 1.379,35€ = 12× IAS × 21,4%)
+continuam não modelados — o motor calcula sempre a proporção exata,
+sem aplicar pisos/tetos.
+Fonte: [simuladorneto.pt — Segurança Social Trabalhadores Independentes 2026](https://simuladorneto.pt/seguranca-social-trabalhadores-independentes).
 
 ---
 
@@ -563,11 +584,26 @@ dezembro), e o mais tardar antes de 31 de janeiro.
       reinvestigado 16/08/2026: já não é totalmente UNKNOWN, sabe-se
       que >200 aplicam 0,3% e só 3 aplicam 0,45%, mas a lista completa
       dos 308 continua por embutir — ver secção 5)
+- [x] Diferencial regional de IRS dos Açores — ✅ Verified (18/08/2026):
+      corrigido de um mecanismo diferenciado por escalão (nunca
+      confirmado numericamente) para uma redução uniforme de 30%,
+      confirmada pela tabela numérica da PwC Guia Fiscal 2026 e pelo
+      texto do Art. 4.º do DLR 2/99/A (via pesquisa, corroborado pela
+      Circular 6/2025 da AT) — ver secção 1. **Continua por confirmar**:
+      o texto integral em Série I do Diário da República não foi lido
+      diretamente (página exige JavaScript, inacessível nesta pesquisa).
 - [ ] Confirmar o texto integral do Decreto Legislativo Regional
-      n.º 2/99/A (Açores) diretamente contra o Diário da República —
-      o mecanismo de redução por escalão (30%/20%) foi reconstruído a
-      partir de fontes secundárias convergentes, não do diploma
-      original (ver secção 1)
+      n.º 2/99/A diretamente na Série I do Diário da República (a
+      leitura direta falhou por a página exigir JavaScript) — a
+      confirmação atual assenta em duas fontes secundárias convergentes
+      (tabela numérica da PwC + citação textual via pesquisa), não no
+      diploma em bruto.
+- [ ] Decidir se vale a pena aplicar a Taxa Adicional de Solidariedade
+      (Art. 68.º-A CIRS) na cadeia salarial real — `calculateTaxaSolidariedade()`
+      existe mas nunca é chamada por `calcularCadeiaSalarial`/
+      `calcularCadeiaSalarialConjunta`; afeta só rendimentos coletáveis
+      acima de 80.000€/ano, mas é uma omissão real, não só um ESTIMATE
+      (achado de 18/08/2026, ver secção 1)
 - [ ] Obter a tabela completa de pesos de categorias de consumo do INE
       (Inquérito às Despesas das Famílias 2022/2023) — só se
       confirmaram os três maiores blocos (Habitação, Alimentação,
@@ -582,6 +618,13 @@ dezembro), e o mais tardar antes de 31 de janeiro.
 - [x] Resolver o Imposto de Selo — ✅ Verified diretamente contra
       info.portaldasfinancas.gov.pt (Tabela Geral), implementado em
       `calcularImpostoSelo()` para as verbas principais (ver secção 5)
+- [x] Segurança Social de trabalhadores independentes — ✅ Verified
+      (18/08/2026): confirmados a taxa de 21,4% e o fator de 70% do
+      "rendimento relevante" contra o Art. 168.º CRCSPSS; corrigido um
+      bug real no motor que aplicava a taxa sobre a faturação bruta em
+      vez de sobre 70% dela (sobrestimava a contribuição em ~43%) — ver
+      secção 2. Limites de contribuição mensal (mínimo/máximo) e o
+      fator de 20% para produção/venda de bens continuam por modelar.
 - [ ] Classificar cada item de `data/goods-services-pt.js` contra as
       Listas I/II do CIVA (Fase 5)
 - [ ] Estabelecer o processo de verificação mensal do ISP
