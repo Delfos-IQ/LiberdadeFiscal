@@ -25,7 +25,13 @@
 
 import { calculateFiscalFreedomDay } from "../data/tax-engine.js";
 import { getPeriodoAtual, fecharPeriodoAtual, getHistoricoPeriodos } from "../data/db.js";
-import { buildShareText, desenharCartaoCanvas } from "../data/share-card.js";
+import {
+  buildShareText,
+  desenharCartaoCanvas,
+  desenharCartaoCanvasQuadrado,
+  desenharCartaoComparacaoOCDE,
+} from "../data/share-card.js";
+import { OECD_BENCHMARK_2025 } from "../data/oecd-benchmark-2025.js";
 
 // Ano fiscal ativo — tem de acompanhar data/tax-rules/2026/*.js. Não
 // existe ainda um mecanismo de seleção de ano fiscal (fora do âmbito
@@ -332,6 +338,22 @@ export function render(container) {
       descarregarBtn.type = "button";
       descarregarBtn.addEventListener("click", () => descarregarCartao(r));
       acoes.append(descarregarBtn);
+
+      // Duas variantes adicionais do cartão (19/08/2026, pedido do
+      // autor: "algo que eu possa fazer sozinho para melhorar a tarjeta
+      // de redes"): formato quadrado para feed/carrossel (o vertical
+      // acima é pensado para Stories) e um cartão de comparação contra
+      // o tax wedge da OCDE (spec §6.6), sempre com o aviso obrigatório
+      // de que as duas métricas não são diretamente equiparáveis.
+      const quadradoBtn = el("button", "btn btn--secondary", "Cartão quadrado (feed)");
+      quadradoBtn.type = "button";
+      quadradoBtn.addEventListener("click", () => descarregarCartaoFormato(r, "quadrado"));
+      acoes.append(quadradoBtn);
+
+      const comparacaoBtn = el("button", "btn btn--secondary", "Cartão comparação OCDE");
+      comparacaoBtn.type = "button";
+      comparacaoBtn.addEventListener("click", () => descarregarCartaoFormato(r, "comparacao-ocde"));
+      acoes.append(comparacaoBtn);
     }
 
     // Informe PDF exportável (roadmap P3-16): sem nenhuma dependência
@@ -489,17 +511,31 @@ export function render(container) {
     return wrap;
   }
 
+  // As três variantes do cartão (vertical/Stories, quadrado/feed,
+  // comparação OCDE) partilham o mesmo mecanismo de geração de blob —
+  // só mudam as dimensões do canvas e a função de desenho chamada.
+  const FORMATOS_CARTAO = {
+    vertical: { width: 1080, height: 1920, desenhar: (canvas, r) => desenharCartaoCanvas(canvas, r) },
+    quadrado: { width: 1080, height: 1080, desenhar: (canvas, r) => desenharCartaoCanvasQuadrado(canvas, r) },
+    "comparacao-ocde": {
+      width: 1080,
+      height: 1920,
+      desenhar: (canvas, r) => desenharCartaoComparacaoOCDE(canvas, r, OECD_BENCHMARK_2025),
+    },
+  };
+
   /**
    * Gera o cartão de partilha em canvas e devolve o blob PNG, ou null
    * se a Canvas API não existir (ex.: testes headless).
    */
-  async function gerarCartaoBlob(resultado) {
+  async function gerarCartaoBlob(resultado, formato = "vertical") {
     try {
+      const { width, height, desenhar } = FORMATOS_CARTAO[formato];
       const canvas = document.createElement("canvas");
-      canvas.width = 1080;
-      canvas.height = 1920;
+      canvas.width = width;
+      canvas.height = height;
       if (!canvas.getContext) return null;
-      desenharCartaoCanvas(canvas, resultado);
+      desenhar(canvas, resultado);
       return await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     } catch {
       return null;
@@ -554,12 +590,22 @@ export function render(container) {
     await descarregarECopiar(blob, texto);
   }
 
-  async function descarregarECopiar(blob, texto) {
+  // Variante de descarregarCartao() para as duas variantes de formato
+  // (quadrado, comparação OCDE) — mesmo padrão, ficheiro nomeado
+  // consoante o formato para o utilizador distinguir as várias imagens
+  // descarregadas na mesma sessão.
+  async function descarregarCartaoFormato(resultado, formato) {
+    const texto = buildShareText(resultado);
+    const blob = await gerarCartaoBlob(resultado, formato);
+    await descarregarECopiar(blob, texto, `liberdade-fiscal-${formato}.png`);
+  }
+
+  async function descarregarECopiar(blob, texto, nomeFicheiro = "liberdade-fiscal.png") {
     if (blob) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "liberdade-fiscal.png";
+      link.download = nomeFicheiro;
       link.click();
       URL.revokeObjectURL(url);
     }
