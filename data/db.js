@@ -31,8 +31,8 @@ const DB_VERSION = 2;
 // vez) porque `onupgradeneeded` pode, em teoria, ser interrompido a
 // meio (falha de energia, fecho do browser) e retomado depois.
 //
-// Exemplo (ainda não usado — fica como referência para a próxima vez
-// que a forma de um registo mudar):
+// Exemplo (ainda não usado em produção — fica como referência para a
+// próxima vez que a forma de um registo mudar):
 //   {
 //     versaoAlvo: 3,
 //     executar(db, tx) {
@@ -48,7 +48,18 @@ const DB_VERSION = 2;
 //       };
 //     },
 //   }
-const MIGRACOES_DE_DADOS = [];
+//
+// Exportado (19/08/2026, ronda "vamos a por ello") para poder ser
+// exercitado por um teste de integração real (ver
+// tests/db-migracao.integration.test.js) — antes desta ronda, o padrão
+// tinha zero cobertura de teste: só se saberia se funcionava mesmo
+// quando a primeira migração real de produção corresse contra dados de
+// utilizadores verdadeiros. O teste empurra uma migração sintética para
+// este array, força uma reabertura da BD a partir de uma versão antiga
+// simulada, e confirma que `executar()` é mesmo chamado e transforma os
+// registos — depois remove a migração sintética, para nunca ficar
+// incluída na app real.
+export const MIGRACOES_DE_DADOS = [];
 
 /** @type {Record<string, string>} nome lógico -> keyPath */
 export const STORES = {

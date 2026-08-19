@@ -80,3 +80,17 @@ Ambos corregidos, con test de regresión nuevo y 319/319 tests en verde. El rest
 ## 6. Conclusión
 
 El salto de 8,1 a 8,3 es real pero modesto — más pequeño que el 8,8 que publiqué en el primer intento de este informe, precisamente porque parte de lo que iba a contar como "progreso de hoy" (CSP, atomicidad, migraciones) ya estaba resuelto desde ayer y yo no lo había verificado bien antes de escribirlo. Lo que sí es mérito de esta sesión: dos bugs reales de IRS encontrados y corregidos por el propio proceso de verificación, dos figuras fiscales nuevas, y un ciclo de auditoría que se corrige a sí mismo en vivo cuando se equivoca — que es, en el fondo, el mismo estándar de rigor que el proyecto exige para sus datos fiscales.
+
+---
+
+## 7. Addendum (misma sesión, después de este informe)
+
+De los cuatro puntos de la sección 5 ("lo que sigue genuinamente abierto"), tres quedaron resueltos más tarde en esta misma sesión, a petición explícita del autor ("vamos a atacar a lo que sigue en abierto" / "vamos a por ello"):
+
+- **Confirmación contra el CIRS en bruto**: Claude in Chrome se reconectó y confirmó directamente en el texto legal (Art. 25.º y Art. 78.º-A CIRS) los dos bugs de IRS corregidos hoy — ya no depende solo de PwC.
+- **ISV/IUC/IABA/IT**: la mayoría ya estaba `verified` (mi lectura inicial de estos como "huecos abiertos" fue otro error de este informe — no releí los ficheros de datos actuales). Los huecos reales que sí quedaban (tabaco: charutos/tabaco de enrolar/líquidos de e-cigarette; ISV protocolo NEDC; IUC categorías E completa, F, G, y un recargo por altas emisiones que el motor no aplicaba) se completaron contra la misma fuente primaria de la AT ya usada el 18/08.
+- **Patrón de migraciones de IndexedDB**: exercitado por primera vez con un test de integración real (crea una BD en una versión antigua, empuja una migración sintética, confirma que corre y transforma los datos, y que una migración con `versaoAlvo` ya alcanzado NO corre).
+
+Único punto de los cuatro que sigue abierto: la verificación real de accesibilidad (Lighthouse, lector de pantalla, dispositivo físico), que sigue sin poder hacerse desde este entorno.
+
+325/325 tests en verde tras estos cambios (319 al momento de escribir la sección 6 de este informe).
