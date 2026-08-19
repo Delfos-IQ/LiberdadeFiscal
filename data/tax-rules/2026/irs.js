@@ -8,6 +8,16 @@
 // deste ambiente de construção. Recomenda-se confirmar contra
 // https://www.portaldasfinancas.gov.pt antes de publicar.
 //
+// Ronda de re-verificação (19/08/2026, "confirmar fuentes primarias"):
+// os escalões de Continente/Madeira/Açores e a Taxa Adicional de
+// Solidariedade foram re-confirmados diretamente contra o PwC Guia
+// Fiscal 2026 (fonte independente da usada em 15/08/2026, mesmo
+// resultado nos escalões). Nessa mesma leitura foram encontradas e
+// corrigidas duas desatualizações: a dedução específica da Categoria A
+// (era 4.104€, o valor correto para 2026 é 4.587,09€) e o limiar de
+// idade da bonificação de 900€ ao 2.º dependente (era <=3 anos, o
+// correto é <=6 anos). Ver comentários junto a cada campo.
+//
 // @typedef {import('../../db.js').TaxParameter} TaxParameter
 
 export const IRS_2026 = {
@@ -83,8 +93,22 @@ export const IRS_2026 = {
     },
   },
 
-  /** Mínimo de existência 2026 — abaixo deste valor não há IRS a pagar. */
-  minimoExistencia: { value: 12880, unit: "EUR/ano", notes: "Atualizado para 2026." },
+  /**
+   * Mínimo de existência 2026 — abaixo deste valor não há IRS a pagar.
+   * ✅ Verified (19/08/2026): confirmado via múltiplas fontes
+   * secundárias convergentes (Montepio, e-loan.pt, CGD Saldo Positivo,
+   * ECO) — todas derivam o valor da mesma lógica legal (14× o salário
+   * mínimo nacional de 920€/mês = 12.880€/ano), não de uma única fonte
+   * a copiar as outras. Não encontrado ainda no texto direto do CIRS
+   * nem no Portal das Finanças a partir deste ambiente.
+   */
+  minimoExistencia: {
+    value: 12880,
+    unit: "EUR/ano",
+    status: "verified",
+    notes:
+      "= 14 × salário mínimo nacional 2026 (920€/mês). Confirmado via fontes secundárias convergentes em 19/08/2026 (Montepio, e-loan.pt, CGD, ECO); não confirmado diretamente contra o CIRS/Portal das Finanças.",
+  },
 
   /**
    * Quociente familiar (Art. 69.º CIRS) — divide o rendimento coletável
@@ -108,7 +132,8 @@ export const IRS_2026 = {
     segundoDependenteOuSeguinteAte3Anos: {
       value: 900,
       unit: "EUR/ano",
-      notes: "Substitui os 726€ a partir do 2.º dependente com idade <= 3 anos.",
+      notes:
+        "Substitui os 726€ a partir do 2.º dependente. ⚠️ Corrigido (19/08/2026): a tabela \"Deduções à coleta de IRS\" do PwC Guia Fiscal 2026 aplica este valor a dependentes com idade <= 6 anos (\"para o segundo dependente e seguintes, independentemente da idade do primeiro\"), não <= 3 anos como assumido antes. O nome do campo ficou desatualizado (mantido por compatibilidade), mas a regra correta a aplicar é <= 6 anos — a app ainda não foi corrigida para usar este limiar; ver TAX-METHODOLOGY.md.",
     },
     guardaConjuntaResidenciaAlternada: {
       value: 300,
@@ -192,8 +217,28 @@ export const IRS_2026 = {
    * Dedução específica da Categoria A (trabalho dependente) — Art. 25.º
    * CIRS. Aplica-se o maior entre este valor fixo e as contribuições
    * efetivas para a Segurança Social, quando superiores.
+   *
+   * ✅ Verified (19/08/2026, ronda "confirmar fuentes primarias"):
+   * corrigido de 4.104€ para 4.587,09€. O valor de 4.104€ (verificado
+   * via pesquisa web em 15/08/2026) estava desatualizado — confirmado
+   * diretamente contra a tabela "Deduções específicas no IRS" do PwC
+   * Portugal, Guia Fiscal 2026, que lista para a Categoria A:
+   * "4.587,09 € ou, quando superior, o valor total das contribuições
+   * obrigatórias para regimes de proteção social" (podendo subir para
+   * 4.834,17€ em casos específicos de quotas profissionais, não
+   * modelados aqui). O mesmo valor (4.587,09€) reaparece de forma
+   * consistente na Categoria H (pensões) e como base do regime
+   * simplificado da Categoria B na mesma página — convergência interna
+   * do documento que reforça a confiança no valor.
    */
-  deducaoEspecificaCategoriaA: { value: 4104, unit: "EUR/ano" },
+  deducaoEspecificaCategoriaA: {
+    value: 4587.09,
+    unit: "EUR/ano",
+    status: "verified",
+    source: "PwC Portugal, \"Guia Fiscal 2026\" — tabela \"Deduções específicas no IRS\", Categoria A",
+    sourceUrl: "https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html",
+    notes: "Substitui o valor anterior de 4.104€ (desatualizado). Não modelado: elevação para 4.834,17€ em casos de quotas para associações profissionais indispensáveis ao exercício da atividade.",
+  },
 
   /**
    * Coeficiente do regime simplificado para trabalhadores independentes

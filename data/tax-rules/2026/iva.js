@@ -6,13 +6,21 @@
 // do Portal das Finanças a partir deste ambiente — a classificação de
 // cada bem/serviço concreto (data/goods-services-pt.js, Fase 5)
 // precisa de ser verificada individualmente contra essas listas.
+//
+// ✅ Re-confirmado (19/08/2026, "confirmar fuentes primarias"): nova
+// pesquisa web independente da de 15/08/2026 (calculariva.pt,
+// InvoiceXpress, Cegid Vendus, odiverse.com) — todas convergem nos
+// mesmos três valores por região já guardados aqui (Continente
+// 23/13/6%, Açores 16/9/4%, Madeira 22/12/4%). Continua sem
+// confirmação direta contra o CIVA/Portal das Finanças a partir deste
+// ambiente (Claude in Chrome indisponível nesta sessão).
 
 export const IVA_2026 = {
   year: 2026,
   source: "Código do IVA (CIVA) — taxas gerais, Art. 18.º e Listas I/II anexas",
   sourceUrl: "https://www.portaldasfinancas.gov.pt",
   retrievedNote:
-    "Taxas gerais confirmadas via múltiplas fontes secundárias em 15/08/2026. A classificação de bens/serviços concretos nas Listas I/II do CIVA (reduzida vs. intermédia vs. normal) precisa de verificação individual na Fase 5 — não assumir aqui.",
+    "Taxas gerais confirmadas via múltiplas fontes secundárias em 15/08/2026, re-confirmadas com uma segunda ronda de fontes independentes em 19/08/2026 (mesmo resultado). A classificação de bens/serviços concretos nas Listas I/II do CIVA (reduzida vs. intermédia vs. normal) precisa de verificação individual na Fase 5 — não assumir aqui.",
 
   taxas: {
     continente: { reduzida: 0.06, intermedia: 0.13, normal: 0.23 },

@@ -126,15 +126,27 @@ os testes de regressão em `calcularCadeiaSalarial`/
 
 ### Mínimo de existência — ✅ Verificado
 
-12.880 €/ano para 2026. Abaixo deste valor de rendimento, não há IRS a
-pagar — o simulador deve verificar este limiar antes de aplicar os
-escalões.
+12.880 €/ano para 2026 (= 14 × salário mínimo nacional de 920€/mês).
+Abaixo deste valor de rendimento, não há IRS a pagar — o simulador deve
+verificar este limiar antes de aplicar os escalões. Re-confirmado em
+19/08/2026 via múltiplas fontes secundárias convergentes que derivam o
+mesmo cálculo (Montepio, e-loan.pt, CGD Saldo Positivo, ECO) — ainda
+sem confirmação direta contra o CIRS/Portal das Finanças.
 
-### Dedução específica Categoria A — ✅ Verificado
+### Dedução específica Categoria A — ✅ Verificado (corrigido 19/08/2026)
 
-4.104 €/ano, ou as contribuições efetivas para a Segurança Social se
-superiores. Aplica-se antes de calcular o rendimento coletável de
-trabalho dependente.
+**4.587,09 €/ano**, ou as contribuições efetivas para a Segurança
+Social se superiores. Aplica-se antes de calcular o rendimento
+coletável de trabalho dependente. Corrigido de 4.104€ — esse valor
+estava desatualizado (verificado via pesquisa web em 15/08/2026, sem
+fonte primária/de referência direta). O valor correto foi confirmado
+diretamente na tabela "Deduções específicas no IRS" do PwC Guia Fiscal
+2026, onde 4.587,09€ reaparece de forma consistente para as Categorias
+A e H e como base do regime simplificado da Categoria B — convergência
+interna do próprio documento. Pode subir para 4.834,17€ em casos de
+quotas para associações profissionais indispensáveis ao exercício da
+atividade — não modelado nesta app. Fonte: [PwC Portugal, Guia Fiscal
+2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
 ### Quociente familiar (Art. 69.º CIRS) — ✅ Verificado (Fase 4)
 
@@ -169,10 +181,22 @@ dedução específica). Valores 2026:
 
 | Situação | Valor |
 |---|---|
-| Dependente com mais de 3 anos | 600 €/ano |
-| Dependente com até 3 anos (o 1.º) | 726 €/ano |
-| 2.º dependente (ou seguinte) com até 3 anos | 900 €/ano |
+| Dependente com mais de 3 anos (e for o 1.º do agregado) | 600 €/ano |
+| Dependente com até 3 anos (e for o 1.º do agregado) | 726 €/ano |
+| 2.º dependente (ou seguinte) com até 6 anos, independentemente da idade do 1.º | 900 €/ano |
 | Guarda conjunta com residência alternada | 300 €/ano por progenitor |
+
+**Corrigido em 19/08/2026** ("confirmar fuentes primarias"): o motor
+aplicava os 900€ apenas ao 2.º dependente (ou seguinte) com idade
+**<= 3 anos**. A tabela "Deduções à coleta de IRS" do PwC Guia Fiscal
+2026 mostra que o limiar correto é **<= 6 anos**, "independentemente da
+idade do primeiro" — ou seja, um agregado com um dependente de 15 anos
+e outro de 5 anos deduz 600€ + 900€ (1.500€), não 600€ + 600€ (1.200€,
+o que o motor calculava antes). Simplificação conhecida, não resolvida:
+a lei refere-se ao "1.º dependente" por ordem de nascimento/registo
+civil, que esta app não recolhe — usa-se a ordem crescente de idade
+como aproximação determinística (o dependente mais novo do agregado é
+tratado como "2.º ou seguinte" sempre que houver mais do que um).
 
 Implementado em `calcularDeducaoDependentes()`. Nunca deixa o IRS
 final ficar negativo — a dedução aplica-se com `Math.max(0, ...)`.
@@ -272,6 +296,14 @@ este produto não modela na v1).
 | Trabalhador (retido do salário) | 11,00% |
 | Entidade patronal (adicional ao salário bruto) | 23,75% |
 
+Re-confirmado em 19/08/2026 diretamente na tabela "Regimes de
+Segurança Social" do [PwC Guia Fiscal 2026 — Segurança
+Social](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/seguranca-social.html)
+(mesma tabela também fornece o IAS 2026 de 537,13€, já usado nesta
+app) — coincide exatamente com os valores já guardados. Ainda sem
+confirmação direta contra o Código dos Regimes Contributivos ou
+seg-social.pt.
+
 **Ponto crítico de UX (spec §6.2):** a parte da entidade patronal
 **não sai do bolso do trabalhador** — é um custo adicional para o
 empregador, sobre o salário bruto. O Taxímetro tem de mostrar a cadeia
@@ -340,6 +372,11 @@ Fonte: [simuladorneto.pt — Segurança Social Trabalhadores Independentes 2026]
 | Continente | 6% | 13% | 23% |
 | Açores | 4% | 9% | 16% |
 | Madeira | 4% | 12% | 22% |
+
+Re-confirmado em 19/08/2026 com uma segunda ronda de pesquisa
+independente (calculariva.pt, InvoiceXpress, Cegid Vendus,
+odiverse.com) — convergência total com os valores já guardados. Ainda
+sem acesso direto ao CIVA/Portal das Finanças a partir deste ambiente.
 
 ### Limitação importante
 

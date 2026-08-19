@@ -138,6 +138,19 @@ export function calculateIRS(rendimentoColetavel, opcoes = {}) {
  * Dedução à coleta por dependentes (Art. 78.º-A CIRS) — subtrai-se
  * DIRETAMENTE ao imposto já calculado, nunca ao rendimento coletável.
  *
+ * ✅ Corrigido (19/08/2026, ronda "confirmar fuentes primarias"): a
+ * tabela "Deduções à coleta de IRS" do PwC Guia Fiscal 2026 mostra que
+ * o valor de 900€ se aplica ao 2.º dependente e seguintes com idade
+ * <= 6 anos, "independentemente da idade do primeiro" — não <= 3 anos
+ * como o motor assumia antes. Isto muda o resultado sempre que há 2+
+ * dependentes e um deles (que não seja o 1.º, por ordem crescente de
+ * idade) tem entre 4 e 6 anos inclusive: antes recebia 600€, agora
+ * recebe corretamente 900€.
+ * Simplificação conhecida, não resolvida: a lei fala em "1.º
+ * dependente" por ordem de nascimento/registo civil, que esta app não
+ * recolhe — usa-se a ordem crescente de idade (mais novo = "2.º
+ * dependente e seguintes") como aproximação determinística.
+ *
  * @param {Array<{idade: number}>} dependentes
  */
 export function calcularDeducaoDependentes(dependentes) {
@@ -147,29 +160,25 @@ export function calcularDeducaoDependentes(dependentes) {
 
   const regras = IRS_2026.deducaoPorDependente;
   let total = 0;
-  let contadorAte3Anos = 0;
 
-  // Ordena para que a regra "a partir do 2.º dependente ≤3 anos" seja
-  // aplicada de forma determinística, independentemente da ordem de
-  // entrada do utilizador.
+  // Ordena para que a regra "2.º dependente e seguintes" seja aplicada
+  // de forma determinística, independentemente da ordem de entrada do
+  // utilizador (ver nota acima sobre a aproximação por idade).
   const ordenados = dependentes.slice().sort((a, b) => a.idade - b.idade);
 
-  for (const dep of ordenados) {
+  ordenados.forEach((dep, index) => {
     if (typeof dep.idade !== "number" || dep.idade < 0) {
       throw new RangeError("Cada dependente precisa de uma idade numérica >= 0.");
     }
 
-    if (dep.idade <= 3) {
-      contadorAte3Anos += 1;
-      const valor =
-        contadorAte3Anos >= 2
-          ? regras.segundoDependenteOuSeguinteAte3Anos.value
-          : regras.ate3AnosInclusive.value;
-      total += valor;
+    if (index >= 1 && dep.idade <= 6) {
+      total += regras.segundoDependenteOuSeguinteAte3Anos.value;
+    } else if (dep.idade <= 3) {
+      total += regras.ate3AnosInclusive.value;
     } else {
       total += regras.maisDe3Anos.value;
     }
-  }
+  });
 
   return { totalDeducao: round2(total), numeroDependentes: dependentes.length };
 }

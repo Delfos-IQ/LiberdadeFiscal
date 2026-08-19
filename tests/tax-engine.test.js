@@ -148,7 +148,8 @@ describe("calculateTaxaSolidariedade", () => {
 describe("calcularRendimentoColetavelCategoriaA", () => {
   test("usa a dedução fixa quando as contribuições de SS são menores", () => {
     const r = calcularRendimentoColetavelCategoriaA(20000, 1000);
-    assert.equal(r, 20000 - 4104);
+    // 4.587,09€ (corrigido 19/08/2026 de 4.104€, fonte: PwC Guia Fiscal 2026).
+    assert.equal(r, 20000 - 4587.09);
   });
 
   test("usa as contribuições de SS quando são maiores que a dedução fixa", () => {

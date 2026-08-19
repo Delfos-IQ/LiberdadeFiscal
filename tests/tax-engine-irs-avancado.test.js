@@ -107,6 +107,15 @@ describe("calcularDeducaoDependentes", () => {
     assert.equal(r.totalDeducao, 600 + 726);
   });
 
+  test("2.º dependente com idade entre 4 e 6 anos deduz 900€, não 600€ (corrigido 19/08/2026, fonte: PwC Guia Fiscal 2026)", () => {
+    // Antes da correção, um dependente com 5 anos que não fosse o mais
+    // novo do agregado recebia 600€ (regra "> 3 anos"). A tabela oficial
+    // aplica os 900€ a qualquer 2.º dependente (ou seguinte) com <= 6
+    // anos, independentemente da idade do primeiro.
+    const r = calcularDeducaoDependentes([{ idade: 2 }, { idade: 5 }]);
+    assert.equal(r.totalDeducao, 726 + 900);
+  });
+
   test("rejeita idade negativa", () => {
     assert.throws(() => calcularDeducaoDependentes([{ idade: -1 }]), RangeError);
   });

@@ -6,13 +6,22 @@
 // Finanças. Não foi possível aceder diretamente ao portal da
 // Segurança Social a partir deste ambiente — confirmar antes de
 // publicar em produção.
+//
+// ✅ Re-confirmado (19/08/2026, "confirmar fuentes primarias"): a TSU
+// do regime geral (11% trabalhador / 23,75% entidade patronal =
+// 34,75%) foi lida diretamente na tabela "Regimes de Segurança Social"
+// do PwC Guia Fiscal 2026 (pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/
+// seguranca-social.html, consultado 19/08/2026) — coincide exatamente
+// com o valor já guardado nesta app. Ainda não confirmado contra o
+// texto do Código dos Regimes Contributivos nem contra seg-social.pt
+// diretamente.
 
 export const SEGURANCA_SOCIAL_2026 = {
   year: 2026,
   source: "Código dos Regimes Contributivos (Lei n.º 110/2009) — regime geral",
   sourceUrl: "https://www.seg-social.pt",
   retrievedNote:
-    "Dados obtidos via pesquisa web em 15/08/2026. Confirmar contra www.seg-social.pt antes de publicar em produção.",
+    "Dados obtidos via pesquisa web em 15/08/2026, re-confirmados diretamente via PwC Guia Fiscal 2026 em 19/08/2026 (https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/seguranca-social.html). Confirmar contra www.seg-social.pt antes de publicar em produção.",
 
   /** Indexante de Apoios Sociais 2026 — base de cálculo de várias prestações. */
   ias: { value: 537.13, unit: "EUR/mês" },

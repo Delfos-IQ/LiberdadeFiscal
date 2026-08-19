@@ -457,10 +457,10 @@ export const QUIZ_QUESTIONS = [
   {
     id: "irs-011",
     question_pt: "Qual é o valor da dedução específica da Categoria A (trabalho dependente) em 2026?",
-    options: ["600€/ano", "920€/ano", "4.104€/ano", "12.880€/ano"],
+    options: ["600€/ano", "920€/ano", "4.587,09€/ano", "12.880€/ano"],
     correct_index: 2,
     explanation_pt:
-      "A dedução específica da Categoria A (Art. 25.º CIRS) é de 4.104€/ano, ou o valor das contribuições efetivas para a Segurança Social, se for superior.",
+      "A dedução específica da Categoria A (Art. 25.º CIRS) é de 4.587,09€/ano, ou o valor das contribuições efetivas para a Segurança Social, se for superior.",
     category: "IRS",
   },
   {
