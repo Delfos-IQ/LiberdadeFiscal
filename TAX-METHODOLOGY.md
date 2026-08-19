@@ -535,6 +535,76 @@ operações financeiras/de crédito. Implementado em
 
 ---
 
+## 5b. Outras contribuições — CAV e Taxa Municipal Turística (18/08/2026)
+
+Adicionadas a pedido explícito do autor ("piensa en otros impuestos que
+podamos incluir, por ejemplo el impuesto de audiovisuales, el impuesto
+sobre el tratamiento de residuos"). A investigação avaliou cinco
+candidatos; dois foram implementados, três foram deliberadamente
+deixados de fora — ver justificação abaixo.
+
+### Contribuição Audiovisual (CAV) — 🟡 ESTIMATE
+
+Cobrada mensalmente na fatura de eletricidade de (quase) todos os
+consumidores em Portugal Continental, para financiar a RTP (Lei n.º
+30/2003, de 22 de agosto). Valor 2026: 2,85€ + IVA (6%) = 3,02€/mês
+(36,24€/ano) na tarifa normal; 1€ + IVA = 1,06€/mês (12,72€/ano) na
+tarifa reduzida, para clientes elegíveis da tarifa social de energia;
+isento se o consumo anual for inferior a 400 kWh. O Orçamento do Estado
+2026 não atualizou estes valores. Implementado em
+`data/tax-rules/2026/outras-taxas.js` (`OUTRAS_TAXAS_2026.cav`) e no
+formulário de Taxas (`modules/impostos-anuais.js`), com um seletor de
+situação (normal/reduzida/isento) que sugere o valor anual mas nunca o
+bloqueia — o utilizador pode sempre corrigir a partir da própria
+fatura. Continua ESTIMATE, não verified: o valor base e a
+não-atualização em 2026 assentam em fontes secundárias convergentes
+(imprensa, comercializadoras de energia), não na leitura direta da Lei
+n.º 30/2003; só o critério de isenção/tarifa reduzida tem fonte
+institucional direta (DGEG). Fonte: [DGEG, Contribuição Audiovisual
+(CAV) Reduzida](https://www.dgeg.gov.pt/pt/areas-transversais/politicas-de-protecao-ao-consumidor-de-energia/tarifa-social-de-energia/contribuicao-audiovisual-cav-reduzida/).
+
+### Taxa Municipal Turística — 🟡 ESTIMATE
+
+Cobrada por pessoa/noite em hotéis e alojamento local, tipicamente só
+nas primeiras 7 noites consecutivas de estadia. Ao contrário do IMI,
+**não existe uma taxa nacional única** — cada município decide,
+autonomamente, se cobra e quanto; só uma parte dos 308 municípios a
+cobra. Por isso a app não tenta embutir uma tabela completa por
+concelho (seria um esforço de tamanho semelhante ao do IMI, mas para um
+imposto que a maioria dos utilizadores só paga ocasionalmente, em
+viagem — não compensa). Em vez disso, mostra dois exemplos de
+referência (Lisboa 4€/noite, Porto 3€/noite — dados 2026) e oferece uma
+calculadora opcional de noites × valor/noite que preenche o campo
+"Valor pago", sempre editável a partir da fatura real do alojamento.
+Implementado em `data/tax-rules/2026/outras-taxas.js`
+(`OUTRAS_TAXAS_2026.taxaTuristica`). Fonte: [Host Wise, Taxa Turística
+em Portugal](https://www.hostwise.pt/blog/taxa-turistica-alojamento-local-portugal),
+Lisboa.pt, Câmara Municipal do Porto.
+
+### Deixados de fora, deliberadamente: TGR, TRH e TMDP
+
+Três contribuições foram investigadas e **não** implementadas, por
+decisão conjunta com o autor — não por falta de dados, mas porque o
+esforço de as modelar com precisão não compensaria o efeito no
+resultado final:
+
+- **Taxa de Gestão de Resíduos (TGR)** e **Taxa de Recursos Hídricos
+  (TRH)** — cobradas em cêntimos por m³ na fatura da água (ex.:
+  ~0,08€/m³ e ~0,06€/m³ em 2026, valores que variam por entidade
+  gestora municipal), tipicamente somando poucos euros por ano e quase
+  invisíveis ao utilizador médio sem ler a fatura da água linha a
+  linha.
+- **Taxa Municipal de Direitos de Passagem (TMDP)** — até 0,25% da
+  fatura de telecomunicações (o próprio município decide a percentagem,
+  até esse limite), nem sequer cobrada em todos os municípios, e alvo
+  de controvérsia legal sobre a sua cobrança.
+
+Estas três aparecem mencionadas explicitamente como limitação no ecrã
+do Dia da Liberdade Fiscal ("O que fica sempre de fora"), para que o
+resultado nunca seja apresentado como 100% completo sem o dizer.
+
+---
+
 ## 6. Retenção na fonte vs. imposto anual — princípio transversal
 
 Vale para IRS e, por extensão, para a lógica do Taxímetro: os valores

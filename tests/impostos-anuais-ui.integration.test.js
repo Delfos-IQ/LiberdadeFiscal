@@ -271,6 +271,112 @@ describe("Taxas — registo manual", () => {
   });
 });
 
+describe("Taxas — CAV e Taxa Municipal Turística (adicionadas 18/08/2026, a pedido do autor)", () => {
+  function selecionarTipo(container, value) {
+    const tipoSelect = container.querySelector("#tipo-imposto");
+    tipoSelect.value = value;
+    tipoSelect.dispatchEvent(new window.Event("change", { bubbles: true }));
+  }
+
+  test("CAV: escolher 'Normal' sugere 36,24€/ano (3,02€/mês × 12), editável", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    selecionarTipo(container, "CAV");
+    const situacaoSelect = container.querySelector("#situacao-cav");
+    assert.ok(situacaoSelect, "o seletor de situação da CAV deve aparecer quando o tipo é CAV");
+    situacaoSelect.value = "normal";
+    situacaoSelect.dispatchEvent(new window.Event("change", { bubbles: true }));
+
+    const valorInput = container.querySelector("#valor-imposto");
+    assert.equal(Number(valorInput.value), 36.24);
+  });
+
+  test("CAV: escolher 'Isento' sugere 0€", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    selecionarTipo(container, "CAV");
+    const situacaoSelect = container.querySelector("#situacao-cav");
+    situacaoSelect.value = "isento";
+    situacaoSelect.dispatchEvent(new window.Event("change", { bubbles: true }));
+
+    const valorInput = container.querySelector("#valor-imposto");
+    assert.equal(Number(valorInput.value), 0);
+  });
+
+  test("CAV: o valor sugerido continua editável manualmente (nunca bloqueia o utilizador)", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    selecionarTipo(container, "CAV");
+    const valorInput = container.querySelector("#valor-imposto");
+    valorInput.value = "12";
+    valorInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    assert.equal(Number(valorInput.value), 12);
+  });
+
+  test("Taxa Municipal Turística: calculadora opcional noites × valor/noite preenche o valor pago", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    selecionarTipo(container, "Taxa_Turistica");
+    const noitesInput = container.querySelector("#noites-turistica");
+    const valorNoiteInput = container.querySelector("#valor-noite-turistica");
+    assert.ok(noitesInput && valorNoiteInput, "os campos da calculadora devem aparecer para Taxa_Turistica");
+
+    noitesInput.value = "3";
+    noitesInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    valorNoiteInput.value = "4";
+    valorNoiteInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+
+    const valorInput = container.querySelector("#valor-imposto");
+    assert.equal(Number(valorInput.value), 12);
+  });
+
+  test("Taxa Municipal Turística: regista e aparece na lista com o tipo correto", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    selecionarTipo(container, "Taxa_Turistica");
+    const valorInput = container.querySelector("#valor-imposto");
+    valorInput.value = "8";
+    valorInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    container.querySelector("form").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
+
+    await waitFor(() => container.querySelector("#taxas-heading") && container.textContent.includes("8,00"));
+    assert.match(container.textContent, /Taxa Municipal Turística/);
+    assert.match(container.textContent, /8,00\s?€/);
+  });
+
+  test("campos de CAV e Taxa Turística ficam escondidos para os outros tipos de imposto", async () => {
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.querySelector("#taxas-heading"));
+    clickByText(container, "Registar taxa");
+    await waitFor(() => container.querySelector("#nova-taxa-heading"));
+
+    selecionarTipo(container, "IUC");
+    assert.equal(container.querySelector("#situacao-cav").closest(".taximetro-field").hidden, true);
+    assert.equal(container.querySelector("#noites-turistica").closest(".taximetro-field").hidden, true);
+  });
+});
+
 describe("Taxas — acessibilidade básica", () => {
   test("cada ecrã tem exatamente um h1 com foco programático", async () => {
     const container = getContainer();

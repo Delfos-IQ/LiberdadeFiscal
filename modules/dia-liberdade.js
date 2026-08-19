@@ -257,7 +257,7 @@ export function render(container) {
 
     const faltantes = [];
     if (!p.gastosMensal) faltantes.push("Gastos (IVA e impostos especiais de consumo)");
-    if (!p.taxasAnuais) faltantes.push("Taxas (IMI, IUC, ISV, IMT, Imposto de Selo)");
+    if (!p.taxasAnuais) faltantes.push("Taxas (IMI, IUC, ISV, IMT, Imposto de Selo, CAV, Taxa Municipal Turística)");
 
     let avisoFaltantes = null;
     if (faltantes.length > 0) {
@@ -287,7 +287,12 @@ export function render(container) {
       "disclaimer",
       "Fonte do IRS e Segurança Social: CIRS (Código do IRS) e taxas de TSU da Segurança Social, 2026."
     );
-    detalhes.append(summary, metodologiaTexto, fonteRendimentos);
+    const contribuicoesNaoModeladas = el(
+      "p",
+      "disclaimer",
+      "O que fica sempre de fora, mesmo com Gastos e Taxas totalmente preenchidos: a Taxa de Gestão de Resíduos e a Taxa de Recursos Hídricos (cêntimos por m³ na fatura da água) e a Taxa Municipal de Direitos de Passagem (até 0,25% da fatura de telecomunicações, nem sempre cobrada). São valores muito pequenos e escondidos dentro de faturas de terceiros — decidimos não os modelar porque o esforço de os tornar precisos não compensaria o efeito no resultado final."
+    );
+    detalhes.append(summary, metodologiaTexto, fonteRendimentos, contribuicoesNaoModeladas);
 
     const privacidade = el(
       "p",

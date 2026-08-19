@@ -19,6 +19,7 @@
 
 import { savePeriodicTax, dbGetAll, dbDelete, atualizarPeriodoAtual } from "../data/db.js";
 import { PATRIMONIAIS_2026 } from "../data/tax-rules/2026/patrimoniais.js";
+import { OUTRAS_TAXAS_2026 } from "../data/tax-rules/2026/outras-taxas.js";
 
 const TIPOS_IMPOSTO = [
   {
@@ -51,6 +52,18 @@ const TIPOS_IMPOSTO = [
     ajuda: "Ex.: contratos de crédito, transmissões. Nunca acumulado com IVA sobre o mesmo ato.",
     recorrencia: "one_time",
   },
+  {
+    value: "CAV",
+    label: "CAV — Contribuição Audiovisual",
+    ajuda: "Cobrada mensalmente na fatura da eletricidade (financia a RTP). A maioria paga 3,02€/mês — escolhe a tua situação abaixo.",
+    recorrencia: "annual",
+  },
+  {
+    value: "Taxa_Turistica",
+    label: "Taxa Municipal Turística",
+    ajuda: "Cobrada por pessoa/noite em hotéis e alojamento local, normalmente só nas primeiras 7 noites. Só alguns municípios a cobram (ex.: Lisboa 4€/noite, Porto 3€/noite) — regista o que pagaste na fatura do alojamento.",
+    recorrencia: "one_time",
+  },
 ];
 
 export function render(container) {
@@ -81,7 +94,7 @@ export function render(container) {
     const desc = el(
       "p",
       null,
-      "Regista aqui o IMI, IUC, ISV, IMT ou Imposto de Selo que já pagaste — não são calculados pela app, porque dependem de dados que só tu tens (concelho, valor patrimonial, cilindrada, etc.). Introduz o valor da tua nota de liquidação."
+      "Regista aqui o IMI, IUC, ISV, IMT, Imposto de Selo, a Contribuição Audiovisual (CAV) ou a Taxa Municipal Turística que já pagaste — não são calculados pela app, porque dependem de dados que só tu tens (concelho, valor patrimonial, cilindrada, situação de tarifa, etc.). Introduz o valor da tua nota de liquidação ou fatura."
     );
 
     const privacidade = el(
@@ -238,12 +251,100 @@ export function render(container) {
     concelhoInput.addEventListener("input", atualizarTaxaImi);
     atualizarTaxaImi();
 
+    // CAV: valor fixo a nível nacional (ao contrário do IMI), mas
+    // depende da situação do utilizador — normal, tarifa reduzida
+    // (tarifa social de energia), ou isento (consumo anual < 400 kWh).
+    // Sugere o valor anual mas deixa sempre editar (spec: nunca
+    // preencher silenciosamente sem explicar).
+    const cavField = el("div", "taximetro-field");
+    const cavLabel = document.createElement("label");
+    cavLabel.htmlFor = "situacao-cav";
+    cavLabel.textContent = "Qual é a tua situação?";
+    const cavSelect = document.createElement("select");
+    cavSelect.id = "situacao-cav";
+    const cav = OUTRAS_TAXAS_2026.cav;
+    [
+      { value: "normal", label: `Normal — ${formatEUR(cav.valorMensalNormalComIva)}/mês (${formatEUR(round2(cav.valorMensalNormalComIva * 12))}/ano)` },
+      { value: "reduzida", label: `Tarifa reduzida (tarifa social de energia) — ${formatEUR(cav.valorMensalReduzidaComIva)}/mês (${formatEUR(round2(cav.valorMensalReduzidaComIva * 12))}/ano)` },
+      { value: "isento", label: `Isento — consumo anual abaixo de ${cav.isencaoConsumoAnualKwh} kWh` },
+    ].forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.value;
+      o.textContent = opt.label;
+      cavSelect.append(o);
+    });
+    const cavAjuda = el(
+      "span",
+      "stat-label",
+      `🟡 Valor sugerido a partir de fonte secundária — confirma sempre na tua fatura de eletricidade. Fonte: ${cav.source}.`
+    );
+    cavField.append(cavLabel, cavSelect, cavAjuda);
+    cavField.hidden = true;
+
+    function atualizarValorCav() {
+      if (tipoSelect.value !== "CAV") return;
+      const anual =
+        cavSelect.value === "isento"
+          ? 0
+          : cavSelect.value === "reduzida"
+            ? round2(cav.valorMensalReduzidaComIva * 12)
+            : round2(cav.valorMensalNormalComIva * 12);
+      valorInput.value = anual;
+    }
+    cavSelect.addEventListener("change", atualizarValorCav);
+
+    // Taxa Municipal Turística: calculadora opcional noites × valor —
+    // preenche o campo "Valor pago" mas nunca o bloqueia (o utilizador
+    // pode sempre corrigir a partir da fatura real do alojamento).
+    const turisticaField = el("div", "taximetro-field");
+    const turisticaAjuda = el(
+      "span",
+      "stat-label",
+      `Exemplos 2026: Lisboa ${formatEUR(OUTRAS_TAXAS_2026.taxaTuristica.exemplos[0].valorPorNoite)}/noite, Porto ${formatEUR(OUTRAS_TAXAS_2026.taxaTuristica.exemplos[1].valorPorNoite)}/noite (normalmente só as primeiras 7 noites). Cada município decide se cobra e quanto — confirma no teu.`
+    );
+    const noitesLabel = document.createElement("label");
+    noitesLabel.htmlFor = "noites-turistica";
+    noitesLabel.textContent = "Nº de noites tributadas (opcional)";
+    const noitesInput = document.createElement("input");
+    noitesInput.type = "number";
+    noitesInput.id = "noites-turistica";
+    noitesInput.min = "0";
+    noitesInput.step = "1";
+    const valorNoiteLabel = document.createElement("label");
+    valorNoiteLabel.htmlFor = "valor-noite-turistica";
+    valorNoiteLabel.textContent = "Valor por noite (opcional)";
+    const valorNoiteInputWrap = el("div", "input-euro");
+    const valorNoiteInput = document.createElement("input");
+    valorNoiteInput.type = "number";
+    valorNoiteInput.id = "valor-noite-turistica";
+    valorNoiteInput.min = "0";
+    valorNoiteInput.step = "0.01";
+    valorNoiteInputWrap.append(valorNoiteInput);
+    turisticaField.append(turisticaAjuda, noitesLabel, noitesInput, valorNoiteLabel, valorNoiteInputWrap);
+    turisticaField.hidden = true;
+
+    function atualizarValorTuristica() {
+      if (tipoSelect.value !== "Taxa_Turistica") return;
+      const noites = Number(noitesInput.value);
+      const valorNoite = Number(valorNoiteInput.value);
+      if (Number.isFinite(noites) && noites > 0 && Number.isFinite(valorNoite) && valorNoite > 0) {
+        valorInput.value = round2(noites * valorNoite);
+      }
+    }
+    noitesInput.addEventListener("input", atualizarValorTuristica);
+    valorNoiteInput.addEventListener("input", atualizarValorTuristica);
+
     tipoSelect.addEventListener("change", () => {
       const t = TIPOS_IMPOSTO.find((x) => x.value === tipoSelect.value);
       tipoAjuda.textContent = t ? t.ajuda : "";
       concelhoField.hidden = tipoSelect.value !== "IMI";
+      cavField.hidden = tipoSelect.value !== "CAV";
+      turisticaField.hidden = tipoSelect.value !== "Taxa_Turistica";
+      if (tipoSelect.value === "CAV") atualizarValorCav();
     });
     concelhoField.hidden = tipoSelect.value !== "IMI";
+    cavField.hidden = tipoSelect.value !== "CAV";
+    turisticaField.hidden = tipoSelect.value !== "Taxa_Turistica";
 
     const valorField = el("div", "taximetro-field");
     const valorLabel = document.createElement("label");
@@ -258,7 +359,7 @@ export function render(container) {
     valorInputWrap.append(valorInput);
     valorField.append(valorLabel, valorInputWrap);
 
-    form.append(tipoField, concelhoField, valorField);
+    form.append(tipoField, concelhoField, cavField, turisticaField, valorField);
 
     if (state.erro) {
       const erroEl = el("p", "form-error", state.erro);

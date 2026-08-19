@@ -242,7 +242,7 @@ export async function saveInvoice(invoice) {
 
 /**
  * Guarda um PeriodicTax (imposto anual/patrimonial: IMI, IUC, ISV, IMT,
- * Imposto de Selo — secção 6.4 do CLAUDE.md). Ao contrário das
+ * Imposto de Selo, CAV, Taxa_Turistica — secção 6.4 do CLAUDE.md). Ao contrário das
  * Invoices, estes valores não são calculados pela app (as tabelas
  * completas de ISV/IUC/Imposto de Selo estão marcadas UNKNOWN/ESTIMATE
  * em data/tax-rules/2026/patrimoniais.js) — o utilizador introduz o
@@ -262,7 +262,7 @@ export async function savePeriodicTax(periodicTax) {
   if (emFalta.length > 0) {
     throw new Error(`PeriodicTax incompleto — faltam campos: ${emFalta.join(", ")}`);
   }
-  const tiposValidos = ["IMI", "IUC", "ISV", "IMT", "Imposto_Selo"];
+  const tiposValidos = ["IMI", "IUC", "ISV", "IMT", "Imposto_Selo", "CAV", "Taxa_Turistica"];
   if (!tiposValidos.includes(periodicTax.type)) {
     throw new Error(`type inválido: ${periodicTax.type}. Use um de: ${tiposValidos.join(", ")}.`);
   }

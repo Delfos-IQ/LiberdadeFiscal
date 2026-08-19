@@ -122,12 +122,12 @@ describe("data/db.js — savePeriodicTax", () => {
     await assert.rejects(() => savePeriodicTax(taxaValida({ type: "IRS" })), /type inválido/);
   });
 
-  test("aceita os cinco tipos válidos", async () => {
-    for (const [i, type] of ["IMI", "IUC", "ISV", "IMT", "Imposto_Selo"].entries()) {
+  test("aceita os sete tipos válidos (inclui CAV e Taxa_Turistica, adicionados 18/08/2026)", async () => {
+    for (const [i, type] of ["IMI", "IUC", "ISV", "IMT", "Imposto_Selo", "CAV", "Taxa_Turistica"].entries()) {
       await savePeriodicTax(taxaValida({ id: `tax-${i}`, type }));
     }
     const todos = await dbGetAll("periodicTaxes");
-    assert.equal(todos.length, 5);
+    assert.equal(todos.length, 7);
   });
 
   test("rejeita amount negativo ou não numérico", async () => {
