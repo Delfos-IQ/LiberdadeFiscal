@@ -132,8 +132,11 @@ export const IRS_2026 = {
     segundoDependenteOuSeguinteAte3Anos: {
       value: 900,
       unit: "EUR/ano",
+      status: "verified",
+      source: "Art. 78.º-A, n.º 3 do CIRS — lido diretamente no texto consolidado via Diário da República em 19/08/2026",
+      sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-206093046",
       notes:
-        "Substitui os 726€ a partir do 2.º dependente. ⚠️ Corrigido (19/08/2026): a tabela \"Deduções à coleta de IRS\" do PwC Guia Fiscal 2026 aplica este valor a dependentes com idade <= 6 anos (\"para o segundo dependente e seguintes, independentemente da idade do primeiro\"), não <= 3 anos como assumido antes. O nome do campo ficou desatualizado (mantido por compatibilidade), mas a regra correta a aplicar é <= 6 anos — a app ainda não foi corrigida para usar este limiar; ver TAX-METHODOLOGY.md.",
+        "Substitui os 726€ a partir do 2.º dependente. ✅ Confirmado diretamente contra o texto legal (19/08/2026): Art. 78.º-A n.º3 CIRS diz literalmente \"somam-se os montantes de (euro) 300 e (euro) 150 [...] para o segundo dependente e seguintes que não ultrapassem seis anos de idade [...], independentemente da idade do primeiro dependente\" — 600€ base + 300€ = 900€, confirma exatamente a correção já feita nesta ronda a partir do PwC. O nome do campo ficou desatualizado (mantido por compatibilidade), a regra correta é <= 6 anos. Achado adicional do texto legal, não modelado: o n.º4 do mesmo artigo diz que esta bonificação (n.º3) e a de <=3 anos (n.º2, os 726€) \"não são cumulativas\" — o motor já respeita isto (nunca soma os dois), mas vale registar que é uma regra explícita do CIRS, não só uma escolha de implementação.",
     },
     guardaConjuntaResidenciaAlternada: {
       value: 300,
@@ -235,9 +238,9 @@ export const IRS_2026 = {
     value: 4587.09,
     unit: "EUR/ano",
     status: "verified",
-    source: "PwC Portugal, \"Guia Fiscal 2026\" — tabela \"Deduções específicas no IRS\", Categoria A",
-    sourceUrl: "https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html",
-    notes: "Substitui o valor anterior de 4.104€ (desatualizado). Não modelado: elevação para 4.834,17€ em casos de quotas para associações profissionais indispensáveis ao exercício da atividade.",
+    source: "Art. 25.º, n.º 1, alínea a) do CIRS (\"8,54 vezes o valor do IAS\") × IAS 2026 (537,13€) — lido diretamente no texto consolidado do CIRS via Diário da República em 19/08/2026, confirmando também a tabela do PwC Guia Fiscal 2026",
+    sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-902120232",
+    notes: "8,54 × 537,13€ = 4.587,0902€ ≈ 4.587,09€ — confirma exatamente o valor já corrigido nesta ronda a partir do PwC. Substitui o valor anterior de 4.104€ (desatualizado). Não modelado: elevação para 4.834,17€ em casos de quotas para associações profissionais indispensáveis ao exercício da atividade.",
   },
 
   /**

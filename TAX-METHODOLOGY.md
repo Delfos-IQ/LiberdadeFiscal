@@ -133,20 +133,24 @@ verificar este limiar antes de aplicar os escalões. Re-confirmado em
 mesmo cálculo (Montepio, e-loan.pt, CGD Saldo Positivo, ECO) — ainda
 sem confirmação direta contra o CIRS/Portal das Finanças.
 
-### Dedução específica Categoria A — ✅ Verificado (corrigido 19/08/2026)
+### Dedução específica Categoria A — ✅ Verificado diretamente no CIRS (19/08/2026)
 
 **4.587,09 €/ano**, ou as contribuições efetivas para a Segurança
 Social se superiores. Aplica-se antes de calcular o rendimento
 coletável de trabalho dependente. Corrigido de 4.104€ — esse valor
 estava desatualizado (verificado via pesquisa web em 15/08/2026, sem
-fonte primária/de referência direta). O valor correto foi confirmado
-diretamente na tabela "Deduções específicas no IRS" do PwC Guia Fiscal
-2026, onde 4.587,09€ reaparece de forma consistente para as Categorias
-A e H e como base do regime simplificado da Categoria B — convergência
-interna do próprio documento. Pode subir para 4.834,17€ em casos de
-quotas para associações profissionais indispensáveis ao exercício da
-atividade — não modelado nesta app. Fonte: [PwC Portugal, Guia Fiscal
-2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
+fonte primária/de referência direta). Primeiro confirmado via PwC Guia
+Fiscal 2026, e depois **confirmado diretamente no texto consolidado do
+CIRS** (Diário da República, 19/08/2026, via Claude in Chrome — a
+extensão reconectou-se nesta sessão): o Art. 25.º, n.º1, alínea a) diz
+"8,54 vezes o valor do IAS" — não é um valor fixo em euros, é uma
+fórmula. Com o IAS 2026 (537,13€, já verificado nesta app), 8,54 ×
+537,13 = 4.587,0902€ ≈ 4.587,09€, batendo exatamente com o valor da
+PwC. Pode subir para 4.834,17€ em casos de quotas para associações
+profissionais indispensáveis ao exercício da atividade — não modelado
+nesta app. Fontes: [CIRS, Art. 25.º — Diário da República, versão
+consolidada](https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-902120232),
+[PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
 ### Quociente familiar (Art. 69.º CIRS) — ✅ Verificado (Fase 4)
 
@@ -192,11 +196,29 @@ aplicava os 900€ apenas ao 2.º dependente (ou seguinte) com idade
 2026 mostra que o limiar correto é **<= 6 anos**, "independentemente da
 idade do primeiro" — ou seja, um agregado com um dependente de 15 anos
 e outro de 5 anos deduz 600€ + 900€ (1.500€), não 600€ + 600€ (1.200€,
-o que o motor calculava antes). Simplificação conhecida, não resolvida:
-a lei refere-se ao "1.º dependente" por ordem de nascimento/registo
-civil, que esta app não recolhe — usa-se a ordem crescente de idade
-como aproximação determinística (o dependente mais novo do agregado é
-tratado como "2.º ou seguinte" sempre que houver mais do que um).
+o que o motor calculava antes).
+
+**Confirmado diretamente no texto legal (19/08/2026, mais tarde na
+mesma sessão, com Claude in Chrome já reconectado):** Art. 78.º-A,
+n.º3 do CIRS, lido no texto consolidado do Diário da República, diz
+literalmente: *"Quando exista mais de um dependente, à dedução
+prevista nas alíneas a) e b) do n.º 1 somam-se os montantes de (euro)
+300 e (euro) 150, respetivamente, para o segundo dependente e
+seguintes que não ultrapassem seis anos de idade até 31 de dezembro do
+ano a que respeita o imposto, independentemente da idade do primeiro
+dependente."* 600€ (n.º1-a) + 300€ (n.º3) = 900€, exatamente a
+correção já feita a partir da PwC — agora confirmada contra a lei em
+bruto, não só uma fonte secundária. O n.º4 do mesmo artigo acrescenta
+que esta bonificação e a do n.º2 (os 726€ para um único dependente
+<=3 anos) "não são cumulativas" — o motor já respeita isto (nunca
+soma os dois), o que a leitura direta da lei confirma como correto,
+não só como uma escolha de implementação razoável.
+
+Simplificação conhecida, não resolvida: a lei refere-se ao "1.º
+dependente" por ordem de nascimento/registo civil, que esta app não
+recolhe — usa-se a ordem crescente de idade como aproximação
+determinística (o dependente mais novo do agregado é tratado como
+"2.º ou seguinte" sempre que houver mais do que um).
 
 Implementado em `calcularDeducaoDependentes()`. Nunca deixa o IRS
 final ficar negativo — a dedução aplica-se com `Math.max(0, ...)`.
