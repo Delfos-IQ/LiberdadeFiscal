@@ -196,13 +196,30 @@ export function desenharCartaoCanvas(canvas, resultado) {
     34
   );
 
+  // Domínio, fora da card, por baixo do disclaimer — sem isto, uma
+  // Story reposta ou printada perde a hiperligação do Web Share API
+  // (que só viaja com o texto, não com a imagem) e fica sem forma de
+  // encontrar a app. Discreto, mas sempre presente, com o mesmo peso
+  // visual do acento dourado que já lá estava.
+  ctx.fillStyle = NAVY_MUTED;
+  ctx.font = "500 28px Poppins, sans-serif";
+  ctx.fillText(SITE_LABEL, W / 2, H * 0.95);
+
   // Pequeno acento dourado no fundo, fora da card — assinatura visual
   // discreta, sem competir com o conteúdo.
   ctx.fillStyle = GOLD;
   ctx.beginPath();
-  ctx.arc(W / 2, H * 0.965, 7, 0, Math.PI * 2);
+  ctx.arc(W / 2, H * 0.975, 7, 0, Math.PI * 2);
   ctx.fill();
 }
+
+// Etiqueta curta mostrada no rodapé do cartão (fora da card branca),
+// para quem vir a imagem sem o texto/link que a acompanha (ex.: Story
+// repostada por terceiros, ou screenshot). Mantida como constante única
+// para não ter de repetir o domínio em vários sítios do ficheiro — ver
+// nota em index.html sobre ALLOWED_ORIGIN/og:url quando o domínio final
+// mudar de delfos-iq.github.io para um domínio próprio.
+const SITE_LABEL = "delfos-iq.github.io";
 
 function desenharRetanguloArredondado(ctx, x, y, largura, altura, raio) {
   const r = Math.min(raio, largura / 2, altura / 2);
