@@ -388,11 +388,11 @@ export const PATRIMONIAIS_2026 = {
   isv: {
     status: "verified",
     source:
-      "EcoImport (estrutura e confirmação de ausência de alteração no OE2026) + Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção ISV (valores numéricos, cruzados um a um), consultado 18/08/2026",
+      "EcoImport (estrutura e confirmação de ausência de alteração no OE2026) + Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção ISV (valores numéricos, cruzados um a um), consultado 18/08/2026. Tabela NEDC (veículos homologados até 2017/2018) acrescentada em 19/08/2026 a partir da mesma fonte, secção completa lida via web_fetch.",
     sourceUrl:
       "https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf",
     formula:
-      "ISV = componente cilindrada + componente ambiental (CO2, tabela WLTP) [+ 500€ se gasóleo] [× 0,25 se PHEV elegível] × (1 - desconto por idade, se usado importado). Só as tabelas WLTP foram recolhidas — veículos homologados em NEDC (normalmente pré-2018) continuam UNKNOWN nesta app.",
+      "ISV = componente cilindrada + componente ambiental (CO2, tabela WLTP ou NEDC consoante o protocolo de homologação do veículo) [+ 500€ se gasóleo] [× 0,25 se PHEV elegível] × (1 - desconto por idade, se usado importado). Desde 19/08/2026 a app cobre também veículos homologados em NEDC (tipicamente matriculados antes de meados de 2018, antes da transição obrigatória para WLTP) — antes ficavam UNKNOWN.",
     // Componente cilindrada — igual para gasolina/GPL/GN, aplicável à generalidade
     // dos automóveis de passageiros (Tabela A).
     componenteCilindrada: [
@@ -422,6 +422,27 @@ export const PATRIMONIAIS_2026 = {
         { min: 161, max: 170, taxaPorGrama: 221.69, parcelaAAbater: 29227.38 },
         { min: 171, max: 190, taxaPorGrama: 274.08, parcelaAAbater: 36987.98 },
         { min: 191, max: Infinity, taxaPorGrama: 282.35, parcelaAAbater: 38271.32 },
+      ],
+    },
+    // Componente ambiental (CO2), protocolo NEDC — veículos homologados
+    // antes da transição para WLTP (tipicamente até meados de 2018).
+    // Acrescentado 19/08/2026, mesma fonte da tabela WLTP acima.
+    componenteCO2Nedc: {
+      gasolina: [
+        { max: 99, taxaPorGrama: 4.62, parcelaAAbater: 427.0 },
+        { min: 100, max: 115, taxaPorGrama: 8.09, parcelaAAbater: 750.99 },
+        { min: 116, max: 145, taxaPorGrama: 52.56, parcelaAAbater: 5903.94 },
+        { min: 146, max: 175, taxaPorGrama: 61.24, parcelaAAbater: 7140.17 },
+        { min: 176, max: 195, taxaPorGrama: 155.97, parcelaAAbater: 23627.27 },
+        { min: 196, max: Infinity, taxaPorGrama: 205.65, parcelaAAbater: 33390.12 },
+      ],
+      gasoleo: [
+        { max: 79, taxaPorGrama: 5.78, parcelaAAbater: 439.04 },
+        { min: 80, max: 95, taxaPorGrama: 23.45, parcelaAAbater: 1848.58 },
+        { min: 96, max: 120, taxaPorGrama: 79.22, parcelaAAbater: 7195.63 },
+        { min: 121, max: 140, taxaPorGrama: 175.73, parcelaAAbater: 18924.92 },
+        { min: 141, max: 160, taxaPorGrama: 195.43, parcelaAAbater: 21720.92 },
+        { min: 161, max: Infinity, taxaPorGrama: 268.42, parcelaAAbater: 33447.9 },
       ],
     },
     taxaAdicionalGasoleo: {
@@ -515,7 +536,27 @@ export const PATRIMONIAIS_2026 = {
         { min: 1751, max: 2500, valor: 20.12 },
         { min: 2501, max: Infinity, valor: 68.85 },
       ],
-      formula: "IUC = (taxa cilindrada + taxa CO2) × coeficiente do ano de matrícula [+ adicional gasóleo, por cilindrada]",
+      // Acrescentado 19/08/2026: Art. 10.º, n.º2 do CIUC — taxa adicional
+      // para veículos da categoria B cuja 1.ª matrícula (em Portugal ou
+      // noutro Estado-Membro UE/EEE) seja posterior a 1 de janeiro de
+      // 2017. Antes desta ronda, calcularIUC() não aplicava nada disto —
+      // subestimava o imposto de veículos pós-2017 com CO2 mais alto.
+      // Simplificação: usa-se anoMatricula >= 2017 (a lei fala em
+      // "posterior a 1 de janeiro de 2017", que exclui só o próprio
+      // 1/1/2017 — diferença de um único dia, sem efeito prático).
+      adicionalAltasEmissoes: {
+        aplicavelDesdeAno: 2017,
+        source: "Art. 10.º, n.º2 do CIUC — Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção IUC",
+        nedc: [
+          { min: 181, max: 250, valor: 31.77 },
+          { min: 251, max: Infinity, valor: 63.74 },
+        ],
+        wltp: [
+          { min: 206, max: 260, valor: 31.77 },
+          { min: 261, max: Infinity, valor: 63.74 },
+        ],
+      },
+      formula: "IUC = (taxa cilindrada + taxa CO2) × coeficiente do ano de matrícula [+ adicional gasóleo, por cilindrada] [+ adicional de altas emissões, se 1.ª matrícula >= 2017 e CO2 acima do limiar]",
     },
     categoriaAPre2007: {
       aplicavelA: "Veículos com 1.ª matrícula até 30 de junho de 2007",
@@ -560,6 +601,39 @@ export const PATRIMONIAIS_2026 = {
         { min: 501, max: 750, taxa: 63.62 },
         { min: 751, max: Infinity, taxa: 138.15 },
       ],
+      // Acrescentado 19/08/2026, mesma fonte (Art.º 13.º CIUC): coluna em
+      // falta para motociclos matriculados entre 1992 e 1996 inclusive.
+      "entre1992e1996": [
+        { min: 120, max: 250, taxa: 0 },
+        { min: 251, max: 350, taxa: 6.19 },
+        { min: 351, max: 500, taxa: 12.53 },
+        { min: 501, max: 750, taxa: 37.47 },
+        { min: 751, max: Infinity, taxa: 67.76 },
+      ],
+    },
+    // Categorias F e G — acrescentadas 19/08/2026, documentadas mas SEM
+    // função de cálculo dedicada ainda (nenhuma UI desta app pede os
+    // dados necessários — potência em kW para F, peso em kg para G).
+    // Mantidas aqui para referência futura, seguindo o mesmo padrão já
+    // usado para a tabela de cerveja do IABA.
+    categoriaF: {
+      aplicavelA: "Veículos da categoria F (Art. 14.º CIUC)",
+      source: "Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção IUC",
+      taxa: { value: 2.95, unit: "EUR/kW" },
+    },
+    categoriaG: {
+      aplicavelA: "Veículos da categoria G (Art. 15.º CIUC)",
+      source: "Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção IUC",
+      taxa: { value: 0.75, unit: "EUR/kg" },
+      limiteImposto: { value: 13705.25, unit: "EUR" },
+    },
+    // Categorias C e D — Art.os 11.º e 12.º do CIUC. O folheto da AT
+    // remete para tabelas "disponíveis no próprio artigo" sem as
+    // reproduzir; continuam UNKNOWN nesta app (veículos pesados de
+    // mercadorias, fora do público-alvo típico do simulador).
+    categoriaCD: {
+      status: "UNKNOWN",
+      notes: "Veículos pesados de mercadorias (peso bruto >=12t / <12t / articulados para categoria C; ver Art.11.º e 12.º do CIUC para categoria D). Tabelas não reproduzidas no folheto da AT consultado — precisam de consulta direta ao Código do IUC.",
     },
   },
 

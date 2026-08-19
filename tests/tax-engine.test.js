@@ -383,15 +383,18 @@ describe("Impostos patrimoniais e de veículo", () => {
 
   // ISV, IUC e Imposto de Selo ganharam tabelas numéricas verificadas
   // numa ronda de investigação posterior (ver tests/tax-engine-
-  // patrimoniais.test.js para a cobertura completa e as fontes). Este
-  // teste confirma apenas que, para os casos que continuam fora do
-  // âmbito modelado (protocolo NEDC no ISV, categoria pré-2007 no
-  // IUC), a app continua a devolver UNKNOWN em vez de inventar um
+  // patrimoniais.test.js para a cobertura completa e as fontes). O
+  // protocolo NEDC do ISV passou de UNKNOWN a calculado em 19/08/2026
+  // (tabela encontrada na mesma fonte oficial da AT já usada para
+  // WLTP) — ver tests/tax-engine-patrimoniais.test.js para a cobertura
+  // desse caso. Este teste confirma que, para o que continua fora do
+  // âmbito modelado (categoria pré-2007 no IUC; protocolo desconhecido
+  // no ISV), a app continua a devolver UNKNOWN em vez de inventar um
   // número — o princípio central do spec (secção 8) mantém-se válido
   // mesmo com mais dados verificados.
   test("ISV e IUC continuam a devolver UNKNOWN fora do âmbito verificado — nunca um número inventado", () => {
     assert.equal(
-      calcularISV({ cilindrada: 1500, co2: 120, combustivel: "gasolina", protocolo: "NEDC" }).status,
+      calcularISV({ cilindrada: 1500, co2: 120, combustivel: "gasolina", protocolo: "outro" }).status,
       "UNKNOWN"
     );
     assert.equal(

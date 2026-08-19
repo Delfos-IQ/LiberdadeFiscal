@@ -99,19 +99,58 @@ export const IMPOSTOS_ESPECIAIS_2026 = {
    * de 2026. Outros produtos de tabaco (charutos, tabaco de enrolar,
    * tabaco aquecido) não foram verificados.
    */
+  /**
+   * IT (tabaco) — completado 19/08/2026 (ronda "vamos a por ello",
+   * a pedido do autor). Cigarros e bolsas de nicotina já estavam
+   * verificados; os restantes produtos ficavam "outrosProdutos: UNKNOWN".
+   * Encontrados e confirmados diretamente no mesmo folheto oficial da AT
+   * já usado para ISV/IUC/IABA/Imposto de Selo ("Sistema Fiscal
+   * Português — Taxas Aplicáveis 2025", secção 3.3 — IT), lido via
+   * web_fetch em 19/08/2026. Cigarros bate exatamente com o valor já
+   * guardado nesta app (151,88€/1000 + 1%), confirmação cruzada extra.
+   * Nenhum destes novos produtos tem função de cálculo dedicada ainda —
+   * a UI de Gastos só cobre combustível e cigarros — mas ficam
+   * documentados para referência futura, como já é o padrão desta app
+   * (ex.: tabela de cerveja do IABA).
+   */
   it: {
+    status: "verified",
+    source: "Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\", secção 3.3 (IT), consultado diretamente 19/08/2026",
+    sourceUrl: "https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf",
     cigarros: {
       elementoEspecifico: { value: 151.88, unit: "EUR/1000 cigarros" },
       elementoAdValorem: { value: 0.01, unit: "fração do preço de venda ao público" },
+      notes: "Confirmado de novo em 19/08/2026 contra o mesmo folheto da AT — bate exatamente com o valor já guardado (fonte original: pesquisa web em 15/08/2026).",
     },
     bolsasNicotina: {
       value: 0.065,
       unit: "EUR/grama",
-      notes: "Figura fiscal nova em 2026 (primeiro ano de aplicação).",
+      notes: "Figura fiscal nova em 2026 (primeiro ano de aplicação) — não consta no folheto de 2025 por ser posterior a essa edição, consistente com a nota 'primeiro ano de aplicação'.",
     },
-    outrosProdutos: {
-      status: "UNKNOWN",
-      notes: "Charutos, tabaco de enrolar e tabaco aquecido não verificados nesta pesquisa.",
+    tabacoAquecido: {
+      elementoEspecifico: { value: 0.0935, unit: "EUR/grama" },
+      elementoAdValorem: { value: 0.15, unit: "fração do preço de venda ao público" },
+      notes: "Art.º 103.º-A do CIEC. Produto diferente das bolsas de nicotina (ex.: IQOS) — não modelado na UI de Gastos.",
+    },
+    charutosECigarrilhas: {
+      elementoEspecifico: { value: 0.091, unit: "EUR/grama" },
+      elementoAdValorem: { value: 0.15, unit: "fração do preço de venda ao público" },
+      notes: "Art.º 104.º do CIEC.",
+    },
+    tabacoDeFumarRapeTabacoDeMascar: {
+      elementoEspecifico: null,
+      elementoAdValorem: { value: 0.25, unit: "fração do preço de venda ao público" },
+      notes: "Art.º 104.º-A do CIEC. Inclui tabaco de corte fino para cigarros de enrolar. Sem elemento específico — só ad valorem.",
+    },
+    tabacoParaCachimboDeAgua: {
+      elementoEspecifico: null,
+      elementoAdValorem: { value: 0.75, unit: "fração do preço de venda ao público" },
+      notes: "Art.º 104.º-B do CIEC. Sem elemento específico — só ad valorem.",
+    },
+    liquidoCigarrosEletronicos: {
+      comNicotina: { value: 0.351, unit: "EUR/mililitro" },
+      semNicotina: { value: 0.175, unit: "EUR/mililitro" },
+      notes: "Art.º 104.º-C do CIEC. Tributação por volume, sem componente ad valorem.",
     },
   },
 };

@@ -760,10 +760,10 @@ export function calcularISV(opcoes) {
     };
   }
 
-  if (protocolo !== "WLTP") {
+  if (protocolo !== "WLTP" && protocolo !== "NEDC") {
     return {
       status: "UNKNOWN",
-      reason: "Só as tabelas de CO2 em protocolo WLTP foram verificadas neste simulador.",
+      reason: 'protocolo deve ser "WLTP" ou "NEDC".',
     };
   }
   if (typeof cilindrada !== "number" || cilindrada <= 0) {
@@ -781,7 +781,8 @@ export function calcularISV(opcoes) {
 
   const isvData = PATRIMONIAIS_2026.isv;
   const escalaoCilindrada = escolherEscalao(isvData.componenteCilindrada, cilindrada);
-  const escalaoCO2 = escolherEscalao(isvData.componenteCO2Wltp[combustivel], co2);
+  const tabelaCO2Isv = protocolo === "NEDC" ? isvData.componenteCO2Nedc[combustivel] : isvData.componenteCO2Wltp[combustivel];
+  const escalaoCO2 = escolherEscalao(tabelaCO2Isv, co2);
 
   const componenteCilindrada = round2(cilindrada * escalaoCilindrada.taxaPorCC - escalaoCilindrada.parcelaAAbater);
   const componenteCO2 = round2(co2 * escalaoCO2.taxaPorGrama - escalaoCO2.parcelaAAbater);
@@ -867,7 +868,24 @@ export function calcularIUC(opcoes) {
 
   const somaBase = escalaoCilindrada.taxa + escalaoCO2.taxa;
   const adicionalGasoleo = combustivel === "gasoleo" ? escolherEscalao(iucData.adicionalGasoleo, cilindrada).valor : 0;
-  const imposto = round2(somaBase * coeficiente + adicionalGasoleo);
+
+  // Acrescentado 19/08/2026 (Art. 10.º, n.º2 do CIUC): veículos com 1.ª
+  // matrícula a partir de 2017 pagam um adicional consoante o CO2, por
+  // cima da taxa base — antes desta correção o motor não aplicava nada
+  // disto, subestimando o imposto destes veículos.
+  const adicionalAltas = iucData.adicionalAltasEmissoes;
+  let adicionalAltasEmissoes = 0;
+  if (adicionalAltas && anoMatricula >= adicionalAltas.aplicavelDesdeAno) {
+    // Tabela cobre só os escalões de CO2 mais altos (não existe "0 a
+    // 180" nela) — não usar escolherEscalao() aqui, que rejeita valores
+    // fora de todos os escalões com RangeError; a maioria dos veículos
+    // (CO2 baixo) simplesmente não paga este adicional.
+    const tabelaAltas = protocolo === "NEDC" ? adicionalAltas.nedc : adicionalAltas.wltp;
+    const escalaoAltas = tabelaAltas.find((e) => co2 >= e.min && co2 <= e.max);
+    adicionalAltasEmissoes = escalaoAltas ? escalaoAltas.valor : 0;
+  }
+
+  const imposto = round2(somaBase * coeficiente + adicionalGasoleo + adicionalAltasEmissoes);
 
   const limiar = PATRIMONIAIS_2026.iuc.limiarDispensaCobranca;
   const dispensado = imposto < limiar;

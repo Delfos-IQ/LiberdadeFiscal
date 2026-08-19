@@ -21,9 +21,20 @@ describe("calcularISV", () => {
     assert.equal(r.imposto, 0);
   });
 
-  test("protocolo NEDC devolve UNKNOWN (só WLTP foi verificado)", () => {
-    const r = calcularISV({ cilindrada: 1500, co2: 120, combustivel: "gasolina", protocolo: "NEDC" });
+  test("protocolo desconhecido devolve UNKNOWN", () => {
+    const r = calcularISV({ cilindrada: 1500, co2: 120, combustivel: "gasolina", protocolo: "outro" });
     assert.equal(r.status, "UNKNOWN");
+  });
+
+  test("protocolo NEDC calcula (tabela acrescentada 19/08/2026, fonte AT)", () => {
+    // cilindrada 1500 (>1250: 5,61/6.194,88 -> 1500*5,61-6.194,88=2.220,12);
+    // co2 120 NEDC gasolina (116-145: 52,56/5.903,94 -> 120*52,56-5.903,94=403,26);
+    // isvNovo=2.623,38; sem idadeAnos (0), desconto 10% -> 2.361,04.
+    const r = calcularISV({ cilindrada: 1500, co2: 120, combustivel: "gasolina", protocolo: "NEDC" });
+    assert.equal(r.componenteCilindrada, 2220.12);
+    assert.equal(r.componenteCO2, 403.26);
+    assert.equal(r.isvNovo, 2623.38);
+    assert.equal(r.imposto, 2361.04);
   });
 
   test("VW Golf 1.5 TSI gasolina 2022, 1498cc, 128g/km WLTP, 4 anos — recalculado a partir das tabelas", () => {
@@ -115,6 +126,26 @@ describe("calcularIUC", () => {
 
   test("rejeita cilindrada inválida", () => {
     assert.throws(() => calcularIUC({ cilindrada: -1, co2: 100, anoMatricula: 2015, combustivel: "gasolina" }), RangeError);
+  });
+
+  test("adicional de altas emissões (Art. 10.º n.2 CIUC, acrescentado 19/08/2026): veículo 2018 WLTP 230g/km paga +31,77€", () => {
+    // cilindrada 1998 (1751-2500: taxa 127,35) + CO2 230 WLTP (206-260: taxa 212,04)
+    // = 339,39 * coeficiente 1,15 (anoMin 2010) + 31,77 (206-260 no adicional) = 422,07€.
+    const r = calcularIUC({ cilindrada: 1998, co2: 230, anoMatricula: 2018, combustivel: "gasolina", protocolo: "WLTP" });
+    assert.equal(r.coeficiente, 1.15);
+    assert.equal(r.imposto, 422.07);
+  });
+
+  test("adicional de altas emissões não se aplica a veículo com CO2 baixo, mesmo pós-2017 (regressão: escolherEscalao lançava RangeError fora da tabela)", () => {
+    const r = calcularIUC({ cilindrada: 1200, co2: 100, anoMatricula: 2020, combustivel: "gasolina", protocolo: "WLTP" });
+    assert.doesNotThrow(() => r);
+    assert.equal(r.status, "ESTIMATE");
+  });
+
+  test("adicional de altas emissões não se aplica a veículo matriculado antes de 2017, mesmo com CO2 alto", () => {
+    const comAdicional = calcularIUC({ cilindrada: 1998, co2: 230, anoMatricula: 2018, combustivel: "gasolina", protocolo: "WLTP" });
+    const semAdicional = calcularIUC({ cilindrada: 1998, co2: 230, anoMatricula: 2016, combustivel: "gasolina", protocolo: "WLTP" });
+    assert.ok(comAdicional.imposto > semAdicional.imposto);
   });
 });
 

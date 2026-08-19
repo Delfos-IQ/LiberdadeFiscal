@@ -433,50 +433,57 @@ não se reconstruir este parâmetro com regularidade. Recomenda-se um
 processo de atualização mensal, não anual, especificamente para este
 valor — distinto do resto do processo de atualização de janeiro.
 
-### IABA (álcool) — 🟡 ESTIMATE parcial (atualizado 15/08/2026)
+### IABA (álcool) — ✅ Verificado (fonte primária direta, 18/08/2026)
 
-Ronda de investigação adicional confirmou três elementos via fonte
-secundária (PwC Portugal, análise de impostos indiretos ao OE2026, e
-AEVC para os valores de vinho/sidra):
+Duas rondas iniciais (15/08 e 16/08/2026) não conseguiram aceder à
+tabela oficial da AT — só fontes secundárias incompatíveis entre si
+para a cerveja, e nenhum valor absoluto para espirituosas/intermédios
+(esses dois elementos ficaram `UNKNOWN` durante essas rondas). A
+terceira ronda (18/08/2026, roadmap P1-8) encontrou e leu diretamente
+o folheto oficial da AT "Sistema Fiscal Português — Taxas Aplicáveis"
+(info.portaldasfinancas.gov.pt), que tem uma secção IABA completa —
+fechando todos os valores antes `UNKNOWN`:
 
-1. Regime de redução de 75% do IABA para licores/"crème de" e
-   aguardentes de medronho de municípios elegíveis, prorrogado até
-   31/12/2026.
-2. Vinho tranquilo e espumante mantêm taxa de €0/hl.
-3. Bebidas fermentadas (sidras) tributadas a €10,30/hl — valor herdado
-   de 2017, sem alteração legislativa encontrada desde então, mas
-   **não confirmado diretamente** contra a tabela oficial 2026 do
-   Portal das Finanças.
-
-Cerveja, bebidas espirituosas e produtos intermédios **continuam
-UNKNOWN**: encontrou-se apenas a variação percentual de um aumento de
-2017 (+3%), não o valor absoluto em vigor em 2026. Extrapolar a partir
-de uma variação de 9 anos atrás sem o valor base violaria a regra de
-nunca inventar dados (spec §8) — por isso estes três elementos
-mantêm-se explicitamente `UNKNOWN` em vez de estimados.
-
-**Reinvestigação (16/08/2026), sem sucesso mas com um dado novo:**
-confirmou-se por imprensa (Observador, 10/10/2025) que o setor de
-bebidas espirituosas "se congratula com o congelamento" da respetiva
-taxa de IABA no OE2026 — isto é, não houve aumento de taxa para
-espirituosas em 2026 (mas isto confirma ausência de variação, não dá o
-valor absoluto). Encontraram-se também dois valores candidatos para a
-cerveja em fontes secundárias não oficiais e mutuamente incompatíveis
-(21,10 €/hl nalgumas, 9,96 €/hl "desde 2005" noutras) — a própria
-incompatibilidade entre eles é motivo para não usar nenhum sem
-confirmação direta contra o texto do CIEC (Anexo I / Art. 66.º) ou a
-tabela oficial da AT, que não foram acessíveis nesta ronda de
-pesquisa. Mantém-se `UNKNOWN`.
-
-### IT (tabaco) — ✅ Verificado para cigarros, 🔴 UNKNOWN para o resto
-
-| Elemento | Valor |
+| Produto | Taxa |
 |---|---|
-| Específico (cigarros) | 151,88 €/1000 cigarros |
-| Ad valorem (cigarros) | 1% do PVP |
-| Bolsas de nicotina (nova figura 2026) | 0,065 €/grama |
+| Vinho tranquilo e espumante | €0/hl |
+| Bebidas fermentadas (inclui sidras) | €12,06/hl (corrige os €10,30/hl herdados de 2017) |
+| Produtos intermédios | €87,92/hl |
+| Álcool etílico | €1.602,51/hl de álcool contido |
+| Bebidas espirituosas | €1.602,51/hl de álcool contido (mesma base do álcool etílico) |
+| Cerveja | escalões por % vol./grau Plato, de €9,64 a €33,85/hl — tabela completa em `impostos-especiais.js`, ainda não exposta na UI de Gastos (a unidade tributável exige dados que o utilizador tipicamente não sabe de cabeça) |
 
-Charutos, tabaco de enrolar e tabaco aquecido não foram verificados.
+Regime de redução de 75% para licores/"crème de" e aguardentes de
+medronho, prorrogado até 31/12/2026. A edição do folheto é de 2025 —
+confirmado de forma independente (PwC Portugal, Observador) que o
+OE2026 não alterou as taxas base do IABA, só prorrogou o regime do
+medronho. Regras específicas dos Açores e da Madeira confirmadas mas
+não implementadas (esta app assume sempre a taxa do Continente, como
+já documentado para o IVA). Fonte: [AT, "Sistema Fiscal Português —
+Taxas Aplicáveis 2025"](https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf).
+
+### IT (tabaco) — ✅ Verificado (completado 19/08/2026, mesma fonte primária)
+
+| Elemento | Elemento específico | Elemento ad valorem |
+|---|---|---|
+| Cigarros | 151,88 €/1000 | 1% do PVP |
+| Tabaco aquecido | 0,0935 €/g | 15% do PVP |
+| Charutos e cigarrilhas | 0,091 €/g | 15% do PVP |
+| Tabaco de fumar/enrolar, rapé, tabaco de mascar | — | 25% do PVP |
+| Tabaco para cachimbo de água | — | 75% do PVP |
+| Líquido p/ cigarros eletrónicos, com nicotina | 0,351 €/ml | — |
+| Líquido p/ cigarros eletrónicos, sem nicotina | 0,175 €/ml | — |
+| Bolsas de nicotina | 0,065 €/g | — (figura nova de 2026, não consta no folheto 2025) |
+
+Os valores de cigarros foram re-confirmados de forma independente
+contra o mesmo folheto — batem exatamente com o que já estava
+guardado. Os restantes produtos (charutos, tabaco de fumar/enrolar,
+cachimbo de água, líquidos de cigarro eletrónico) estavam `UNKNOWN`
+até esta ronda; nenhum tem função de cálculo dedicada ainda — a UI de
+Gastos só cobre combustível e cigarros — mas ficam documentados para
+referência futura, seguindo o mesmo padrão já usado para a tabela de
+cerveja do IABA. Mesma fonte: [AT, "Sistema Fiscal Português — Taxas
+Aplicáveis 2025", secção 3.3](https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf).
 
 ---
 
@@ -529,34 +536,62 @@ Município a pagar em 2026"](https://economiafinancas.com/2026/taxas-de-imi-por-
 ### ISV — 🟡 ESTIMATE (atualizado 15/08/2026)
 
 Tabelas numéricas completas obtidas (componente cilindrada + componente
-ambiental CO₂ em protocolo WLTP, para gasolina e gasóleo; desconto por
-idade para usados importados; regime PHEV 2026; isenção total de
-elétricos). Fonte: EcoImport
-(ecoimport.pt/isv-2026-novas-regras/), um agregador especializado em
-importação automóvel — **não a AT diretamente** (o texto do Código do
-ISV devolveu uma página sem conteúdo acessível nesta pesquisa), por
-isso mantém-se ESTIMATE e não ✅ Verified. Os dois exemplos numéricos
-do artigo foram reproduzidos manualmente: um bate certo, o outro (VW
-Golf) revelou um erro de 1€ na própria conta da fonte (1.498×5,61−
-6.194,88 = 2.208,90€, não os 2.209,90€ que o artigo reporta) — o motor
-desta app usa o valor recalculado corretamente, não o valor com erro
-da fonte. Só o protocolo WLTP tem tabela — veículos homologados em
-NEDC (tipicamente pré-2018) continuam a devolver `UNKNOWN`.
-Implementado em `calcularISV()`.
+ambiental CO₂, para gasolina e gasóleo; desconto por idade para usados
+importados; regime PHEV 2026; isenção total de elétricos). Fonte
+original: EcoImport (ecoimport.pt/isv-2026-novas-regras/), um agregador
+especializado em importação automóvel. **Verificação direta (18/08/2026,
+roadmap P1-8):** a tabela WLTP foi cruzada, número a número, contra o
+folheto oficial da AT "Sistema Fiscal Português — Taxas Aplicáveis
+2025" (info.portaldasfinancas.gov.pt) — todos os valores batem
+exatamente, e como o OE2026 não alterou estas tabelas, a confirmação
+de 2025 vale para 2026. Passa de ESTIMATE a ✅ Verified nessa ronda. Os
+dois exemplos numéricos do artigo EcoImport foram reproduzidos
+manualmente: um bate certo, o outro (VW Golf) revelou um erro de 1€ na
+própria conta da fonte (1.498×5,61−6.194,88 = 2.208,90€, não os
+2.209,90€ que o artigo reporta) — o motor desta app usa o valor
+recalculado corretamente, não o valor com erro da fonte.
 
-### IUC — 🟡 ESTIMATE (atualizado 15/08/2026)
+**Tabela NEDC acrescentada em 19/08/2026** (ronda "vamos a por ello"):
+até então só a tabela WLTP estava implementada — veículos homologados
+em NEDC (tipicamente matriculados antes de meados de 2018) deviam
+`UNKNOWN`. A mesma fonte da AT tem a secção NEDC completa (gasolina e
+gasóleo); lida via `web_fetch` e cruzada com a tabela já existente.
+`calcularISV()` agora aceita `protocolo: "NEDC"` e calcula
+normalmente. Implementado em `calcularISV()`.
+
+### IUC — ✅ Verified para categorias A/B/E (atualizado 19/08/2026)
 
 Tabela completa da categoria B (ligeiros de passageiros/mistos, 1.ª
-matrícula desde 1/7/2007 — a mais comum) obtida, incluindo componente
-cilindrada, componente CO₂ (NEDC e WLTP), coeficiente por ano de
-matrícula e adicional para gasóleo. Também obtidas as tabelas de
-veículos pré-2007 (categoria A) e de motociclos/triciclos/quadriciclos
-(categoria E). Fonte: DECO PROteste
-(deco.proteste.pt/dinheiro/impostos/noticias/tabelas-iuc-quanto-paga),
-associação de defesa do consumidor — não é a AT, por isso ESTIMATE.
-Os dois exemplos numéricos do artigo foram reproduzidos manualmente e
-batem certo com a fórmula. Categorias C/D (veículos de mercadorias, por
-peso bruto) e F (potência em kW) continuam sem tabela numérica.
+matrícula desde 1/7/2007 — a mais comum), categoria A pré-2007 e
+categoria E (motociclos/triciclos/quadriciclos). Fonte original: DECO
+PROteste. **Verificação direta (18/08/2026):** categoriaB e
+categoriaAPre2007 cruzadas número a número contra o mesmo folheto
+oficial da AT usado para o ISV — passam a ✅ Verified.
+categoriaEMotociclos manteve-se ESTIMATE nessa ronda (não re-cruzada).
+
+**Ronda 19/08/2026 ("vamos a por ello"), a partir da mesma fonte:**
+
+- **categoriaEMotociclos passa a ✅ Verified**: a coluna "posterior a
+  1996" já batia certo (confirmação extra); acrescentada a coluna em
+  falta "entre 1992 e 1996" (Art.º 13.º CIUC).
+- **Adicional de altas emissões (Art. 10.º, n.º2 do CIUC), NOVO —
+  corrige uma subestimação real**: veículos da categoria B com 1.ª
+  matrícula a partir de 2017 pagam um adicional de 31,77€ ou 63,74€
+  consoante o CO₂ (por cima da taxa base). `calcularIUC()` não
+  aplicava nada disto até esta ronda — subestimava sistematicamente o
+  imposto de veículos pós-2017 com emissões mais altas. Corrigido,
+  com testes de regressão que comparam o mesmo veículo antes/depois de
+  2017.
+- **categoriaF** (2,95 €/kW, Art. 14.º CIUC) e **categoriaG** (0,75
+  €/kg, limite 13.705,25€, Art. 15.º CIUC) acrescentadas como dados de
+  referência — sem função de cálculo dedicada (nenhuma UI desta app
+  pede potência em kW ou peso em kg).
+- **Categorias C e D continuam UNKNOWN**: o folheto da AT remete para
+  tabelas "disponíveis no próprio artigo" (Art. 11.º/12.º CIUC) sem as
+  reproduzir — precisam de consulta direta ao Código do IUC. Baixa
+  prioridade: são veículos pesados de mercadorias, fora do público-alvo
+  típico deste simulador.
+
 Implementado em `calcularIUC()`.
 
 ### Imposto de Selo — ✅ Verified (atualizado 15/08/2026)
