@@ -19,8 +19,32 @@
 // como na tanda original, nenhuma pergunta usa um valor marcado
 // ESTIMATE/UNKNOWN no ficheiro de origem.
 //
+// Tanda 3 (19/08/2026, a pedido do autor: "aumentar o quiz de 60 a
+// 100 perguntas e fechamos aí" — decisão explícita de não escalar até
+// às 200 previstas no spec original): +40 perguntas, total 100, teto
+// definitivo. Mesma disciplina das tandas anteriores — todas extraídas
+// de campos já "verified" em data/tax-rules/2026/*.js e
+// data/oecd-benchmark-2025.js (nenhuma pergunta nova usa um valor
+// ESTIMATE/UNKNOWN, ex.: o ISP não aparece com nenhum valor numérico
+// concreto, só a pergunta conceptual já existente sobre a sua
+// volatilidade; a tabela de concelhos do IMI, marcada ESTIMATE, também
+// não é usada). Cobre sobretudo conteúdo verificado nas rondas de
+// 18-19/08/2026 que ainda não tinha pergunta própria: regime
+// simplificado de trabalhadores independentes (IRS e SS), diferencial
+// regional de IRS (Açores/Madeira), IVA reduzido/intermédio por
+// região, produtos de tabaco e álcool completados no folheto da AT
+// (tabaco aquecido, charutos, líquidos de cigarro eletrónico, "outras
+// bebidas fermentadas", produtos intermédios), CAV, Taxa Municipal
+// Turística, categorias F/G e recargo de altas emissões do IUC,
+// critérios do desconto PHEV no ISV, verbas adicionais do Imposto de
+// Selo, e mais dois países do benchmark OCDE. Inclui também uma
+// pergunta meta sobre a própria disciplina UNKNOWN/ESTIMATE da app
+// (categoria "Conceitos Gerais"), para reforçar o princípio de nunca
+// inventar dados.
+//
 // Estrutura preparada para escalar a 200 perguntas sem mudanças de
-// arquitetura (spec §6.1): basta acrescentar objetos a este array.
+// arquitetura (spec §6.1) — decisão do autor (19/08/2026): fica em
+// 100, não se escala mais.
 //
 // @typedef {import('../data/db.js')} _unused
 
@@ -755,6 +779,432 @@ export const QUIZ_QUESTIONS = [
     correct_index: 1,
     explanation_pt:
       "A app é \"local-first\": os teus dados ficam guardados só no teu dispositivo (IndexedDB do navegador), sem conta nem servidor próprio. A única exceção é o fluxo opcional de foto+IA, sempre avisado no momento em que é usado.",
+    category: "Conceitos Gerais",
+  },
+
+  // ========== TANDA 3 (19/08/2026) — total 100, teto definitivo ==========
+
+  // ---------- IRS (continuação) ----------
+  {
+    id: "irs-015",
+    question_pt: "Qual é o coeficiente-regra do regime simplificado da Categoria B (Art. 31.º CIRS) para prestação de serviços?",
+    options: ["0,10", "0,35", "0,75", "0,95"],
+    correct_index: 2,
+    explanation_pt:
+      "O coeficiente-regra para prestação de serviços (Art. 151.º CIRS) é 0,75 — ou seja, 75% do rendimento bruto faturado constitui rendimento coletável. Outras atividades têm coeficientes distintos (0,35, 0,10 ou 0,95 consoante o CAE).",
+    category: "IRS",
+  },
+  {
+    id: "irs-016",
+    question_pt: "Qual é a dedução à coleta por um dependente com até 3 anos de idade (inclusive)?",
+    options: ["600€/ano", "726€/ano", "900€/ano", "1.200€/ano"],
+    correct_index: 1,
+    explanation_pt:
+      "A dedução por dependente é de 600€/ano para dependentes com mais de 3 anos, mas sobe para 726€/ano quando o dependente tem até 3 anos inclusive (Art. 78.º-A CIRS).",
+    category: "IRS",
+  },
+  {
+    id: "irs-017",
+    question_pt: "O diferencial fiscal de IRS dos Açores e da Madeira, em 2026, funciona como...",
+    options: [
+      "Uma redução de 30% só no 1.º escalão",
+      "Uma redução uniforme de 30% sobre a taxa marginal de todos os 9 escalões",
+      "Um valor fixo de desconto, igual para todos os rendimentos",
+      "Não existe nenhum diferencial regional",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Tanto os Açores como a Madeira aplicam, em 2026, uma redução uniforme de 30% sobre a taxa marginal de cada um dos 9 escalões nacionais de IRS — não um mecanismo diferenciado por escalão.",
+    category: "IRS",
+  },
+  {
+    id: "irs-018",
+    question_pt: "Qual é a taxa marginal de IRS aplicável à fatia de rendimento coletável entre 29.397€ e 43.090€?",
+    options: ["24,1%", "31,1%", "34,9%", "43,1%"],
+    correct_index: 2,
+    explanation_pt:
+      "O 6.º escalão de IRS (29.397€ a 43.090€) tem taxa marginal de 34,9% — recorda que só a fatia dentro deste intervalo paga esta taxa, não o rendimento todo.",
+    category: "IRS",
+  },
+  {
+    id: "irs-019",
+    question_pt: "Em guarda conjunta com residência alternada comunicada à AT, quanto pode deduzir cada progenitor, por dependente?",
+    options: ["150€/ano", "300€/ano", "600€/ano", "900€/ano"],
+    correct_index: 1,
+    explanation_pt:
+      "Em guarda conjunta com residência alternada comunicada à Autoridade Tributária, cada progenitor pode deduzir 300€/ano por dependente — metade do valor normal de 600€.",
+    category: "IRS",
+  },
+
+  // ---------- Segurança Social (continuação) ----------
+  {
+    id: "ss-008",
+    question_pt: "Um trabalhador independente no regime simplificado paga que taxa contributiva sobre o \"rendimento relevante\"?",
+    options: ["11%", "14,98%", "21,4%", "34,75%"],
+    correct_index: 2,
+    explanation_pt:
+      "A taxa contributiva-regra dos trabalhadores independentes é 21,4% (Art. 168.º do Código dos Regimes Contributivos), aplicada sobre o \"rendimento relevante\" — não sobre a faturação bruta.",
+    category: "Segurança Social",
+  },
+  {
+    id: "ss-009",
+    question_pt: "Para um trabalhador independente que presta serviços, que percentagem da faturação constitui o \"rendimento relevante\" para efeitos de Segurança Social?",
+    options: ["20%", "50%", "70%", "100%"],
+    correct_index: 2,
+    explanation_pt:
+      "Para prestação de serviços, o rendimento relevante é 70% da faturação (20% para produção/venda de bens) — só depois se aplica a taxa contributiva de 21,4% sobre esse valor, não sobre o total faturado.",
+    category: "Segurança Social",
+  },
+  {
+    id: "ss-010",
+    question_pt: "Qual é a base máxima mensal de contribuição de um trabalhador independente para a Segurança Social?",
+    options: ["1× o IAS", "6× o IAS", "12× o IAS", "24× o IAS"],
+    correct_index: 2,
+    explanation_pt:
+      "A base máxima de incidência contributiva mensal de um trabalhador independente é 12 vezes o IAS — acima disso, a contribuição não aumenta mais, independentemente do rendimento.",
+    category: "Segurança Social",
+  },
+  {
+    id: "ss-011",
+    question_pt: "Qual é o valor do IAS (Indexante de Apoios Sociais) em 2026?",
+    options: ["537,13€/mês", "920€/mês", "4.587,09€/ano", "12.880€/ano"],
+    correct_index: 0,
+    explanation_pt:
+      "O IAS em 2026 é 537,13€/mês — valor de referência usado como base de cálculo de várias prestações sociais e de limites contributivos.",
+    category: "Segurança Social",
+  },
+
+  // ---------- IVA (continuação) ----------
+  {
+    id: "iva-007",
+    question_pt: "A taxa reduzida de IVA (a mais baixa) é igual em quais destas regiões?",
+    options: ["Continente e Açores", "Continente e Madeira", "Açores e Madeira (ambas 4%)", "É diferente nas três regiões"],
+    correct_index: 2,
+    explanation_pt:
+      "A taxa reduzida de IVA é 4% tanto nos Açores como na Madeira — ao contrário das taxas intermédia e normal, que diferem entre as duas regiões autónomas (Açores 9%/16%, Madeira 12%/22%).",
+    category: "IVA",
+  },
+  {
+    id: "iva-008",
+    question_pt: "Qual é a taxa intermédia de IVA na Madeira?",
+    options: ["9%", "12%", "13%", "16%"],
+    correct_index: 1,
+    explanation_pt: "A taxa intermédia de IVA na Madeira é 12% (Continente: 13%; Açores: 9%).",
+    category: "IVA",
+  },
+  {
+    id: "iva-009",
+    question_pt: "Qual é a taxa intermédia de IVA nos Açores?",
+    options: ["4%", "9%", "13%", "16%"],
+    correct_index: 1,
+    explanation_pt: "A taxa intermédia de IVA nos Açores é 9% (Continente: 13%; Madeira: 12%).",
+    category: "IVA",
+  },
+
+  // ---------- Impostos Especiais (continuação) ----------
+  {
+    id: "iec-011",
+    question_pt: "Qual é a taxa de IABA para \"outras bebidas fermentadas\" (como a sidra), distintas do vinho tranquilo?",
+    options: ["0€/hl — isentas, tal como o vinho", "12,06€/hl", "87,92€/hl", "1.602,51€/hl"],
+    correct_index: 1,
+    explanation_pt:
+      "Ao contrário do vinho tranquilo e do espumante (isentos), outras bebidas fermentadas como a sidra (Art.º 73.º do CIEC) pagam 12,06€/hl.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-012",
+    question_pt: "Qual é a taxa de IABA para \"produtos intermédios\" (Art.º 74.º do CIEC)?",
+    options: ["0€/hl", "12,06€/hl", "87,92€/hl", "1.602,51€/hl"],
+    correct_index: 2,
+    explanation_pt: "Os produtos intermédios pagam 87,92€/hl de IABA — um valor intermédio entre as bebidas fermentadas e as espirituosas.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-013",
+    question_pt: "A taxa de IABA do álcool etílico (Art.º 75.º CIEC) é igual à de que outra categoria?",
+    options: ["Cerveja", "Vinho tranquilo", "Bebidas espirituosas", "Produtos intermédios"],
+    correct_index: 2,
+    explanation_pt:
+      "O álcool etílico e as bebidas espirituosas partilham a mesma base tributável e o mesmo valor: 1.602,51€/hl de álcool contido (base 100% vol., 20°C).",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-014",
+    question_pt: "O tabaco aquecido (ex.: dispositivos tipo IQOS) é tributado com que elementos?",
+    options: [
+      "Só um elemento ad valorem",
+      "Não é tributado — só paga IVA",
+      "Um elemento específico (por grama) mais um elemento ad valorem, tal como os cigarros",
+      "Uma taxa fixa por dispositivo",
+    ],
+    correct_index: 2,
+    explanation_pt:
+      "O tabaco aquecido (Art.º 103.º-A CIEC) combina um elemento específico de 0,0935€/grama com um elemento ad valorem de 15% do preço de venda — a mesma lógica dos cigarros, com valores diferentes.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-015",
+    question_pt: "O tabaco de fumar (para enrolar), o rapé e o tabaco de mascar são tributados só com que tipo de elemento?",
+    options: ["Só elemento específico, por grama", "Ad valorem, 25% do preço de venda ao público", "Não têm imposto especial", "Uma taxa fixa por embalagem"],
+    correct_index: 1,
+    explanation_pt:
+      "Ao contrário dos cigarros e do tabaco aquecido, o tabaco de fumar, o rapé e o tabaco de mascar (Art.º 104.º-A CIEC) não têm elemento específico — são tributados só com um elemento ad valorem de 25%.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-016",
+    question_pt: "O líquido para cigarros eletrónicos com nicotina paga uma taxa por mililitro que é, aproximadamente, quantas vezes a do líquido sem nicotina?",
+    options: ["Igual", "Metade", "O dobro", "O triplo"],
+    correct_index: 2,
+    explanation_pt:
+      "O líquido com nicotina paga 0,351€/ml, cerca do dobro dos 0,175€/ml do líquido sem nicotina (Art.º 104.º-C CIEC).",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-017",
+    question_pt: "Charutos e cigarrilhas (Art.º 104.º CIEC) combinam que elementos de tributação?",
+    options: [
+      "Só ad valorem",
+      "Elemento específico (por grama) mais ad valorem, tal como os cigarros",
+      "Não há imposto especial sobre charutos",
+      "Uma taxa única por unidade, sem relação com o peso",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Charutos e cigarrilhas combinam um elemento específico de 0,091€/grama com um elemento ad valorem de 15% do preço de venda ao público.",
+    category: "Impostos Especiais",
+  },
+  {
+    id: "iec-018",
+    question_pt: "Qual destes produtos de tabaco tem a taxa ad valorem mais alta (75% do preço de venda)?",
+    options: ["Cigarros (1%)", "Charutos e cigarrilhas (15%)", "Tabaco para cachimbo de água", "Tabaco aquecido (15%)"],
+    correct_index: 2,
+    explanation_pt:
+      "O tabaco para cachimbo de água (Art.º 104.º-B CIEC) tem a taxa ad valorem mais alta de todos os produtos de tabaco desta app: 75% do preço de venda ao público, sem elemento específico.",
+    category: "Impostos Especiais",
+  },
+
+  // ---------- Impostos Patrimoniais e de Veículo (continuação) ----------
+  {
+    id: "pat-017",
+    question_pt: "A Contribuição Audiovisual (CAV) é cobrada em que fatura?",
+    options: ["Água", "Eletricidade", "Gás natural", "Telecomunicações"],
+    correct_index: 1,
+    explanation_pt: "A CAV é cobrada mensalmente na fatura da eletricidade de (quase) todos os consumidores em Portugal Continental.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-018",
+    question_pt: "A CAV paga IVA a que taxa?",
+    options: ["6% (reduzida)", "13% (intermédia)", "23% (normal)", "Está isenta de IVA"],
+    correct_index: 0,
+    explanation_pt: "A CAV é sujeita a IVA à taxa reduzida de 6%, tal como outros bens/serviços essenciais.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-019",
+    question_pt: "Um consumidor de eletricidade está isento de CAV se o seu consumo anual for inferior a quantos kWh?",
+    options: ["100 kWh", "400 kWh", "1.000 kWh", "2.000 kWh"],
+    correct_index: 1,
+    explanation_pt: "Consumidores com consumo anual de eletricidade inferior a 400 kWh estão isentos de CAV.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-020",
+    question_pt: "A Taxa Municipal Turística em Portugal...",
+    options: [
+      "É igual em todo o país, definida pelo Governo central",
+      "Cada município decide se cobra, e quanto, dentro da sua autonomia regulamentar",
+      "Só existe em Lisboa",
+      "É uma parcela do IVA sobre alojamento",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Não existe uma taxa turística nacional única — cada um dos municípios decide, dentro da sua autonomia regulamentar, se cobra a taxa e qual o valor. Por isso esta app não embute uma tabela nacional completa, e pede ao utilizador o que pagou na fatura.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-021",
+    question_pt: "Em Lisboa, qual é o valor de referência da Taxa Municipal Turística por noite, e até quantas noites tributadas (exemplo usado nesta app)?",
+    options: ["3€, até 7 noites", "4€, até 7 noites", "4€, até 14 noites", "2€, até 5 noites"],
+    correct_index: 1,
+    explanation_pt: "O exemplo de Lisboa usado nesta app é 4€ por noite, com um máximo de 7 noites tributadas por estadia.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-022",
+    question_pt: "No ISV, a componente cilindrada tem uma taxa por cm³ que...",
+    options: [
+      "É igual para qualquer cilindrada",
+      "Aumenta por escalões, sendo bastante mais alta acima de 1.250 cm³",
+      "Diminui à medida que a cilindrada aumenta",
+      "Só se aplica a motociclos",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "A componente cilindrada do ISV tem 3 escalões com taxas por cm³ crescentes — de 1,09€/cm³ até 1000cc, a 5,61€/cm³ acima de 1250cc, um salto acentuado.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-023",
+    question_pt: "Qual é o valor do adicional do ISV para um veículo ligeiro de passageiros a gasóleo?",
+    options: ["100€", "250€", "500€", "1.000€"],
+    correct_index: 2,
+    explanation_pt:
+      "Veículos ligeiros de passageiros a gasóleo pagam um adicional de 500€ no ISV (250€ para ligeiros de mercadorias), além das componentes de cilindrada e CO2.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-024",
+    question_pt: "Para um híbrido plug-in beneficiar do desconto de 75% no ISV (pagar só 25%), além de emissões baixas, precisa de quê?",
+    options: [
+      "Ter mais de 5 lugares",
+      "Uma autonomia elétrica mínima (50 km, ou 25 km em casos específicos)",
+      "Ser um veículo importado",
+      "Ter motor a gasóleo",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Para beneficiar do desconto de 75% no ISV, um híbrido plug-in precisa de uma autonomia elétrica mínima de 50 km (ou 25 km para matrículas UE 2015-2020) e emissões dentro dos limites definidos.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-025",
+    question_pt: "As categorias F e G do IUC (menos comuns que a categoria B) tributam os veículos com base em quê, respetivamente?",
+    options: [
+      "Cilindrada e CO2, tal como a categoria B",
+      "Potência (kW) e peso (kg)",
+      "Preço de venda e idade",
+      "Número de lugares e combustível",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "A categoria F do IUC tributa por potência (2,95€/kW) e a categoria G por peso (0,75€/kg, com um limite máximo de imposto de 13.705,25€) — categorias específicas, fora da generalidade dos ligeiros de passageiros.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-026",
+    question_pt: "Desde 2017, veículos da categoria B do IUC com emissões de CO2 muito altas pagam...",
+    options: ["Nada extra", "Um desconto adicional", "Um adicional (recargo) sobre o imposto normal", "Ficam totalmente isentos"],
+    correct_index: 2,
+    explanation_pt:
+      "Desde 2017, existe um adicional (recargo) do IUC para veículos da categoria B com emissões de CO2 muito elevadas, que se soma ao imposto calculado normalmente por cilindrada/CO2.",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-027",
+    question_pt: "O crédito ao consumo (cartões de crédito, crédito pessoal) paga Imposto de Selo a uma taxa...",
+    options: [
+      "Igual à do crédito em geral",
+      "Mais alta que a do crédito em geral, num regime específico (DL 133/2009)",
+      "Está isento de Imposto de Selo",
+      "Só se aplica a empresas",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O crédito a consumidores (verba 17.2, ao abrigo do DL 133/2009 — cartões de crédito, crédito pessoal) paga uma taxa de Imposto de Selo mais alta do que o crédito em geral (verba 17.1).",
+    category: "Impostos Patrimoniais",
+  },
+  {
+    id: "pat-028",
+    question_pt: "Na Tabela Geral do Imposto de Selo, qual destes ramos de seguro (verba 22) paga a taxa mais alta?",
+    options: ["Seguro de caução (3%)", "Seguro de acidentes e doenças (5%)", "Seguros de \"outros ramos\" (9%)", "Seguro de mercadorias transportadas (5%)"],
+    correct_index: 2,
+    explanation_pt:
+      "Os seguros de \"outros ramos\" pagam a taxa mais alta de Imposto de Selo desta verba, 9% — mais que o dobro da taxa do seguro de caução (3%).",
+    category: "Impostos Patrimoniais",
+  },
+
+  // ---------- Comparação Internacional (continuação) ----------
+  {
+    id: "int-004",
+    question_pt: "Entre os países comparados nesta app, qual tem o tax wedge mais próximo da média da OCDE (35,1%)?",
+    options: ["Portugal", "Países Baixos", "Irlanda", "Espanha"],
+    correct_index: 1,
+    explanation_pt: "Os Países Baixos (35,9%) têm o tax wedge mais próximo da média da OCDE (35,1%) entre os 7 países comparados nesta app.",
+    category: "Comparação Internacional",
+  },
+  {
+    id: "int-005",
+    question_pt: "Segundo o benchmark desta app, a Irlanda tem um tax wedge...",
+    options: ["Mais alto que o de Portugal", "Mais baixo que o de Portugal", "Exatamente igual ao de Portugal", "A OCDE não mede a Irlanda"],
+    correct_index: 1,
+    explanation_pt: "A Irlanda (32,6%) tem um tax wedge mais baixo que o de Portugal (39,3%).",
+    category: "Comparação Internacional",
+  },
+  {
+    id: "int-006",
+    question_pt: "Qual destes países tem o tax wedge mais alto, segundo o benchmark desta app?",
+    options: ["França", "Alemanha", "Espanha", "Suíça"],
+    correct_index: 1,
+    explanation_pt: "A Alemanha tem o tax wedge mais alto do grupo comparado (49,3%), acima até de França (47,2%).",
+    category: "Comparação Internacional",
+  },
+
+  // ---------- Conceitos gerais (continuação) ----------
+  {
+    id: "ger-005",
+    question_pt: "Por que esta app marca as categorias C e D do IUC (veículos pesados de mercadorias) como UNKNOWN, em vez de arriscar um valor?",
+    options: [
+      "Porque esses veículos não existem em Portugal",
+      "Porque a fonte consultada não reproduzia as tabelas completas, e a app prefere não inventar valores",
+      "Porque estão isentos de IUC",
+      "Porque só se aplicam a veículos estrangeiros",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "É a mesma disciplina em toda a app: quando a fonte disponível não permite confirmar um valor com confiança, a figura fica marcada UNKNOWN em vez de se assumir um número plausível — mesmo que isso signifique deixar algo por calcular.",
+    category: "Conceitos Gerais",
+  },
+  {
+    id: "ger-006",
+    question_pt: "Onde é que o aviso legal (disclaimer) desta app aparece obrigatoriamente?",
+    options: [
+      "Só no footer",
+      "No onboarding, no ecrã do Dia da Liberdade Fiscal, e no footer/Acerca de",
+      "Só quando se usa a foto+IA",
+      "Nunca aparece de forma explícita",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "O aviso legal tem três presenças obrigatórias nesta app: no onboarding, no ecrã de resultado do Dia da Liberdade Fiscal, e no footer/Acerca de — sempre visível, nunca escondido.",
+    category: "Conceitos Gerais",
+  },
+  {
+    id: "ger-007",
+    question_pt: "Nesta app, o que significa um parâmetro fiscal estar marcado como \"🟡 ESTIMATE\"?",
+    options: [
+      "É um erro conhecido que devia ser corrigido",
+      "A estrutura/fórmula está confirmada, mas o valor exato ainda precisa de verificação adicional contra a fonte primária",
+      "É sempre um valor falso",
+      "O utilizador deve ignorar esse dado por completo",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "ESTIMATE não significa \"errado\" — significa que a estrutura está correta mas o valor concreto ainda não foi confirmado diretamente contra a fonte primária (ao contrário de UNKNOWN, onde nem a estrutura está confirmada).",
+    category: "Conceitos Gerais",
+  },
+  {
+    id: "ger-008",
+    question_pt: "Um imposto \"progressivo\", como o IRS, significa que...",
+    options: [
+      "Todos pagam exatamente a mesma percentagem do rendimento",
+      "A percentagem paga sobe à medida que o rendimento sobe",
+      "Só quem tem rendimentos baixos paga imposto",
+      "É um imposto pago só uma vez na vida",
+    ],
+    correct_index: 1,
+    explanation_pt:
+      "Num imposto progressivo, a percentagem de imposto sobe à medida que o rendimento sobe — ao contrário de um imposto proporcional (taxa fixa, como o IVA) ou regressivo.",
+    category: "Conceitos Gerais",
+  },
+  {
+    id: "ger-009",
+    question_pt: "De quanto em quanto tempo esta app revê os seus parâmetros fiscais?",
+    options: ["Nunca — os dados ficam fixos para sempre", "Semestralmente (1ª semana de janeiro e de julho)", "Só quando há eleições", "Diariamente"],
+    correct_index: 1,
+    explanation_pt:
+      "Os parâmetros fiscais são revistos semestralmente — início de janeiro, quando costumam entrar em vigor alterações do Orçamento do Estado, e início de julho, seis meses depois, com foco especial nos parâmetros mais voláteis como o ISP.",
     category: "Conceitos Gerais",
   },
 ];
