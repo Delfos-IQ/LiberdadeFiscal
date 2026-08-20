@@ -772,13 +772,13 @@ export const QUIZ_QUESTIONS = [
     question_pt: "Onde ficam guardados os dados que introduzes nesta app (salário, gastos, etc.)?",
     options: [
       "Num servidor central da app, associados à tua conta",
-      "Localmente, no teu próprio dispositivo — nunca num servidor, exceto no fluxo opcional de foto+IA",
+      "Localmente, no teu próprio dispositivo — nunca num servidor",
       "Na cloud de um parceiro comercial",
       "São partilhados automaticamente com a Autoridade Tributária",
     ],
     correct_index: 1,
     explanation_pt:
-      "A app é \"local-first\": os teus dados ficam guardados só no teu dispositivo (IndexedDB do navegador), sem conta nem servidor próprio. A única exceção é o fluxo opcional de foto+IA, sempre avisado no momento em que é usado.",
+      "A app é \"local-first\": os teus dados ficam guardados só no teu dispositivo (IndexedDB do navegador), sem conta nem servidor próprio — nenhum dado sai daqui, sem exceções.",
     category: "Conceitos Gerais",
   },
 
@@ -1162,7 +1162,7 @@ export const QUIZ_QUESTIONS = [
     options: [
       "Só no footer",
       "No onboarding, no ecrã do Dia da Liberdade Fiscal, e no footer/Acerca de",
-      "Só quando se usa a foto+IA",
+      "Só na primeira vez que se abre a app",
       "Nunca aparece de forma explícita",
     ],
     correct_index: 1,

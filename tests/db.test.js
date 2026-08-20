@@ -75,12 +75,17 @@ describe("data/db.js — saveInvoice", () => {
     await assert.rejects(() => saveInvoice(invoiceValida({ source: "telepatia" })), /source inválido/);
   });
 
-  test("aceita as três origens válidas: manual, qr, photo_ocr", async () => {
+  test("aceita as duas origens válidas: manual, qr", async () => {
+    // "photo_ocr" removido como origem válida (19/08/2026, eliminação
+    // do fallback de foto+IA).
     await saveInvoice(invoiceValida({ id: "a", source: "manual" }));
     await saveInvoice(invoiceValida({ id: "b", source: "qr" }));
-    await saveInvoice(invoiceValida({ id: "c", source: "photo_ocr" }));
     const todas = await dbGetAll("invoices");
-    assert.equal(todas.length, 3);
+    assert.equal(todas.length, 2);
+  });
+
+  test("rejeita \"photo_ocr\" como source (removido, já não é válido)", async () => {
+    await assert.rejects(() => saveInvoice(invoiceValida({ source: "photo_ocr" })), /source inválido/);
   });
 
   test("rejeita invoice que não é um objeto", async () => {

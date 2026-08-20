@@ -244,8 +244,12 @@ export async function saveInvoice(invoice) {
   if (emFalta.length > 0) {
     throw new Error(`Invoice incompleta — faltam campos: ${emFalta.join(", ")}`);
   }
-  if (!["manual", "photo_ocr", "qr"].includes(invoice.source)) {
-    throw new Error(`source inválido: ${invoice.source}. Use "manual", "photo_ocr" ou "qr".`);
+  // "photo_ocr" removido como valor válido (19/08/2026, a pedido do
+  // autor: eliminação do fallback de foto+IA — ver worker/README.md no
+  // histórico do git para o que existia antes). "manual" e "qr"
+  // continuam válidos porque nunca dependeram de nenhum servidor.
+  if (!["manual", "qr"].includes(invoice.source)) {
+    throw new Error(`source inválido: ${invoice.source}. Use "manual" ou "qr".`);
   }
 
   return dbPut("invoices", invoice);

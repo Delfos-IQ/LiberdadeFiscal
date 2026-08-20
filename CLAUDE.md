@@ -25,8 +25,10 @@ fiscal, con captura real de datos del usuario (no solo estimaciones).
   estimaciones como datos oficiales. Todo parámetro fiscal debe llevar
   fuente, año de vigencia y estar versionado por año fiscal.
 - **Privacidad por diseño**: local-first, sin cuentas obligatorias, sin
-  analítica invasiva, sin enviar datos fiscales a servidor salvo el caso
-  explícito de OCR de fotos (ver sección 6).
+  analítica invasiva, sin enviar NUNCA datos fiscales a ningún servidor
+  — sin excepciones (el fallback opcional de foto+OCR que existía en
+  versiones anteriores del spec fue eliminado el 19/08/2026, decisión
+  explícita del autor; ver sección 6.3).
 - **Alcance geográfico v1**: Portugal únicamente — Continente, Açores y
   Madeira, con sus tres columnas de tipos de IVA diferenciadas. España u
   otros países quedan fuera de v1 por completo.
@@ -193,11 +195,12 @@ hardcodear tasas dentro de la lógica de UI.
 - **QR: opcional**, atajo secundario. Lectura 100% en cliente (librería
   JS tipo `jsQR`), parseando el código estructurado que ya llevan las
   facturas portuguesas por ley. Sin servidor, sin envío de datos.
-- **Foto + IA: fallback**, solo cuando no hay QR ni se quiere teclear.
-  Único punto de la app con salida de datos a terceros (Cloudflare
-  Worker → Groq/Claude Vision). Debe mostrarse aviso claro: la imagen se
-  procesa de forma temporal para extraer texto y no se almacena en
-  ningún servidor.
+- **Foto + IA (fallback): ELIMINADO (19/08/2026, decisión explícita del
+  autor).** Existió en el código (cliente + worker Cloudflare) pero
+  nunca se desplegó; se retiró por completo para simplificar la
+  promesa de privacidad de la app — ya no hay ningún flujo con salida
+  de datos a terceros, sin excepciones. No reintroducir sin decisión
+  explícita nueva del autor.
 - Para ítems con impuesto especial (combustible/ISP, alcohol/IABA,
   tabaco/IT): el usuario introduce el importe total pagado; la app
   muestra un desglose educativo estimado (impuesto especial + IVA
@@ -296,9 +299,9 @@ e impuesto anual. Si hay incertidumbre sobre un dato, márcalo como
 
 - Sin cuentas obligatorias. Datos del usuario en IndexedDB del
   dispositivo, nunca en servidor propio.
-- Único flujo con salida de datos: foto de factura → Cloudflare Worker
-  → IA (procesamiento efímero, sin persistencia server-side) → aviso
-  claro al usuario en el momento de usar esa función.
+- Cero flujos con salida de datos a terceros (19/08/2026: el fallback
+  de foto+IA que estaba previsto aquí fue eliminado por decisión
+  explícita del autor — no reintroducir sin decisión nueva).
 - Disclaimer en tres puntos: onboarding, pantalla de resultado (Dia da
   Liberdade Fiscal), y footer/Acerca de. Texto base: *"Esta aplicação
   fornece estimativas para fins informativos e educativos. Não
@@ -315,7 +318,7 @@ e impuesto anual. Si hay incertidumbre sobre un dato, márcalo como
 - No afirmar que el usuario "trabaja gratis para el Estado".
 - No usar lenguaje partidista.
 - No exigir registro/cuenta para usar el simulador.
-- No enviar datos fiscales a un backend salvo el caso explícito de OCR.
+- No enviar NUNCA datos fiscales a ningún backend — sin excepciones.
 - No comparar el benchmark OCDE con el resultado local sin la
   aclaración de metodologías distintas.
 
@@ -338,8 +341,9 @@ aleatoria de 10, pantalla de resultado con explicaciones.
 coste empleador → líquido.
 
 **Fase 5 — Facturas**: catálogo de bienes/servicios, flujo manual
-(primario), QR (opcional, cliente), foto+IA (fallback, Cloudflare
-Worker).
+(primario), QR (opcional, cliente). El fallback de foto+IA (Cloudflare
+Worker) que estaba previsto aquí fue eliminado el 19/08/2026, decisión
+explícita del autor.
 
 **Fase 6 — Impuestos anuales/patrimoniales**: módulo separado
 IMI/IUC/ISV/IMT/Imposto de Selo.
@@ -361,4 +365,4 @@ Un usuario, sin registrarse, debe poder en pocos minutos: hacer el quiz
 inicial, introducir su ingreso, registrar algunas facturas reales
 (manual), ver su Taxímetro y su Dia da Liberdade Fiscal con desglose
 explicado, y compartir el resultado — todo desde el móvil y funcionando
-offline salvo la función opcional de foto+IA.
+completamente offline, sin excepciones.

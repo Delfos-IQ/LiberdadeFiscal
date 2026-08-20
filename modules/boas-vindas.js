@@ -38,7 +38,7 @@ const PROMESSAS = [
     icon: iconCadeado,
     titulo: "Privada",
     texto:
-      "Os teus dados ficam no teu dispositivo. Sem contas, sem servidores nossos a guardar o que introduzes — a única exceção é opcional e sempre avisada no momento em que a usas.",
+      "Os teus dados ficam sempre no teu dispositivo. Sem contas, sem servidores nossos — nada do que introduzes sai daqui.",
   },
   {
     icon: iconFolha,

@@ -2,7 +2,7 @@
 // Versionamento explícito: sobe o CACHE_VERSION em cada release que
 // altere o shell ou os assets estáticos em cache.
 
-const CACHE_VERSION = "liberdade-fiscal-v0.50";
+const CACHE_VERSION = "liberdade-fiscal-v0.51";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // Base do scope do service worker — funciona tanto em GitHub Pages de
@@ -27,7 +27,6 @@ const STATIC_ASSETS = [
   "modules/taximetro.js",
   "modules/faturas.js",
   "modules/faturas-qr.js",
-  "modules/faturas-foto-ocr.js",
   "modules/onboarding.js",
   "modules/impostos-anuais.js",
   "modules/dia-liberdade.js",
@@ -39,7 +38,6 @@ const STATIC_ASSETS = [
   "data/db.js",
   "data/tax-engine.js",
   "data/qr-parser.js",
-  "data/ocr-client.js",
   "data/goods-services-pt.js",
   "data/categorias-gastos-pt.js",
   "data/tax-rules/2026/meta.js",
@@ -116,21 +114,23 @@ self.addEventListener("activate", (event) => {
 
 // --- Estratégia de fetch ---
 // Cache-first para assets estáticos do shell (HTML/CSS/JS da app).
-// Network-first para tudo o resto (p.ex. futuras chamadas à API de
-// OCR, ou conteúdo de data/ enquanto se itera), com fallback para
-// cache de forma a suportar o modo offline.
+// Network-first para tudo o resto (ex.: conteúdo de data/ enquanto se
+// itera), com fallback para cache de forma a suportar o modo offline.
+// Nota (19/08/2026): esta app já não faz NENHUM pedido a outra origem
+// — o fallback de foto+IA, que era o único caso previsto, foi
+// eliminado. Este handler mantém-se genérico para o resto do shell.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
-  // Só intercetamos GET; outros métodos (p.ex. POST ao worker de OCR)
-  // vão diretos para a rede e nunca são colocados em cache.
+  // Só intercetamos GET; outros métodos vão diretos para a rede e
+  // nunca são colocados em cache.
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
 
-  // Pedidos a outras origens (p.ex. Cloudflare Worker de OCR) não são
-  // colocados em cache — sempre rede, sem fallback offline (essa
-  // função requer ligação por design).
+  // Pedidos a outras origens não são colocados em cache — sempre rede,
+  // sem fallback offline. Na prática esta app não faz nenhum pedido a
+  // outra origem hoje, mas o handler mantém-se genérico.
   if (url.origin !== self.location.origin) return;
 
   // STATIC_ASSETS já contém pathnames absolutos e resolvidos (ver SCOPE

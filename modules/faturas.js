@@ -14,18 +14,21 @@
 // permite calcular o imposto especial (ISP/IT) com exatidão, além do
 // IVA — em vez de só mostrar o IVA e deixar o resto por explicar.
 //
-// O fluxo de fatura individual + QR (faturas-qr.js) e o fallback de
-// foto+IA (faturas-foto-ocr.js + data/ocr-client.js, roadmap P3-17)
-// continuam no código, mas ficam FORA da navegação ativa desta versão
-// — o autor pediu para os manter disponíveis como possível "modo
-// avançado" futuro, sem os apagar. Não importar faturas-qr.js/
-// faturas-foto-ocr.js aqui evita que fiquem mortos silenciosamente sem
-// ninguém notar: ficam por reativar explicitamente quando/se esse modo
-// avançado avançar. O fallback de foto+IA já funciona ponta-a-ponta do
-// lado do cliente (validação, conversão para base64, chamada ao
-// worker, ecrã de confirmação) mas o worker (worker/ocr-fatura.js)
-// continua por publicar — sem um workerUrl configurado, o ecrã mostra
-// isso claramente em vez de tentar e falhar um pedido de rede.
+// O fluxo de fatura individual + QR (faturas-qr.js) continua no
+// código, fora da navegação ativa desta versão — o autor pediu para o
+// manter disponível como possível "modo avançado" futuro, sem o
+// apagar. Não importar faturas-qr.js aqui evita que fique morto
+// silenciosamente sem ninguém notar: fica por reativar explicitamente
+// quando/se esse modo avançado avançar.
+//
+// O fallback de foto+IA (faturas-foto-ocr.js + data/ocr-client.js +
+// worker/ocr-fatura.js, roadmap P3-17) foi ELIMINADO nesta ronda
+// (19/08/2026, decisão explícita do autor): nunca chegou a ser
+// desplegado, e removê-lo simplifica a promessa de privacidade da app
+// — deixa de haver qualquer exceção "sem servidor nosso, exceto...";
+// agora é sem servidor, ponto final. "photo_ocr" deixou de ser um
+// `source` válido para uma Invoice (ver data/db.js). O código antigo
+// fica no histórico do git, não neste ficheiro.
 
 import { getSetting, atualizarPeriodoAtual, getPeriodoAtual } from "../data/db.js";
 import { CATEGORIAS_GASTOS_PT } from "../data/categorias-gastos-pt.js";
