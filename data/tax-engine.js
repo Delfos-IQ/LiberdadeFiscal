@@ -186,10 +186,10 @@ export function calcularDeducaoDependentes(dependentes) {
 /**
  * Taxa adicional de solidariedade (Art. 68.º-A CIRS) — cumulativa com
  * o IRS normal, incide só sobre a fração do rendimento coletável acima
- * de cada limiar (80.000€ e 250.000€/ano). 🟡 ESTIMATE — ver nota
- * completa em irs.js#taxaSolidariedade sobre o diferencial regional
- * (só Açores, segundo a única fonte que temos) e a interação incerta
- * com a dedução por dependentes.
+ * de cada limiar (80.000€ e 250.000€/ano). ✅ Verified (19/08/2026,
+ * confirmado contra folheto oficial da AT "Taxas Aplicáveis 2025") —
+ * ver nota completa em irs.js#taxaSolidariedade. Continua ESTIMATE só
+ * a interação com a dedução por dependentes (ver nota abaixo).
  *
  * Aplica o mesmo padrão de quociente familiar do IRS normal (Art. 69.º
  * CIRS, tal como confirmado pela fonte para este artigo): divide o
@@ -405,7 +405,7 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     salarioLiquidoMensal: round2(liquidoMensal),
     detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs, solidariedade },
     metodologia:
-      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente. Se o rendimento coletável ultrapassar 80.000€/ano, soma-se ainda a taxa adicional de solidariedade (Art. 68.º-A CIRS) — também uma estimativa, ver metodologia completa.",
+      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente. Se o rendimento coletável ultrapassar 80.000€/ano, soma-se ainda a taxa adicional de solidariedade (Art. 68.º-A CIRS), já confirmada contra o folheto oficial da Autoridade Tributária — a única parte ainda por confirmar é a forma exata como interage com a dedução por dependentes, ver metodologia completa.",
   };
 }
 

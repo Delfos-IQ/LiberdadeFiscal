@@ -51,37 +51,39 @@ export const IRS_2026 = {
    * sobre a parte do rendimento coletável que excede cada limiar,
    * cumulativa com o IRS normal.
    *
-   * 🟡 ESTIMATE (cablado em 18/08/2026, ronda seguinte a "vamos a por
-   * los estimates"): esta figura estava definida e tinha uma função de
-   * cálculo (`calculateTaxaSolidariedade` em tax-engine.js), mas nunca
-   * era chamada pela cadeia salarial real — a app não cobrava esta
-   * sobretaxa a ninguém, independentemente do rendimento. Corrigido
-   * para ser aplicada sempre que o rendimento coletável ultrapassa
-   * 80.000€/ano (só afeta rendimentos altos). Duas partes ficam
-   * ESTIMATE, não ✅ Verified:
-   * (1) **Diferencial regional**: a tabela numérica da PwC Guia Fiscal
-   *     2026 mostra esta sobretaxa reduzida em 30% só nos Açores
-   *     (1,75%/3,5% em vez de 2,5%/5%) — Madeira aparece agrupada com
-   *     o Continente, SEM redução, ao contrário do que acontece nos
-   *     escalões normais de IRS (onde Madeira também tem 30%). Isto é
-   *     modelado abaixo em `reducaoRegional`, mas só temos esta única
-   *     fonte a confirmá-lo — não foi cruzado contra o texto do
-   *     Art. 68.º-A diretamente.
-   * (2) **Interação com a dedução por dependentes**: o Art. 68.º-A
-   *     tinha originalmente um mecanismo de ajuste por dependentes
-   *     (n.os 4-6), mas foi revogado pela Lei n.º 7-A/2016. Não
-   *     confirmámos com certeza se a dedução à coleta por dependentes
-   *     (Art. 78.º-A) desconta desta sobretaxa ou só do IRS calculado
-   *     pelo Art. 68.º — por precaução, este motor NÃO deixa a dedução
-   *     por dependentes reduzir a sobretaxa (soma-a à parte, depois da
-   *     dedução já ter sido aplicada ao IRS normal). Se isto estiver
-   *     errado, o motor está a sobrestimar ligeiramente o imposto de
-   *     quem tem rendimento coletável > 80.000€/ano E dependentes.
-   * Fonte: [PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html),
+   * ✅ Verified (19/08/2026, ronda "SFP-Taxas-2025.pdf" — folheto oficial
+   * da Autoridade Tributária e Aduaneira, "Sistema Fiscal Português,
+   * Taxas Aplicáveis 2025", publicado dezembro 2025): a página 5 traz a
+   * tabela oficial dos três territórios lado a lado — Continente 2,5%
+   * / 5%, RAA 1,75% / 3,5%, RAM 2,5% / 5% (Madeira IGUAL ao Continente,
+   * sem redução) — confirmando exatamente os valores já guardados em
+   * `tramos` e `reducaoRegional` abaixo, agora a partir da fonte
+   * primária (AT), não só da PwC (secundária, mantida como referência
+   * cruzada). O documento é datado de 2025, mas estes limiares e taxas
+   * não sofrem atualização anual por inflação (ao contrário dos
+   * escalões normais em `escaloes` acima) — mantidos sem alteração há
+   * vários anos, por isso trata-se do mesmo valor em vigor para 2026.
+   *
+   * Continua ESTIMATE apenas um ponto, não coberto por este documento
+   * (que só lista taxas, não mecânica de dedução):
+   * **Interação com a dedução por dependentes**: o Art. 68.º-A tinha
+   * originalmente um mecanismo de ajuste por dependentes (n.os 4-6),
+   * mas foi revogado pela Lei n.º 7-A/2016. Não confirmámos com certeza
+   * se a dedução à coleta por dependentes (Art. 78.º-A) desconta desta
+   * sobretaxa ou só do IRS calculado pelo Art. 68.º — por precaução,
+   * este motor NÃO deixa a dedução por dependentes reduzir a sobretaxa
+   * (soma-a à parte, depois da dedução já ter sido aplicada ao IRS
+   * normal). Se isto estiver errado, o motor está a sobrestimar
+   * ligeiramente o imposto de quem tem rendimento coletável >
+   * 80.000€/ano E dependentes. Ver `notaDependentes` abaixo.
+   * Fontes: Autoridade Tributária e Aduaneira, "Sistema Fiscal
+   * Português — Taxas Aplicáveis 2025" (folheto oficial, pág. 5),
+   * [PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html),
    * [Art. 68.º-A CIRS (informador.pt)](https://informador.pt/legislacao/lexit/codigos/direito-fiscal/codigo-do-irs/capitulo-iii-taxas/artigo-68-o-a-taxa-adicional-de-solidariedade/).
    */
   taxaSolidariedade: {
-    status: "ESTIMATE",
+    status: "verified",
+    source: "Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\" (folheto oficial, pág. 5), confirmado contra Art. 68.º-A CIRS",
     tramos: [
       { min: 80000, max: 250000, taxa: 0.025 },
       { min: 250000, max: Infinity, taxa: 0.05 },
@@ -91,6 +93,8 @@ export const IRS_2026 = {
       madeira: 0,
       acores: 0.3,
     },
+    notaDependentes:
+      "ESTIMATE isolado, não coberto pela fonte AT acima: a interação entre a dedução por dependentes (Art. 78.º-A) e esta sobretaxa não está confirmada — o motor assume, por precaução, que a dedução não reduz a sobretaxa.",
   },
 
   /**
@@ -201,7 +205,7 @@ export const IRS_2026 = {
         "PwC Portugal, \"Guia Fiscal 2026 — IRS\" (tabela numérica dos 9 escalões, consultada diretamente 18/08/2026) + Art. 4.º, n.º 1 do Decreto Legislativo Regional n.º 2/99/A, de 20 de janeiro, na redação da DLR n.º 15-A/2021/A, de 31 de maio (citado via pesquisa, corroborado pela Circular n.º 6/2025 da AT)",
       sourceUrl: "https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html",
       notes:
-        "Ronda de correção (18/08/2026): substitui o mecanismo diferenciado por escalão (30%/20%) de uma ronda anterior, que nunca teve confirmação numérica — a tabela oficial da PwC mostra uma redução uniforme de 30% em todos os 9 escalões, igual à Madeira. Não foi possível ler o Diário da República Série I em bruto (página exige JavaScript nesta pesquisa); a confirmação assenta em duas fontes convergentes (tabela numérica + citação textual do artigo). A Taxa Adicional de Solidariedade também parece reduzida em 30% nos Açores segundo a mesma tabela da PwC, mas isso não está modelado no motor de cálculo — ver aviso na nota geral acima.",
+        "Ronda de correção (18/08/2026): substitui o mecanismo diferenciado por escalão (30%/20%) de uma ronda anterior, que nunca teve confirmação numérica — a tabela oficial da PwC mostra uma redução uniforme de 30% em todos os 9 escalões, igual à Madeira. Não foi possível ler o Diário da República Série I em bruto (página exige JavaScript nesta pesquisa); a confirmação assenta em duas fontes convergentes (tabela numérica + citação textual do artigo). A Taxa Adicional de Solidariedade tem a sua própria redução de 30% nos Açores, modelada separadamente em `taxaSolidariedade.reducaoRegional` acima — confirmado 19/08/2026 contra fonte primária (AT, folheto oficial 2025), já não é ESTIMATE.",
     },
     madeira: {
       reducaoSobreTaxaMarginal: 0.3,

@@ -88,52 +88,66 @@ mesmo resultado. Optámos pelo cálculo por fatias porque é mais fácil
 de auditar e explicar ao utilizador — coerente com o objetivo do
 produto de tornar o método visível, não só o resultado.
 
-### Taxa adicional de solidariedade (Art. 68.º-A) — 🟡 ESTIMATE (cablada 18/08/2026)
+### Taxa adicional de solidariedade (Art. 68.º-A) — ✅ Verificado (19/08/2026)
 
 Aplica-se **cumulativamente** ao IRS normal, apenas sobre a parte do
 rendimento coletável acima de cada limiar. Os próprios limiares e taxas
 estão ✅ verificados (exemplos oficiais documentados: 100.000€ → 500€;
 300.000€ → 6.750€):
 
-| Rendimento coletável | Taxa de solidariedade |
-|---|---|
-| 80.000 € – 250.000 € | 2,5% |
-| superior a 250.000 € | 5,0% |
+| Rendimento coletável | Continente | RAA (Açores) | RAM (Madeira) |
+|---|---|---|---|
+| 80.000 € – 250.000 € | 2,5% | 1,75% | 2,5% |
+| superior a 250.000 € | 5,0% | 3,5% | 5,0% |
+
+**Atualização (19/08/2026, ronda "SFP-Taxas-2025.pdf"):** o autor
+partilhou o folheto oficial da Autoridade Tributária e Aduaneira,
+"Sistema Fiscal Português — Taxas Aplicáveis 2025" (publicado dezembro
+2025). A página 5 traz a tabela dos três territórios lado a lado,
+confirmando exatamente os valores já guardados — incluindo o ponto que
+antes só tínhamos de uma fonte secundária (PwC): a Madeira NÃO tem
+redução nesta sobretaxa específica (fica igual ao Continente), ao
+contrário do mecanismo principal de IRS (Art. 68.º), onde a Madeira
+também tem -30%. Isto já estava modelado em `irs.js`
+(`reducaoRegional: { continente: 0, madeira: 0, acores: 0.3 }`), mas
+agora com confirmação de fonte primária (AT), não só da PwC. O
+documento é de 2025, mas estes limiares e taxas não sofrem atualização
+por inflação ano a ano (ao contrário dos escalões normais) — mesmo
+valor em vigor para 2026. `status` passou de `"ESTIMATE"` para
+`"verified"` em `irs.js#taxaSolidariedade`.
 
 Até 18/08/2026, `calculateTaxaSolidariedade()` existia no motor mas
 nunca era chamada pela cadeia salarial real (`calcularCadeiaSalarial`/
 `calcularCadeiaSalarialConjunta`) — a app não aplicava esta sobretaxa a
-ninguém, independentemente do rendimento. Nesta ronda foi cablada,
+ninguém, independentemente do rendimento. Nessa ronda foi cablada,
 somada ao IRS anual **depois** da dedução por dependentes (nunca
 reduzida por ela — ver justificação abaixo) e refletida em
 `irsEstimadoMensal`, `taxaSolidariedadeAnual` e `detalheAnual.solidariedade`
 no resultado de `calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`,
-propagado a Rendimentos, Dia da Liberdade Fiscal e Comparação OCDE. O
-conjunto foi marcado `status: "ESTIMATE"` em vez de `"verified"` por
-duas ambiguidades não resolvidas:
+propagado a Rendimentos, Dia da Liberdade Fiscal e Comparação OCDE.
 
-1. **Redução regional só confirmada para os Açores.** A tabela da PwC
-   mostra a redução de 30% (2,5%→1,75%; 5%→3,5%) só para os Açores —
-   ao contrário do mecanismo principal de IRS (Art. 68.º), que reduz
-   também para a Madeira. Sem uma fonte equivalente para a Madeira
-   nesta sobretaxa específica, aplicamos redução 0% à Madeira
-   (`reducaoRegional: { continente: 0, madeira: 0, acores: 0.3 }` em
-   `irs.js`).
-2. **Interação com a dedução por dependentes é ambígua.** O Art.
-   68.º-A CIRS, nos seus n.os 4 a 6 originais, prevIA um mecanismo de
-   atenuação para agregados com dependentes — mas esses números foram
-   **revogados pela Lei n.º 7-A/2016** (Orçamento do Estado 2016) sem
-   substituição clara equivalente localizada nesta pesquisa. Por
-   precaução, optámos por **não** deixar a dedução por dependentes
-   reduzir esta sobretaxa (é somada à parte do IRS já líquida de
-   dependentes, não à base tributável da sobretaxa).
+Continua por confirmar apenas um ponto (não coberto pelo folheto da AT,
+que só lista taxas, não mecânica de deduções):
+
+**Interação com a dedução por dependentes é ambígua.** O Art.
+68.º-A CIRS, nos seus n.os 4 a 6 originais, previa um mecanismo de
+atenuação para agregados com dependentes — mas esses números foram
+**revogados pela Lei n.º 7-A/2016** (Orçamento do Estado 2016) sem
+substituição clara equivalente localizada nesta pesquisa. Por
+precaução, optámos por **não** deixar a dedução por dependentes
+reduzir esta sobretaxa (é somada à parte do IRS já líquida de
+dependentes, não à base tributável da sobretaxa). Documentado como
+`notaDependentes` em `irs.js#taxaSolidariedade`, à parte do `status`
+geral.
 
 Quociente familiar (Art. 69.º) aplica-se normalmente — divide o
 rendimento coletável combinado por 2 antes de aplicar os tramos,
 multiplica o resultado de volta por 2. Cobertura de testes em
 `tests/tax-engine.test.js` (`describe("calculateTaxaSolidariedade")` e
 os testes de regressão em `calcularCadeiaSalarial`/
-`calcularCadeiaSalarialConjunta`). Fonte: [PwC Portugal, Guia Fiscal
+`calcularCadeiaSalarialConjunta`). Fontes: Autoridade Tributária e
+Aduaneira, "Sistema Fiscal Português — Taxas Aplicáveis 2025" (folheto
+oficial, pág. 5), [PwC Portugal, Guia Fiscal
 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
 ### Mínimo de existência — ✅ Verificado
@@ -857,16 +871,17 @@ dezembro), e o mais tardar antes de 31 de janeiro.
       renderizado) — já não depende só de fontes secundárias. Ver
       secção 1.
 - [x] Cablar a Taxa Adicional de Solidariedade (Art. 68.º-A CIRS) na
-      cadeia salarial real — 🟡 ESTIMATE (cablada 18/08/2026):
+      cadeia salarial real — ✅ Verificado (cablada 18/08/2026,
+      confirmada contra fonte primária 19/08/2026):
       `calculateTaxaSolidariedade()` já é chamada por
       `calcularCadeiaSalarial`/`calcularCadeiaSalarialConjunta`, com
-      quociente familiar e redução regional só para Açores (30%,
-      confirmada), sem redução para Madeira (não confirmada), e sem
+      quociente familiar e redução regional só para Açores (30%),
+      sem redução para Madeira — ambas confirmadas contra o folheto
+      oficial da Autoridade Tributária "Taxas Aplicáveis 2025" — e sem
       deixar a dedução por dependentes reduzir a sobretaxa (Art. 68.º-A
       n.os 4-6, que previam essa atenuação, foram revogados pela Lei
-      7-A/2016) — ver secção 1. **Continua por confirmar**: redução
-      regional da Madeira nesta sobretaxa específica (0% assumido por
-      precaução, pode estar incorreto).
+      7-A/2016) — ver secção 1. **Continua por confirmar**: só a
+      interação exata com a dedução por dependentes.
 - [ ] Obter a tabela completa de pesos de categorias de consumo do INE
       (Inquérito às Despesas das Famílias 2022/2023) — só se
       confirmaram os três maiores blocos (Habitação, Alimentação,
