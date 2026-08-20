@@ -13,6 +13,7 @@
 // data/tax-rules/ e aos módulos de motor de cálculo das próximas fases.
 
 import { getSetting } from "./data/db.js";
+import { REVISAO_DADOS_2026 } from "./data/tax-rules/2026/meta.js";
 
 /* -----------------------------
    0. Ecrã de boas-vindas (storytelling de marca) — mostra-se uma
@@ -62,6 +63,30 @@ function initOfflineBanner() {
   window.addEventListener("online", update);
   window.addEventListener("offline", update);
   update();
+}
+
+/* -----------------------------
+   2b. Nota de "última revisão" dos dados fiscais (19/08/2026) — mostra
+   no footer quando os parâmetros fiscais foram verificados pela última
+   vez, para não deixar a app parecer "definitiva" para sempre. Lê
+   REVISAO_DADOS_2026 (fonte única, ver data/tax-rules/2026/meta.js) em
+   vez de hardcodar a data aqui.
+   ----------------------------- */
+function initDataFreshnessNote() {
+  const el = document.getElementById("data-freshness-note");
+  if (!el) return;
+
+  const formatarDataPT = (isoDate) => {
+    const [ano, mes, dia] = isoDate.split("-").map(Number);
+    const data = new Date(Date.UTC(ano, mes - 1, dia));
+    return new Intl.DateTimeFormat("pt-PT", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
+      data
+    );
+  };
+
+  el.textContent =
+    `Dados fiscais revistos em ${formatarDataPT(REVISAO_DADOS_2026.ultimaRevisao)} · ` +
+    `próxima revisão prevista: ${formatarDataPT(REVISAO_DADOS_2026.proximaRevisaoPrevista)}.`;
 }
 
 /* -----------------------------
@@ -226,6 +251,7 @@ function enterEphemeralMode(error) {
 async function init() {
   initOfflineBanner();
   initNav();
+  initDataFreshnessNote();
   await registerServiceWorker();
 
   try {

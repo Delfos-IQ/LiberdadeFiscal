@@ -130,6 +130,14 @@
       <p class="app-footer__links no-print">
         <button class="link-button" type="button" data-route-link="dados">Os teus dados (exportar/importar/apagar)</button>
       </p>
+      <!-- Preenchido por app.js (initDataFreshnessNote), a partir de
+           data/tax-rules/2026/meta.js — fonte única da data, para não
+           ficar dessincronizado do que a app diz noutros sítios
+           (TAX-METHODOLOGY.md). Vazio até o JS correr; sem JS, fica
+           simplesmente ausente (não é informação crítica de
+           segurança/legal como o disclaimer acima, que está sempre no
+           HTML estático). -->
+      <p class="app-footer__revisao" id="data-freshness-note"></p>
     </footer>
 
     <nav class="app-nav no-print" aria-label="Navegação principal">

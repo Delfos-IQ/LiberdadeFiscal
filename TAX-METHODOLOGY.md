@@ -1,5 +1,17 @@
 # Metodologia fiscal — Liberdade Fiscal (ano fiscal 2026)
 
+**Cadência de revisão (19/08/2026).** Os parâmetros fiscais deste
+documento e de `data/tax-rules/2026/` são revistos semestralmente —
+1ª semana de janeiro (coincide com a entrada em vigor de alterações do
+Orçamento do Estado) e 1ª semana de julho (seis meses depois, com foco
+especial no ISP, que muda por Portaria com mais frequência que o resto).
+A data exata da última/próxima revisão vive em
+`data/tax-rules/2026/meta.js` (`REVISAO_DADOS_2026`) — fonte única,
+também mostrada no footer da app — para não ficar dessincronizada entre
+vários sítios. Existe uma scheduled task de Claude
+(`liberdade-fiscal-revisao-semestral`) que dispara nessas datas com
+instruções para rever os dados e atualizar esse ficheiro.
+
 Este documento explica de onde vem cada parâmetro fiscal usado pelo
 motor de cálculo, que fórmula se aplica, que hipóteses assume, e que
 limitações tem. É a implementação prática da secção 8 do `CLAUDE.md`:

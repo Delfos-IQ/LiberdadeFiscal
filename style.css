@@ -437,6 +437,20 @@ p {
   padding-top: 0;
 }
 
+/* Nota de "última revisão" dos dados fiscais (19/08/2026) — texto
+   pequeno e discreto, claramente secundário face ao disclaimer legal
+   acima (que é a informação obrigatória, esta é só transparência
+   extra). Preenchida via JS (app.js, initDataFreshnessNote) — fica
+   vazia até lá, por isso não reserva espaço fixo. */
+.app-footer__revisao {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+.app-footer__revisao:empty {
+  display: none;
+}
+
 .app-nav {
   display: flex;
   justify-content: space-around;
