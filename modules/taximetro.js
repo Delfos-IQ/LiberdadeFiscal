@@ -175,13 +175,24 @@ export function render(container) {
         },
         { euro: true }
       ),
+      // "Independente (recibos verdes)" removido da UI (19/08/2026, a
+      // pedido do autor): o cálculo dependia de
+      // `IRS_2026.coeficienteRegimeSimplificado`, um único coeficiente
+      // de 0,75 (Art. 151.º CIRS, prestação de serviços) que ignora a
+      // tabela completa por atividade do Art. 31.º CIRS — outras
+      // atividades têm coeficientes bem diferentes (ex.: vendas de
+      // mercadorias têm 0,15), por isso simular "independente" com um
+      // único número induzia em erro consoante a atividade real do
+      // utilizador. Passa a estar só no glossário como conceito
+      // explicado, não como algo que a app calcula. A lógica de cálculo
+      // (`calcularCadeiaSalarial` com `tipoTrabalhador: "independente"`
+      // em tax-engine.js) fica no código, sem apagar, caso um dia se
+      // consiga a tabela completa e valha a pena reativar — mas deixa
+      // de ser alcançável a partir desta UI.
       fieldSelect(
         "tipo-trabalhador",
         "Tipo de trabalhador",
-        [
-          { value: "dependente", label: "Por conta de outrem" },
-          { value: "independente", label: "Independente (recibos verdes)" },
-        ],
+        [{ value: "dependente", label: "Por conta de outrem" }],
         state.tipoTrabalhador,
         (v) => {
           state.tipoTrabalhador = v;

@@ -230,6 +230,22 @@ export const GLOSSARIO = [
     sourceField: "data/tax-rules/2026/outras-taxas.js (cav)",
   },
   {
+    id: "coeficiente-regime-simplificado",
+    sigla: "Regime Simplificado",
+    nome: "Coeficiente do Regime Simplificado (trabalhadores independentes)",
+    tipo: "Direto",
+    categoria: "Rendimento",
+    pagaQuem_pt: "Trabalhadores independentes (recibos verdes) que optem pelo regime simplificado de IRS.",
+    explicacao_pt:
+      "Em vez de deduzir despesas reais uma a uma, o regime simplificado aplica um coeficiente fixo à faturação — só essa fração é que conta como rendimento tributável em sede de IRS. O coeficiente varia por tipo de atividade (Art. 31.º CIRS): 0,75 para prestação de serviços em geral, mas outros valores para venda de mercadorias, alojamento local, atividades hoteleiras, entre outros — não é um número único.",
+    comoSeCalcula_pt:
+      "Só está confirmado o coeficiente-regra de 0,75 (prestação de serviços, Art. 151.º CIRS). A tabela completa por atividade do Art. 31.º CIRS não foi verificada nesta app — por isso o Taxímetro (Rendimentos) não simula trabalhadores independentes: aplicar só o coeficiente de 0,75 a qualquer atividade daria um valor errado para quem não presta serviços em regime geral (ex.: venda de mercadorias tem coeficiente bem mais baixo).",
+    status: "estimate",
+    source: "Art. 151.º e 31.º do CIRS — só o coeficiente-regra confirmado, tabela completa por atividade (CAE) por confirmar",
+    sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-902120232",
+    sourceField: "data/tax-rules/2026/irs.js (coeficienteRegimeSimplificado) — dormant, não usado a partir da UI desde 19/08/2026",
+  },
+  {
     id: "taxa-turistica",
     sigla: "Taxa Turística",
     nome: "Taxa Municipal Turística",

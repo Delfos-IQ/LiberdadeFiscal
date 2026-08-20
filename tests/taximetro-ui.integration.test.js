@@ -104,22 +104,13 @@ describe("Taxímetro — Modo Rápido", () => {
     assert.match(container.textContent, /Introduz um salário bruto/);
   });
 
-  test("mudar para trabalhador independente altera o resultado face a dependente, para o mesmo bruto", () => {
-    const container1 = getContainer();
-    render(container1);
-    setInput(container1, "salario-bruto", 2000);
-    submitForm(container1);
-    const custoDependente = container1.querySelector(".taximetro-cadeia dd").textContent;
-
-    const container2 = getContainer();
-    render(container2);
-    setInput(container2, "salario-bruto", 2000);
-    setSelect(container2, "tipo-trabalhador", "independente");
-    submitForm(container2);
-    const custoIndependente = container2.querySelector(".taximetro-cadeia dd").textContent;
-
-    assert.notEqual(custoDependente, custoIndependente);
-  });
+  // O teste "mudar para trabalhador independente" foi removido
+  // (19/08/2026, a pedido do autor): a opção "Independente (recibos
+  // verdes)" deixou de existir no seletor "tipo-trabalhador" — ver
+  // nota completa em modules/taximetro.js. A lógica de cálculo em si
+  // (calcularCadeiaSalarial com tipoTrabalhador: "independente")
+  // continua coberta em tests/tax-engine.test.js, ao nível do motor,
+  // não da UI.
 
   test('"Simular outro valor" volta ao formulário', () => {
     const container = getContainer();

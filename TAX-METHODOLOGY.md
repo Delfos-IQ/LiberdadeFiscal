@@ -817,6 +817,18 @@ dezembro), e o mais tardar antes de 31 de janeiro.
       apoio). Marcar `UNKNOWN`/`ESTIMATE` o que não se conseguir
       confirmar, nunca copiar o valor do ano anterior "a assumir que
       não mudou" sem verificar.
+      **Ponto de partida recomendado:** a AT publica anualmente o
+      folheto "Sistema Fiscal Português — Taxas Aplicáveis", que
+      cobre num único documento IRS, IRC, IVA, Selo, IEC (IABA/ISP/
+      IT), ISV, IMI, IMT e IUC —
+      https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf
+      é a edição 2025 (o "2025" no nome do ficheiro muda a cada
+      edição; confirmar se já existe uma edição AAAA antes de assumir
+      que os valores não mudaram). Não cobre: Segurança Social,
+      coeficientes do regime simplificado (Art. 31.º CIRS), tabelas
+      completas de IUC categorias C/D, nem taxas municipais (IMI por
+      concelho, Taxa Turística) — estas continuam a precisar de fontes
+      próprias.
 - [ ] Atualizar os 5 imports em `data/tax-engine.js` (linhas ~16-20)
       para o novo caminho `./tax-rules/AAAA/...`.
 - [ ] Atualizar o import em `modules/impostos-anuais.js`
@@ -844,7 +856,13 @@ dezembro), e o mais tardar antes de 31 de janeiro.
 
 - [ ] Confirmar todos os parâmetros ✅ diretamente contra
       portaldasfinancas.gov.pt / seg-social.pt / diariodarepublica.pt
-- [ ] Resolver o coeficiente completo do regime simplificado (IRS)
+- [x] Coeficiente completo do regime simplificado (IRS) — decisão
+      tomada (19/08/2026, a pedido do autor): em vez de resolver a
+      tabela completa do Art. 31.º CIRS, "Independente (recibos
+      verdes)" foi removido do simulador (Rendimentos); o coeficiente
+      fica só documentado no glossário. Ver `data/glosario.js`
+      (`coeficiente-regime-simplificado`) e a nota em
+      `modules/taximetro.js`.
 - [ ] Resolver a tabela completa de IABA (cerveja, bebidas
       espirituosas, produtos intermédios continuam UNKNOWN após duas
       rondas de investigação — 15/08 e 16/08/2026; vinho, espumante e

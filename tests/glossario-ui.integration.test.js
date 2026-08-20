@@ -65,7 +65,7 @@ describe("data/glosario.js — integridade dos dados", () => {
   });
 
   test("cobre as 13 figuras esperadas (11 da tabela do CLAUDE.md §7 + CAV + Taxa Turística)", () => {
-    assert.equal(GLOSSARIO.length, 13);
+    assert.equal(GLOSSARIO.length, 14);
   });
 });
 

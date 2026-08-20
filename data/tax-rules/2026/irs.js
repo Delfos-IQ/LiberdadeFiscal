@@ -84,6 +84,7 @@ export const IRS_2026 = {
   taxaSolidariedade: {
     status: "verified",
     source: "Autoridade Tributária e Aduaneira, \"Sistema Fiscal Português — Taxas Aplicáveis 2025\" (folheto oficial, pág. 5), confirmado contra Art. 68.º-A CIRS",
+    sourceUrl: "https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/Folhetos_informativos/Documents/SFP-Taxas-2025.pdf",
     tramos: [
       { min: 80000, max: 250000, taxa: 0.025 },
       { min: 250000, max: Infinity, taxa: 0.05 },
