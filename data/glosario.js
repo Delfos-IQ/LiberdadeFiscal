@@ -223,10 +223,10 @@ export const GLOSSARIO = [
     explicacao_pt:
       "Financia o serviço público de rádio e televisão (RTP). Aparece discretamente numa linha da fatura da luz, por isso muita gente não sabe que a paga.",
     comoSeCalcula_pt:
-      "2,85€/mês (antes de IVA), ou 3,02€ já com o IVA reduzido de 6% incluído. Tarifa reduzida de 1,00€/mês para clientes elegíveis (tarifa social de energia). Isenção total para consumo anual inferior a 400 kWh.",
-    status: "estimate",
-    source: "Lei n.º 30/2003, via imprensa e comercializadoras de energia (EDP, Repsol, Goldenergy) + DGEG",
-    sourceUrl: "https://www.dgeg.gov.pt/pt/areas-transversais/politicas-de-protecao-ao-consumidor-de-energia/tarifa-social-de-energia/contribuicao-audiovisual-cav-reduzida/",
+      "2,85€/mês (antes de IVA), ou 3,02€ já com o IVA reduzido de 6% incluído. Tarifa reduzida de 1,00€/mês para beneficiários do complemento solidário para idosos, do rendimento social de inserção, do subsídio social de desemprego, do 1.º escalão do abono de família, ou da pensão social de invalidez. Isenção total para consumo anual inferior a 400 kWh.",
+    status: "verified",
+    source: "Lei n.º 30/2003, de 22 de agosto, Art. 4.º — texto consolidado lido diretamente via Diário da República",
+    sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2003-105700797-105720191",
     sourceField: "data/tax-rules/2026/outras-taxas.js (cav)",
   },
   {

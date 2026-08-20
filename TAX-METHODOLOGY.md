@@ -649,25 +649,33 @@ sobre el tratamiento de residuos"). A investigação avaliou cinco
 candidatos; dois foram implementados, três foram deliberadamente
 deixados de fora — ver justificação abaixo.
 
-### Contribuição Audiovisual (CAV) — 🟡 ESTIMATE
+### Contribuição Audiovisual (CAV) — ✅ Verified
 
 Cobrada mensalmente na fatura de eletricidade de (quase) todos os
 consumidores em Portugal Continental, para financiar a RTP (Lei n.º
 30/2003, de 22 de agosto). Valor 2026: 2,85€ + IVA (6%) = 3,02€/mês
 (36,24€/ano) na tarifa normal; 1€ + IVA = 1,06€/mês (12,72€/ano) na
-tarifa reduzida, para clientes elegíveis da tarifa social de energia;
-isento se o consumo anual for inferior a 400 kWh. O Orçamento do Estado
-2026 não atualizou estes valores. Implementado em
-`data/tax-rules/2026/outras-taxas.js` (`OUTRAS_TAXAS_2026.cav`) e no
-formulário de Taxas (`modules/impostos-anuais.js`), com um seletor de
-situação (normal/reduzida/isento) que sugere o valor anual mas nunca o
-bloqueia — o utilizador pode sempre corrigir a partir da própria
-fatura. Continua ESTIMATE, não verified: o valor base e a
-não-atualização em 2026 assentam em fontes secundárias convergentes
-(imprensa, comercializadoras de energia), não na leitura direta da Lei
-n.º 30/2003; só o critério de isenção/tarifa reduzida tem fonte
-institucional direta (DGEG). Fonte: [DGEG, Contribuição Audiovisual
-(CAV) Reduzida](https://www.dgeg.gov.pt/pt/areas-transversais/politicas-de-protecao-ao-consumidor-de-energia/tarifa-social-de-energia/contribuicao-audiovisual-cav-reduzida/).
+tarifa reduzida; isento se o consumo anual for inferior a 400 kWh.
+Implementado em `data/tax-rules/2026/outras-taxas.js`
+(`OUTRAS_TAXAS_2026.cav`) e no formulário de Taxas
+(`modules/impostos-anuais.js`), com um seletor de situação
+(normal/reduzida/isento) que sugere o valor anual mas nunca o bloqueia
+— o utilizador pode sempre corrigir a partir da própria fatura.
+
+**Atualização (19/08/2026, ronda "verificar o glossário contra a
+fonte"):** passa de ESTIMATE a ✅ Verified — o Art. 4.º da Lei n.º
+30/2003 foi lido DIRETAMENTE na versão consolidada do Diário da
+República (`diariodarepublica.pt`, "Em vigor", última alteração
+2017-12-29), já não depende de imprensa/comercializadoras de energia
+como fonte primária. Confirma exatamente os valores já guardados e
+acrescenta o critério exato de elegibilidade à tarifa reduzida (Art.
+4.º, n.º 2): beneficiários do complemento solidário para idosos, do
+rendimento social de inserção, do subsídio social de desemprego, do
+1.º escalão do abono de família, ou da pensão social de invalidez —
+mais preciso do que "tarifa social de energia" (a formulação da DGEG,
+mantida como referência secundária). Fonte primária: [Diário da
+República, Lei n.º 30/2003, Art.
+4.º](https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2003-105700797-105720191).
 
 ### Taxa Municipal Turística — 🟡 ESTIMATE
 
