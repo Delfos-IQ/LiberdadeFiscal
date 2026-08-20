@@ -60,7 +60,7 @@ npm install   # só a primeira vez — instala o jsdom, usado apenas para os tes
 npm test
 ```
 
-Cobertura atual: 317 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas [dormant], persistência IndexedDB incluindo o acumulador de "Período" e exportação/importação de dados, integridade dos dados do Glossário fiscal, acessibilidade via axe-core, integração de UI de todos os módulos via jsdom + fake-indexeddb).
+Cobertura atual: 322 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas [dormant], persistência IndexedDB incluindo o acumulador de "Período" — e o seu reset controlado via `reiniciarPeriodoAtual` — e exportação/importação de dados, integridade dos dados do Glossário fiscal, acessibilidade via axe-core, integração de UI de todos os módulos via jsdom + fake-indexeddb).
 
 ## Desenvolvimento local
 

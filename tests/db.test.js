@@ -156,7 +156,13 @@ describe("data/db.js — savePeriodicTax", () => {
 });
 
 describe("data/db.js — Período acumulativo (getPeriodoAtual/atualizarPeriodoAtual/fecharPeriodoAtual)", () => {
-  let getPeriodoAtual, atualizarPeriodoAtual, fecharPeriodoAtual, getHistoricoPeriodos, dbClear;
+  let getPeriodoAtual,
+    atualizarPeriodoAtual,
+    fecharPeriodoAtual,
+    getHistoricoPeriodos,
+    dbClear,
+    periodoTemAnaliseEmCurso,
+    reiniciarPeriodoAtual;
 
   beforeEach(async () => {
     const mod = await import(`../data/db.js?t=${Date.now()}-${Math.random()}`);
@@ -165,6 +171,8 @@ describe("data/db.js — Período acumulativo (getPeriodoAtual/atualizarPeriodoA
     fecharPeriodoAtual = mod.fecharPeriodoAtual;
     getHistoricoPeriodos = mod.getHistoricoPeriodos;
     dbClear = mod.dbClear;
+    periodoTemAnaliseEmCurso = mod.periodoTemAnaliseEmCurso;
+    reiniciarPeriodoAtual = mod.reiniciarPeriodoAtual;
     await dbClear("userSettings");
     await dbClear("periodosFechados");
   });
@@ -217,6 +225,42 @@ describe("data/db.js — Período acumulativo (getPeriodoAtual/atualizarPeriodoA
     const [historico, atual] = await Promise.all([getHistoricoPeriodos(), getPeriodoAtual()]);
     assert.equal(historico.length, 1);
     assert.equal(atual.rendimentos, null);
+  });
+
+  test("periodoTemAnaliseEmCurso é false para um período vazio", async () => {
+    const p = await getPeriodoAtual();
+    assert.equal(periodoTemAnaliseEmCurso(p), false);
+  });
+
+  test("periodoTemAnaliseEmCurso é true com rendimentos ou gastosMensal preenchidos", async () => {
+    assert.equal(periodoTemAnaliseEmCurso({ rendimentos: { salarioLiquidoMensal: 1500 } }), true);
+    assert.equal(periodoTemAnaliseEmCurso({ gastosMensal: { totalMensal: 800 } }), true);
+  });
+
+  test("periodoTemAnaliseEmCurso ignora taxasAnuais (não é uma simulação descartável)", async () => {
+    assert.equal(periodoTemAnaliseEmCurso({ taxasAnuais: { total: 500 } }), false);
+  });
+
+  test("reiniciarPeriodoAtual limpa rendimentos e gastosMensal mas preserva taxasAnuais", async () => {
+    await atualizarPeriodoAtual({
+      rendimentos: { salarioLiquidoMensal: 1500 },
+      gastosMensal: { totalMensal: 800 },
+      taxasAnuais: { total: 300 },
+    });
+    const reiniciado = await reiniciarPeriodoAtual();
+    assert.equal(reiniciado.rendimentos, null);
+    assert.equal(reiniciado.gastosMensal, null);
+    assert.equal(reiniciado.taxasAnuais.total, 300, "taxasAnuais é histórico de pagamentos reais, não deve ser apagado aqui");
+
+    const p = await getPeriodoAtual();
+    assert.equal(p.rendimentos, null);
+  });
+
+  test("reiniciarPeriodoAtual não guarda cópia no histórico (é um descarte, não um fecho)", async () => {
+    await atualizarPeriodoAtual({ rendimentos: { salarioLiquidoMensal: 1500 } });
+    await reiniciarPeriodoAtual();
+    const historico = await getHistoricoPeriodos();
+    assert.equal(historico.length, 0);
   });
 });
 

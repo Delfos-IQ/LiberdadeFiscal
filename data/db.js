@@ -376,6 +376,49 @@ export async function fecharPeriodoAtual(resultadoDiaLiberdade) {
   return fechado;
 }
 
+/**
+ * @param {object} periodo o período atual (ver getPeriodoAtual)
+ * @returns {boolean} true se houver rendimentos ou gastos mensais
+ * guardados — ou seja, se há uma simulação em curso que faz sentido
+ * perguntar "continuar ou começar de novo?" ao reabrir a app.
+ *
+ * Não conta `taxasAnuais`: esse campo é só um resumo calculado a
+ * partir dos registos reais em `periodicTaxes` (IMI/IUC/ISV/IMT/Selo,
+ * ver impostos-anuais.js) — não é uma "simulação" descartável, é
+ * histórico de pagamentos que o utilizador já fez. Recalcula-se
+ * sozinho na próxima visita ao ecrã de Taxas, mesmo depois de
+ * `reiniciarPeriodoAtual()`.
+ */
+export function periodoTemAnaliseEmCurso(periodo) {
+  return Boolean(periodo && (periodo.rendimentos || periodo.gastosMensal));
+}
+
+/**
+ * "Começar nova análise" (19/08/2026, a pedido do autor: o
+ * utilizador via o Taxímetro/Gastos reaparecerem já preenchidos ao
+ * reabrir a app e queria poder recomeçar do zero, com confirmação).
+ *
+ * Limpa APENAS `rendimentos` e `gastosMensal` — os dois campos que são
+ * uma simulação/estimativa preenchida num formulário, barata de
+ * refazer. NÃO mexe em `taxasAnuais` nem nos registos em
+ * `periodicTaxes`: esses representam impostos anuais reais que o
+ * utilizador já pagou (IMI, IUC...) e apagá-los silenciosamente aqui
+ * seria perda de dados reais, não o reset de uma simulação — ver
+ * `periodoTemAnaliseEmCurso` acima. Quem quiser apagar esses registos
+ * fá-lo explicitamente em Impostos anuais ou em "Os teus dados".
+ *
+ * Ao contrário de `fecharPeriodoAtual`, isto NÃO guarda cópia no
+ * histórico — é um descarte, não um fecho com resultado.
+ *
+ * @returns {Promise<object>} o período atualizado
+ */
+export async function reiniciarPeriodoAtual() {
+  const atual = await getPeriodoAtual();
+  const reiniciado = { ...atual, criadoEm: new Date().toISOString(), rendimentos: null, gastosMensal: null };
+  await setSetting(PERIODO_ATUAL_KEY, reiniciado);
+  return reiniciado;
+}
+
 /** @returns {Promise<object[]>} histórico de períodos fechados, mais recente primeiro */
 export async function getHistoricoPeriodos() {
   const todos = await dbGetAll("periodosFechados");

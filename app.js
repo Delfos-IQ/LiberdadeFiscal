@@ -12,7 +12,7 @@
 // Nada de lógica fiscal vive neste ficheiro — isso pertence a
 // data/tax-rules/ e aos módulos de motor de cálculo das próximas fases.
 
-import { getSetting } from "./data/db.js";
+import { getSetting, getPeriodoAtual, periodoTemAnaliseEmCurso } from "./data/db.js";
 import { REVISAO_DADOS_2026 } from "./data/tax-rules/2026/meta.js";
 
 /* -----------------------------
@@ -214,6 +214,57 @@ function currentRouteFromHash() {
 }
 
 /* -----------------------------
+   3b. "Continuar ou começar de novo?" (19/08/2026, a pedido do autor)
+   — Rendimentos e Gastos rehidratam-se sozinhos a partir do período
+   atual (ver taximetro.js/faturas.js), o que é ótimo ao navegar entre
+   ecrãs mas confuso ao reabrir a app dias depois e ver tudo já
+   preenchido, sem ter pedido isso. Corre uma vez por sessão do
+   separador (sessionStorage, não localStorage — cada nova sessão do
+   navegador volta a perguntar), só quando há mesmo uma análise em
+   curso (periodoTemAnaliseEmCurso).
+   ----------------------------- */
+const AVISO_RETOMAR_KEY = "avisoRetomarAnaliseMostrado";
+
+async function talvezMostrarAvisoRetomar() {
+  const main = document.getElementById("app-main");
+  if (!main) return;
+
+  let jaMostrado = false;
+  try {
+    jaMostrado = sessionStorage.getItem(AVISO_RETOMAR_KEY) === "1";
+  } catch {
+    // sessionStorage indisponível (ex.: navegação privada nalguns
+    // browsers) — trata como "ainda não mostrado" nesta visita; o
+    // pior cenário é perguntar de novo depois de um reload, não é
+    // crítico.
+  }
+  if (jaMostrado) return;
+
+  let periodo;
+  try {
+    periodo = await getPeriodoAtual();
+  } catch {
+    return; // sem IndexedDB, não há nada para retomar
+  }
+  if (!periodoTemAnaliseEmCurso(periodo)) return;
+
+  try {
+    sessionStorage.setItem(AVISO_RETOMAR_KEY, "1");
+  } catch {
+    // ignora — pior caso, pergunta outra vez depois de um reload
+  }
+
+  await new Promise((resolve) => {
+    import("./modules/retomar-analise.js")
+      .then((mod) => mod.render(main, { periodo, onDecidido: resolve }))
+      .catch((err) => {
+        console.error("Falha ao carregar o aviso de retomar análise:", err);
+        resolve();
+      });
+  });
+}
+
+/* -----------------------------
    4. Onboarding mínimo — região
    ----------------------------- */
 async function ensureOnboarding() {
@@ -276,6 +327,8 @@ async function init() {
   } catch (err) {
     enterEphemeralMode(err);
   }
+
+  await talvezMostrarAvisoRetomar();
 
   await renderRoute(currentRouteFromHash());
 }
