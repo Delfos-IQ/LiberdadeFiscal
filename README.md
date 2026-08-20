@@ -51,6 +51,7 @@ Ver o roadmap completo em `CLAUDE.md` (secção 11). Resumo:
 - [x] Fase 7 — Dia da Liberdade Fiscal (redesenhado em agosto de 2026: consome o "Período" acumulado por Rendimentos → Gastos → Taxas via `data/db.js`, sem voltar a pedir dados; assinala explicitamente o que ficou de fora quando algum passo não foi preenchido; permite fechar o período e começar um novo, guardando histórico; ver metodologia em `TAX-METHODOLOGY.md` secção 6b)
 - [x] Fase 8 — Benchmark OCDE (tax wedge, Taxing Wages 2026, PT/ES/FR/DE/IE/NL/CH) + cartão para partilhar (Web Share API com fallback de download/clipboard — inclui partilha nativa para WhatsApp quando `navigator.share({files})` está disponível)
 - [x] Fase 9 — QA final (verificações estáticas scriptadas, ver `QA-FASE-9.md` para o relatório completo e as limitações conhecidas)
+- [x] Glossário fiscal (19/08/2026, a pedido do autor: conteúdo opcional "para quem quiser mais", sem tocar no fluxo principal) — 13 figuras (as 11 da tabela do CLAUDE.md §7 + CAV + Taxa Municipal Turística), em linguagem simples, cada uma com badge de confiança (verificado/estimativa/não confirmado) e link para a fonte oficial; acesso pelo footer, fora do fluxo principal e da navegação principal
 
 ## Testes
 
@@ -59,7 +60,7 @@ npm install   # só a primeira vez — instala o jsdom, usado apenas para os tes
 npm test
 ```
 
-Cobertura atual: 325 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas [dormant], cliente do fallback foto+IA [dormant, roadmap P3-17], persistência IndexedDB incluindo o acumulador de "Período" e exportação/importação de dados, acessibilidade via axe-core, integração de UI de todos os módulos via jsdom + fake-indexeddb).
+Cobertura atual: 336 testes (motor fiscal, lógica do quiz, catálogo de bens/serviços, parser de QR de faturas [dormant], cliente do fallback foto+IA [dormant, roadmap P3-17], persistência IndexedDB incluindo o acumulador de "Período" e exportação/importação de dados, integridade dos dados do Glossário fiscal, acessibilidade via axe-core, integração de UI de todos os módulos via jsdom + fake-indexeddb).
 
 ## Desenvolvimento local
 

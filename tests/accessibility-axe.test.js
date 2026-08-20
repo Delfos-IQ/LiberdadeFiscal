@@ -167,4 +167,12 @@ describe("Acessibilidade (axe-core sobre jsdom) — ecrãs principais", () => {
     const violacoes = await auditar(container);
     assert.equal(violacoes.length, 0, formatarViolacoes(violacoes));
   });
+
+  test("Glossário fiscal", async () => {
+    const { render } = await import(`../modules/glossario.js?t=${Date.now()}`);
+    const container = getContainer();
+    render(container);
+    const violacoes = await auditar(container);
+    assert.equal(violacoes.length, 0, formatarViolacoes(violacoes));
+  });
 });

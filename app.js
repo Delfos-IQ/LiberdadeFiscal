@@ -113,6 +113,11 @@ const ROUTE_MODULES = {
   // mesmo motivo que benchmark-ocde: 5 itens já é o limite confortável
   // a 320px (ver AUDITORIA-2026-08.md, hallazgo B-13 herdado).
   dados: () => import("./modules/dados.js"),
+  // Rota secundária (19/08/2026, a pedido do autor: conteúdo opcional
+  // "para quem quiser mais", sem tocar no fluxo principal) — mesmo
+  // padrão de acesso que "dados": link no footer, fora do nav
+  // principal.
+  glossario: () => import("./modules/glossario.js"),
 };
 
 let currentModuleInstance = null;
