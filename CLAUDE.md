@@ -32,6 +32,20 @@ fiscal, con captura real de datos del usuario (no solo estimaciones).
 - **Alcance geográfico v1**: Portugal únicamente — Continente, Açores y
   Madeira, con sus tres columnas de tipos de IVA diferenciadas. España u
   otros países quedan fuera de v1 por completo.
+- **Lo que no encaja en el simulador va al glosario, no se descarta**
+  (regla explícita del autor, 19/08/2026): cuando un parámetro fiscal
+  real no cabe en el flujo de <60s del simulador — porque depende de
+  demasiadas variables, porque es un caso raro, o porque de momento no
+  se pudo confirmar contra una fuente primaria — la respuesta por
+  defecto es documentarlo en `data/glosario.js` en vez de mentir con
+  una simplificación (ej.: Taxa Turística, IUC categorias C/D). Esto
+  no es una excusa para no intentar resolverlo primero: cuando SÍ se
+  encuentra la fuente primaria (ej.: coeficientes del Art. 31.º CIRS
+  para trabajadores independientes, resuelto el mismo día 19/08/2026
+  después de haberse marcado como "fuera del simulador"), el dato
+  vuelve a entrar en el motor de cálculo. El glosario es el destino
+  por defecto para lo no resuelto, no una forma de cerrar la
+  investigación antes de intentarla.
 
 ---
 
