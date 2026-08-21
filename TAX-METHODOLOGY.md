@@ -313,12 +313,48 @@ ver detalhe completo mais acima, na subsecção "Taxa adicional de
 solidariedade".
 Fonte: [PwC Portugal, Guia Fiscal 2026 — IRS](https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html).
 
-### Coeficiente do regime simplificado (trabalhadores independentes) — 🟡 ESTIMATE
+### Coeficiente do regime simplificado (trabalhadores independentes) — ✅ Verificado (19/08/2026)
 
-Confirmado o coeficiente-regra de 0,75 para prestação de serviços
-(Art. 151.º CIRS). A tabela completa por atividade (CAE) não foi
-verificada — necessária antes de a Fase 4 (Taxímetro) suportar
-trabalhadores independentes com rigor.
+**Atualização (19/08/2026, a pedido do autor: "buscamos la
+informacion" — reintrodução de independentes no Taxímetro, depois de
+terem sido removidos horas antes por falta desta tabela).** Texto
+integral do Art. 31.º, n.º1 CIRS lido diretamente na versão
+consolidada do Diário da República. Coeficientes confirmados:
+
+| Alínea | Coeficiente | Atividade |
+|---|---|---|
+| a) | 0,15 | Venda de mercadorias/produtos, restauração e hotelaria (exceto alojamento local em moradia/apartamento) |
+| b) | 0,75 | Atividades profissionais da tabela do Art. 151.º CIRS |
+| c) | 0,35 | Prestações de serviços não previstas nas alíneas anteriores |
+| d) | 0,95 | Cessão de propriedade intelectual/industrial, criptoativos, rendimentos de capitais imputáveis à atividade |
+| e) | 0,30 | Subsídios não destinados à exploração |
+| f) | 0,10 | Subsídios destinados à exploração e restantes rendimentos da categoria B |
+| g) | 1,00 | Prestações de serviços a sociedades relacionadas (regime de transparência fiscal ou participação ≥5%/25%) |
+| h) | 0,50 | Alojamento local (moradia/apartamento) em área de contenção |
+
+O Taxímetro (`modules/taximetro.js`, `ATIVIDADES_INDEPENDENTE`) modela
+as alíneas a, b, c, d, h — as que correspondem a um "tipo de
+atividade" que um freelancer escolhe. Deliberadamente fora do âmbito:
+
+- **Alíneas e, f, g**: não são "tipo de atividade", são situações
+  específicas (subsídios, partes relacionadas) fora do que um
+  simulador rápido consegue perguntar sem se tornar um formulário de
+  contabilista.
+- **N.º 10**: os coeficientes das alíneas b), c) e f) reduzem-se em
+  50%/25% no ano de início de atividade e no seguinte — não aplicado;
+  sobrestima ligeiramente o imposto de quem começou a atividade há
+  menos de 2 anos.
+- **N.º 13**: a dedução das alíneas b) e c) está parcialmente
+  condicionada à comprovação de despesas reais (15% dos rendimentos
+  brutos) — não aplicado; o motor assume sempre a dedução completa.
+
+Estas três limitações são comunicadas ao utilizador no ecrã de
+resultado (aviso + `metodologia`) sempre que escolhe "Independente".
+Cobertura de testes: `tests/tax-engine-irs-avancado.test.js`
+(`describe("calcularCadeiaSalarial...")`) e
+`tests/taximetro-ui.integration.test.js`. Fonte: [CIRS, Art. 31.º —
+Diário da República, versão
+consolidada](https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-912821422).
 
 ### Retenção na fonte vs. imposto anual — nota metodológica
 
@@ -856,12 +892,16 @@ dezembro), e o mais tardar antes de 31 de janeiro.
 
 - [ ] Confirmar todos os parâmetros ✅ diretamente contra
       portaldasfinancas.gov.pt / seg-social.pt / diariodarepublica.pt
-- [x] Coeficiente completo do regime simplificado (IRS) — decisão
-      tomada (19/08/2026, a pedido do autor): em vez de resolver a
-      tabela completa do Art. 31.º CIRS, "Independente (recibos
-      verdes)" foi removido do simulador (Rendimentos); o coeficiente
-      fica só documentado no glossário. Ver `data/glosario.js`
-      (`coeficiente-regime-simplificado`) e a nota em
+- [x] Coeficiente completo do regime simplificado (IRS) — ✅ resolvido
+      (19/08/2026, mesmo dia, a pedido do autor): "Independente
+      (recibos verdes)" tinha sido removido do simulador horas antes
+      por falta desta tabela; o autor pediu para ir buscar a
+      informação em vez de a deixar de fora. Tabela completa do
+      Art. 31.º CIRS lida diretamente na versão consolidada do Diário
+      da República — "Independente" voltou ao Taxímetro com um
+      seletor de tipo de atividade (5 das 8 alíneas, ver secção 1
+      acima para as 3 deixadas de fora e porquê). Ver `data/glosario.js`
+      (`coeficiente-regime-simplificado`, agora `status: "verified"`) e a nota em
       `modules/taximetro.js`.
 - [ ] Resolver a tabela completa de IABA (cerveja, bebidas
       espirituosas, produtos intermédios continuam UNKNOWN após duas

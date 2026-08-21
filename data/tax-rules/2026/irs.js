@@ -256,13 +256,62 @@ export const IRS_2026 = {
    * ESTIMATE: apenas o coeficiente-regra foi verificado; a tabela
    * completa por atividade (0.75 / 0.35 / 0.10 / 0.95 consoante o CAE)
    * não foi confirmada nesta pesquisa.
+   *
+   * ✅ Verified (19/08/2026, a pedido do autor: "buscamos la
+   * informacion" — reintrodução de trabalhadores independentes no
+   * Taxímetro). Texto integral do Art. 31.º, n.º 1 do CIRS lido
+   * diretamente na versão consolidada do Diário da República,
+   * "Em vigor", última alteração 2026-06-03. Tabela completa por
+   * atividade (substitui o coeficiente único de 0,75 usado antes de
+   * hoje, que só cobria a alínea b) e enganava quem tivesse outra
+   * atividade).
+   *
+   * Modelado nesta app (alíneas a, b, c, d, h — as que correspondem a
+   * "tipo de atividade" que um trabalhador independente escolhe):
+   * a) 0,15 — venda de mercadorias/produtos, restauração e hotelaria
+   *    (exceto alojamento local em moradia/apartamento)
+   * b) 0,75 — atividades profissionais da tabela do Art. 151.º CIRS
+   *    (a "regra geral" já usada antes de hoje)
+   * c) 0,35 — prestação de serviços não previstos nas alíneas anteriores
+   * d) 0,95 — cessão de propriedade intelectual/industrial, criptoativos
+   *    (mineração), rendimentos de capitais imputáveis à atividade
+   * h) 0,50 — alojamento local (moradia/apartamento) em área de contenção
+   *
+   * NÃO modelado, por precaução (âmbito reduzido para caber num
+   * simulador de <60s, sem contabilidade organizada):
+   * - Alíneas e), f), g): subsídios e casos de partes relacionadas —
+   *   não são "tipo de atividade", são situações específicas raras
+   *   para um freelancer típico.
+   * - N.º 10: os coeficientes das alíneas b), c) e f) reduzem-se em
+   *   50%/25% no ano de início de atividade e no ano seguinte — não
+   *   aplicado; sobrestima ligeiramente o imposto de quem começou a
+   *   atividade há menos de 2 anos.
+   * - N.º 13: a dedução das alíneas b) e c) está parcialmente
+   *   condicionada à comprovação de despesas reais (15% dos
+   *   rendimentos brutos) — não aplicado; o motor assume sempre que a
+   *   dedução completa do coeficiente se aplica, o que pode
+   *   subestimar o imposto de quem não tem despesas documentadas
+   *   suficientes.
+   * Fonte: [CIRS, Art. 31.º — Diário da República, versão consolidada](https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-912821422).
    */
   coeficienteRegimeSimplificado: {
+    status: "verified",
+    source: "Art. 31.º, n.º 1 do CIRS — texto consolidado lido diretamente via Diário da República em 19/08/2026",
+    sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-912821422",
+    // Valor por omissão/legado — mantido para não quebrar chamadas
+    // antigas que não especifiquem tipoAtividade; corresponde à
+    // alínea b).
     value: 0.75,
     unit: "fração",
-    status: "ESTIMATE",
+    porAtividade: {
+      vendaMercadoriasERestauracao: { coeficiente: 0.15, label: "Venda de mercadorias/produtos, restauração e hotelaria", alinea: "a" },
+      atividadeProfissionalTabela151: { coeficiente: 0.75, label: "Atividade profissional da tabela do Art. 151.º CIRS", alinea: "b" },
+      outrasPrestacoesServicos: { coeficiente: 0.35, label: "Outras prestações de serviços", alinea: "c" },
+      propriedadeIntelectualECriptoativos: { coeficiente: 0.95, label: "Cessão de propriedade intelectual/industrial ou criptoativos", alinea: "d" },
+      alojamentoLocal: { coeficiente: 0.5, label: "Alojamento local (moradia/apartamento) em área de contenção", alinea: "h" },
+    },
     notes:
-      "Coeficiente-regra para prestação de serviços (Art. 151.º CIRS). Outras atividades têm coeficientes distintos — verificar tabela completa do Art. 31.º CIRS antes de publicar.",
+      "Coeficientes das alíneas a, b, c, d, h do Art. 31.º, n.º1 CIRS. Não modela: alíneas e/f/g (subsídios, partes relacionadas), a redução de 50%/25% no início de atividade (n.º10), nem a condicionante de despesas comprovadas (n.º13).",
   },
 
   /**

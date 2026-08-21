@@ -310,6 +310,11 @@ export function calculateTSU(salarioBrutoMensal) {
  * @param {number} salarioBrutoMensal
  * @param {object} [opcoes]
  * @param {"dependente"|"independente"} [opcoes.tipoTrabalhador]
+ * @param {keyof IRS_2026.coeficienteRegimeSimplificado.porAtividade} [opcoes.tipoAtividade] —
+ *   só relevante quando tipoTrabalhador === "independente". Escolhe o
+ *   coeficiente do regime simplificado (Art. 31.º CIRS) a aplicar;
+ *   por omissão usa "atividadeProfissionalTabela151" (0,75, alínea b),
+ *   a mesma regra usada antes desta opção existir.
  * @param {"individual"|"conjunta"} [opcoes.estadoCivil] — "conjunta" só
  *   faz sentido para casados/unidos de facto que optem por declaração
  *   conjunta.
@@ -325,6 +330,7 @@ export function calculateTSU(salarioBrutoMensal) {
 export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
   const {
     tipoTrabalhador = "dependente",
+    tipoAtividade = "atividadeProfissionalTabela151",
     estadoCivil = "individual",
     dependentes = [],
     regiao = "continente",
@@ -355,8 +361,9 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     );
   } else {
     // Trabalhador independente, regime simplificado — ver notas em
-    // seguranca-social.js (coeficiente 0.75 do regime simplificado de
-    // IRS em irs.js). Não há "entidade patronal": o custo total é o
+    // seguranca-social.js (coeficientes do regime simplificado de IRS
+    // por tipo de atividade em irs.js#coeficienteRegimeSimplificado,
+    // Art. 31.º CIRS). Não há "entidade patronal": o custo total é o
     // próprio rendimento bruto.
     //
     // Correção (18/08/2026): a Segurança Social não incide sobre a
@@ -370,7 +377,14 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     const rendimentoRelevanteMensal = salarioBrutoMensal * percentagemRendimentoRelevante.prestacaoServicos;
     descontoSSMensal = round2(rendimentoRelevanteMensal * taxaContributiva);
     custoTotalEmpregadorMensal = round2(salarioBrutoMensal);
-    const coeficiente = IRS_2026.coeficienteRegimeSimplificado.value;
+
+    const atividade = IRS_2026.coeficienteRegimeSimplificado.porAtividade[tipoAtividade];
+    if (!atividade) {
+      throw new RangeError(
+        `tipoAtividade desconhecido: ${tipoAtividade}. Use uma chave de IRS_2026.coeficienteRegimeSimplificado.porAtividade.`
+      );
+    }
+    const coeficiente = atividade.coeficiente;
     rendimentoColetavelAnual = round2(rendimentoBrutoAnual * coeficiente);
   }
 
@@ -395,6 +409,7 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
 
   return {
     tipoTrabalhador,
+    tipoAtividade: tipoTrabalhador === "independente" ? tipoAtividade : null,
     custoTotalEmpregadorMensal,
     salarioBrutoMensal: round2(salarioBrutoMensal),
     descontoSSMensal,
@@ -405,7 +420,10 @@ export function calcularCadeiaSalarial(salarioBrutoMensal, opcoes = {}) {
     salarioLiquidoMensal: round2(liquidoMensal),
     detalheAnual: { rendimentoBrutoAnual, rendimentoColetavelAnual, irs, solidariedade },
     metodologia:
-      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente. Se o rendimento coletável ultrapassar 80.000€/ano, soma-se ainda a taxa adicional de solidariedade (Art. 68.º-A CIRS), já confirmada contra o folheto oficial da Autoridade Tributária — a única parte ainda por confirmar é a forma exata como interage com a dedução por dependentes, ver metodologia completa.",
+      "Para simplificar (ainda estamos numa primeira versão), assumimos 12 pagamentos mensais iguais — ou seja, os subsídios de férias e de Natal já vêm distribuídos em duodécimos — e não aplicamos outras deduções à coleta além dos dependentes. Também vale a pena dizer-te: o diferencial regional de IRS que usamos para os Açores e a Madeira é uma estimativa nossa, não um valor que já confirmámos oficialmente. Se o rendimento coletável ultrapassar 80.000€/ano, soma-se ainda a taxa adicional de solidariedade (Art. 68.º-A CIRS), já confirmada contra o folheto oficial da Autoridade Tributária — a única parte ainda por confirmar é a forma exata como interage com a dedução por dependentes, ver metodologia completa." +
+      (tipoTrabalhador === "independente"
+        ? " Como trabalhador independente: o coeficiente do regime simplificado (Art. 31.º CIRS) que usámos depende do tipo de atividade que escolheste — não modelamos a redução de 50%/25% para quem está no início de atividade (menos de 2 anos), nem a condicionante de despesas comprovadas que se aplica a algumas atividades; ambas podem alterar o teu IRS real."
+        : ""),
   };
 }
 

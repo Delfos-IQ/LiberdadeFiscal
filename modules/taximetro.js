@@ -24,6 +24,20 @@ const REGIOES = [
   { value: "madeira", label: "Madeira" },
 ];
 
+// Chaves de IRS_2026.coeficienteRegimeSimplificado.porAtividade
+// (irs.js) — labels iguais aos usados lá, mantidos aqui só para não
+// importar a tabela fiscal inteira num módulo de UI. Cobre as
+// alíneas a, b, c, d, h do Art. 31.º, n.º1 CIRS — as que correspondem
+// a um "tipo de atividade" que um independente escolhe; ver notas em
+// irs.js sobre as alíneas e/f/g deliberadamente fora do âmbito.
+const ATIVIDADES_INDEPENDENTE = [
+  { value: "atividadeProfissionalTabela151", label: "Atividade profissional da tabela do Art. 151.º CIRS (consultoria, design, etc.)" },
+  { value: "outrasPrestacoesServicos", label: "Outras prestações de serviços" },
+  { value: "vendaMercadoriasERestauracao", label: "Venda de mercadorias/produtos, restauração e hotelaria" },
+  { value: "alojamentoLocal", label: "Alojamento local (moradia/apartamento, área de contenção)" },
+  { value: "propriedadeIntelectualECriptoativos", label: "Cessão de propriedade intelectual/industrial ou criptoativos" },
+];
+
 export function render(container) {
   let state = {
     phase: "form",
@@ -32,6 +46,7 @@ export function render(container) {
     salarioBrutoConjuge: "", // roadmap P3-15 — só usado quando estadoCivil === "conjunta"
     estadoCivil: "individual",
     tipoTrabalhador: "dependente",
+    tipoAtividade: "atividadeProfissionalTabela151",
     regiao: "continente",
     numDependentesRapido: 0,
     dependentesAvancado: [],
@@ -109,6 +124,7 @@ export function render(container) {
           })
         : calcularCadeiaSalarial(salario, {
             tipoTrabalhador: state.tipoTrabalhador,
+            tipoAtividade: state.tipoAtividade,
             estadoCivil: state.estadoCivil,
             dependentes,
             regiao: state.regiao,
@@ -175,27 +191,27 @@ export function render(container) {
         },
         { euro: true }
       ),
-      // "Independente (recibos verdes)" removido da UI (19/08/2026, a
-      // pedido do autor): o cálculo dependia de
-      // `IRS_2026.coeficienteRegimeSimplificado`, um único coeficiente
-      // de 0,75 (Art. 151.º CIRS, prestação de serviços) que ignora a
-      // tabela completa por atividade do Art. 31.º CIRS — outras
-      // atividades têm coeficientes bem diferentes (ex.: vendas de
-      // mercadorias têm 0,15), por isso simular "independente" com um
-      // único número induzia em erro consoante a atividade real do
-      // utilizador. Passa a estar só no glossário como conceito
-      // explicado, não como algo que a app calcula. A lógica de cálculo
-      // (`calcularCadeiaSalarial` com `tipoTrabalhador: "independente"`
-      // em tax-engine.js) fica no código, sem apagar, caso um dia se
-      // consiga a tabela completa e valha a pena reativar — mas deixa
-      // de ser alcançável a partir desta UI.
+      // "Independente (recibos verdes)" reintroduzido em 19/08/2026 (a
+      // pedido do autor, "buscamos la informacion"): tinha sido
+      // removido porque o cálculo dependia de um único coeficiente
+      // (0,75, só a alínea b) do Art. 31.º CIRS), enganando quem
+      // tivesse outra atividade. Lida agora a tabela completa
+      // diretamente no Diário da República — ver
+      // irs.js#coeficienteRegimeSimplificado — e quando se escolhe
+      // "Independente" aparece um segundo campo para o tipo de
+      // atividade (ATIVIDADES_INDEPENDENTE abaixo), que decide o
+      // coeficiente certo em vez de assumir sempre 0,75.
       fieldSelect(
         "tipo-trabalhador",
         "Tipo de trabalhador",
-        [{ value: "dependente", label: "Por conta de outrem" }],
+        [
+          { value: "dependente", label: "Por conta de outrem" },
+          { value: "independente", label: "Independente (recibos verdes)" },
+        ],
         state.tipoTrabalhador,
         (v) => {
           state.tipoTrabalhador = v;
+          draw();
         }
       ),
       fieldSelect(
@@ -215,6 +231,20 @@ export function render(container) {
         state.regiao = v;
       })
     );
+
+    if (state.tipoTrabalhador === "independente") {
+      form.append(
+        fieldSelect("tipo-atividade", "Tipo de atividade (regime simplificado)", ATIVIDADES_INDEPENDENTE, state.tipoAtividade, (v) => {
+          state.tipoAtividade = v;
+        })
+      );
+      const avisoAtividade = el(
+        "p",
+        "disclaimer",
+        "Coeficientes do Art. 31.º CIRS. Não modelamos a redução para quem está no início de atividade (menos de 2 anos), nem a condicionante de despesas comprovadas que se aplica a algumas atividades — o teu IRS real pode ser diferente deste valor."
+      );
+      form.append(avisoAtividade);
+    }
 
     if (state.estadoCivil === "conjunta") {
       // Roadmap P3-15: campo opcional para o rendimento do
@@ -369,6 +399,17 @@ export function render(container) {
         `Rendimento coletável anual: ${formatEUR(r.detalheAnual.rendimentoColetavelAnual)} · Taxa efetiva de IRS: ${(r.detalheAnual.irs.taxaEfetiva * 100).toFixed(2)}%`
       )
     );
+    if (r.tipoTrabalhador === "independente" && r.tipoAtividade) {
+      const atividadeLabel =
+        ATIVIDADES_INDEPENDENTE.find((a) => a.value === r.tipoAtividade)?.label ?? r.tipoAtividade;
+      explicacao.append(
+        el(
+          "p",
+          null,
+          `Regime simplificado: aplicámos o coeficiente do Art. 31.º CIRS para "${atividadeLabel}" — só essa fração da faturação conta como rendimento tributável.`
+        )
+      );
+    }
 
     // Tabela de escalões de IRS efetivamente aplicados — cada escalão
     // com a sua taxa marginal em %, já com o diferencial regional

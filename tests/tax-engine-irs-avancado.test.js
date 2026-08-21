@@ -144,6 +144,47 @@ describe("calcularCadeiaSalarial — Modo Rápido/Avançado do Taxímetro", () =
     assert.notEqual(r.descontoSSMensal, round2(1000 * 0.214), "não deve aplicar a taxa sobre o bruto inteiro");
   });
 
+  test("independente: tipoAtividade por omissão é a alínea b) (0,75), igual ao comportamento antes de 19/08/2026", () => {
+    const semAtividade = calcularCadeiaSalarial(2000, { tipoTrabalhador: "independente" });
+    const comAtividadeExplicita = calcularCadeiaSalarial(2000, {
+      tipoTrabalhador: "independente",
+      tipoAtividade: "atividadeProfissionalTabela151",
+    });
+    assert.equal(semAtividade.detalheAnual.rendimentoColetavelAnual, comAtividadeExplicita.detalheAnual.rendimentoColetavelAnual);
+    assert.equal(semAtividade.detalheAnual.rendimentoColetavelAnual, round2(2000 * 12 * 0.75));
+  });
+
+  test("independente: cada tipoAtividade aplica o coeficiente certo do Art. 31.º CIRS (19/08/2026, tabela completa)", () => {
+    const casos = [
+      { tipoAtividade: "vendaMercadoriasERestauracao", coeficiente: 0.15 },
+      { tipoAtividade: "atividadeProfissionalTabela151", coeficiente: 0.75 },
+      { tipoAtividade: "outrasPrestacoesServicos", coeficiente: 0.35 },
+      { tipoAtividade: "propriedadeIntelectualECriptoativos", coeficiente: 0.95 },
+      { tipoAtividade: "alojamentoLocal", coeficiente: 0.5 },
+    ];
+    casos.forEach(({ tipoAtividade, coeficiente }) => {
+      const r = calcularCadeiaSalarial(2000, { tipoTrabalhador: "independente", tipoAtividade });
+      assert.equal(
+        r.detalheAnual.rendimentoColetavelAnual,
+        round2(2000 * 12 * coeficiente),
+        `coeficiente errado para ${tipoAtividade}`
+      );
+      assert.equal(r.tipoAtividade, tipoAtividade);
+    });
+  });
+
+  test("independente: tipoAtividade inválido rejeitado", () => {
+    assert.throws(
+      () => calcularCadeiaSalarial(2000, { tipoTrabalhador: "independente", tipoAtividade: "atividade-inexistente" }),
+      RangeError
+    );
+  });
+
+  test("dependente: tipoAtividade é sempre null no resultado (só se aplica a independentes)", () => {
+    const r = calcularCadeiaSalarial(2000, { tipoTrabalhador: "dependente" });
+    assert.equal(r.tipoAtividade, null);
+  });
+
   test("dependentes reduzem o IRS mensal e aumentam o líquido", () => {
     const semDependentes = calcularCadeiaSalarial(2500);
     const comDependentes = calcularCadeiaSalarial(2500, { dependentes: [{ idade: 8 }] });

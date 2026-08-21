@@ -237,13 +237,13 @@ export const GLOSSARIO = [
     categoria: "Rendimento",
     pagaQuem_pt: "Trabalhadores independentes (recibos verdes) que optem pelo regime simplificado de IRS.",
     explicacao_pt:
-      "Em vez de deduzir despesas reais uma a uma, o regime simplificado aplica um coeficiente fixo à faturação — só essa fração é que conta como rendimento tributável em sede de IRS. O coeficiente varia por tipo de atividade (Art. 31.º CIRS): 0,75 para prestação de serviços em geral, mas outros valores para venda de mercadorias, alojamento local, atividades hoteleiras, entre outros — não é um número único.",
+      "Em vez de deduzir despesas reais uma a uma, o regime simplificado aplica um coeficiente fixo à faturação — só essa fração é que conta como rendimento tributável em sede de IRS. O coeficiente varia por tipo de atividade (Art. 31.º CIRS): 0,75 para prestação de serviços em geral, 0,15 para venda de mercadorias e restauração, 0,35 para outros serviços, 0,50 para alojamento local, entre outros — não é um número único.",
     comoSeCalcula_pt:
-      "Só está confirmado o coeficiente-regra de 0,75 (prestação de serviços, Art. 151.º CIRS). A tabela completa por atividade do Art. 31.º CIRS não foi verificada nesta app — por isso o Taxímetro (Rendimentos) não simula trabalhadores independentes: aplicar só o coeficiente de 0,75 a qualquer atividade daria um valor errado para quem não presta serviços em regime geral (ex.: venda de mercadorias tem coeficiente bem mais baixo).",
-    status: "estimate",
-    source: "Art. 151.º e 31.º do CIRS — só o coeficiente-regra confirmado, tabela completa por atividade (CAE) por confirmar",
-    sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-902120232",
-    sourceField: "data/tax-rules/2026/irs.js (coeficienteRegimeSimplificado) — dormant, não usado a partir da UI desde 19/08/2026",
+      "O Taxímetro (Rendimentos) simula os cinco tipos de atividade mais comuns para um independente — venda de mercadorias/restauração (0,15), atividade profissional da tabela do Art. 151.º (0,75, a mais comum), outras prestações de serviços (0,35), alojamento local em área de contenção (0,50), e cessão de propriedade intelectual/criptoativos (0,95). Não modela: a redução de 50%/25% do coeficiente para quem está no início de atividade (menos de 2 anos), a condicionante de despesas comprovadas que se aplica a algumas atividades, nem os casos de subsídios ou prestações a sociedades relacionadas (alíneas e/f/g do Art. 31.º).",
+    status: "verified",
+    source: "Art. 31.º, n.º1 do CIRS — texto consolidado lido diretamente via Diário da República em 19/08/2026",
+    sourceUrl: "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167-912821422",
+    sourceField: "data/tax-rules/2026/irs.js (coeficienteRegimeSimplificado.porAtividade)",
   },
   {
     id: "taxa-turistica",

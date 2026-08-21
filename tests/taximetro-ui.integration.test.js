@@ -58,6 +58,17 @@ function setSelect(container, id, value) {
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
 }
 
+// Encontra o <dd> associado a um <dt> pelo texto do label, dentro de
+// qualquer <dl class="taximetro-cadeia"> — mais robusto do que contar
+// posições, que mudam consoante campos ocultos (ex.: "Custo total
+// para o empregador" fica oculto para independentes).
+function getCadeiaValor(container, labelTexto) {
+  const dts = [...container.querySelectorAll(".taximetro-cadeia dt")];
+  const dt = dts.find((el) => el.textContent.trim() === labelTexto);
+  if (!dt) throw new Error(`Não encontrei o campo "${labelTexto}" na cadeia.`);
+  return dt.nextElementSibling.textContent;
+}
+
 function submitForm(container) {
   const form = container.querySelector("form");
   form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
@@ -104,13 +115,51 @@ describe("Taxímetro — Modo Rápido", () => {
     assert.match(container.textContent, /Introduz um salário bruto/);
   });
 
-  // O teste "mudar para trabalhador independente" foi removido
-  // (19/08/2026, a pedido do autor): a opção "Independente (recibos
-  // verdes)" deixou de existir no seletor "tipo-trabalhador" — ver
-  // nota completa em modules/taximetro.js. A lógica de cálculo em si
-  // (calcularCadeiaSalarial com tipoTrabalhador: "independente")
-  // continua coberta em tests/tax-engine.test.js, ao nível do motor,
-  // não da UI.
+  test("mudar para trabalhador independente altera o resultado face a dependente, para o mesmo bruto", () => {
+    const container1 = getContainer();
+    render(container1);
+    setInput(container1, "salario-bruto", 2000);
+    submitForm(container1);
+    const custoDependente = container1.querySelector(".taximetro-cadeia dd").textContent;
+
+    const container2 = getContainer();
+    render(container2);
+    setInput(container2, "salario-bruto", 2000);
+    setSelect(container2, "tipo-trabalhador", "independente");
+    submitForm(container2);
+    const custoIndependente = container2.querySelector(".taximetro-cadeia dd").textContent;
+
+    assert.notEqual(custoDependente, custoIndependente);
+  });
+
+  test("escolher 'Independente' mostra o seletor de tipo de atividade", () => {
+    const container = getContainer();
+    render(container);
+    assert.equal(container.querySelector("#tipo-atividade"), null, "não deve aparecer para 'Por conta de outrem'");
+    setSelect(container, "tipo-trabalhador", "independente");
+    assert.ok(container.querySelector("#tipo-atividade"), "deve aparecer depois de escolher 'Independente'");
+  });
+
+  test("mudar o tipo de atividade de independente altera o rendimento coletável (coeficientes diferentes)", () => {
+    const container1 = getContainer();
+    render(container1);
+    setInput(container1, "salario-bruto", 2000);
+    setSelect(container1, "tipo-trabalhador", "independente");
+    setSelect(container1, "tipo-atividade", "vendaMercadoriasERestauracao"); // 0,15
+    submitForm(container1);
+    assert.match(container1.textContent, /Venda de mercadorias/);
+
+    const container2 = getContainer();
+    render(container2);
+    setInput(container2, "salario-bruto", 2000);
+    setSelect(container2, "tipo-trabalhador", "independente");
+    setSelect(container2, "tipo-atividade", "propriedadeIntelectualECriptoativos"); // 0,95
+    submitForm(container2);
+
+    const irsAtividade1 = getCadeiaValor(container1, "IRS estimado");
+    const irsAtividade2 = getCadeiaValor(container2, "IRS estimado");
+    assert.notEqual(irsAtividade1, irsAtividade2, "coeficientes de 0,15 e 0,95 devem produzir IRS diferente");
+  });
 
   test('"Simular outro valor" volta ao formulário', () => {
     const container = getContainer();
