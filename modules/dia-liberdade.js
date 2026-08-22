@@ -288,6 +288,11 @@ export function render(container) {
     const summary = document.createElement("summary");
     summary.textContent = "Como chegámos a este número?";
     const metodologiaTexto = el("p", null, r.methodology);
+    const porQueClusterizaTexto = el(
+      "p",
+      null,
+      "Se experimentares vários valores de rendimento e repares que o resultado cai sempre por volta do mesmo período do ano (tipicamente entre março e maio), isso não é uma limitação do cálculo — é uma característica real do sistema fiscal português. A Segurança Social do trabalhador é uma taxa fixa de 11% sobre o salário bruto, e a taxa média efetiva do IRS mantém-se relativamente comprimida ao longo da faixa de rendimentos mais comum em Portugal (entre cerca de 1500€ e 4000€ brutos/mês), rondando os 20%-33%. Somadas, IRS e Segurança Social dão uma carga sobre o trabalho entre cerca de 21% e 33% para a maioria dos salários típicos — o que, convertido em dias do ano, cai quase sempre entre finais de março e maio. Só nos extremos (rendimentos muito baixos, abaixo de ~1200€/mês, ou muito altos, acima de ~6000€/mês) é que o resultado se afasta claramente desse intervalo. Preencher Gastos e Taxas com valores reais também desloca a data de forma visível, porque o IVA e os impostos especiais não são uma taxa fixa sobre o rendimento — dependem do que cada pessoa efetivamente gasta."
+    );
     const fonteRendimentos = el(
       "p",
       "disclaimer",
@@ -298,7 +303,7 @@ export function render(container) {
       "disclaimer",
       "O que fica sempre de fora, mesmo com Gastos e Taxas totalmente preenchidos: a Taxa de Gestão de Resíduos e a Taxa de Recursos Hídricos (cêntimos por m³ na fatura da água) e a Taxa Municipal de Direitos de Passagem (até 0,25% da fatura de telecomunicações, nem sempre cobrada). São valores muito pequenos e escondidos dentro de faturas de terceiros — decidimos não os modelar porque o esforço de os tornar precisos não compensaria o efeito no resultado final."
     );
-    detalhes.append(summary, metodologiaTexto, fonteRendimentos, contribuicoesNaoModeladas);
+    detalhes.append(summary, metodologiaTexto, porQueClusterizaTexto, fonteRendimentos, contribuicoesNaoModeladas);
 
     const privacidade = el(
       "p",

@@ -117,6 +117,18 @@ describe("Dia da Liberdade Fiscal — resultado", () => {
     assert.match(container.textContent, /Taxas/);
   });
 
+  test("a metodologia explica por que resultados de rendimentos típicos tendem a cair perto do mesmo período do ano (22/08/2026)", async () => {
+    await preencherRendimentos();
+    const container = getContainer();
+    render(container);
+    await waitFor(() => container.textContent.includes("Calcular o meu Dia da Liberdade Fiscal"));
+    clickByText(container, "Calcular o meu Dia da Liberdade Fiscal");
+    await waitFor(() => container.querySelector("#resultado-dia-heading"));
+
+    assert.match(container.textContent, /taxa fixa de 11%/);
+    assert.match(container.textContent, /não é uma limitação do cálculo/);
+  });
+
   test("inclui os totais de Gastos e Taxas já guardados no período, sem aviso de dados em falta", async () => {
     await preencherRendimentos();
     await atualizarPeriodoAtual({
