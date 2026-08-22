@@ -1,7 +1,7 @@
-// Liberdade Fiscal — Módulo de UI "Dragão Fiscal" (degradação monetária)
+// Liberdade Fiscal — Módulo de UI "Degradação Monetária"
 //
 // Rota secundária (22/08/2026, a pedido do autor — ver conversa sobre
-// "salseo"/pensamento crítico e a ideia de dragão fiscal/progressividade
+// "salseo"/pensamento crítico e a ideia de degradação monetária/progressividade
 // fria). Mesmo padrão de acesso que "benchmark-ocde": sem botão próprio
 // na navegação principal, acedida a partir de um link no ecrã do Dia da
 // Liberdade Fiscal.
@@ -14,13 +14,13 @@
 // tax wedges lado a lado, e deixa o utilizador tirar as suas conclusões
 // (CLAUDE.md §1, neutralidade política).
 //
-// Dados e fontes: ver o cabeçalho de data/dragao-fiscal-2026.js.
+// Dados e fontes: ver o cabeçalho de data/degradacao-monetaria-2026.js.
 
 import {
-  DRAGAO_FISCAL_2021_2026,
+  DEGRADACAO_MONETARIA_2021_2026,
   calcularInflacaoAcumulada,
   calcularCrescimentoNominalEscalao,
-} from "../data/dragao-fiscal-2026.js";
+} from "../data/degradacao-monetaria-2026.js";
 
 export function render(container) {
   container.innerHTML = "";
@@ -34,16 +34,16 @@ export function render(container) {
 }
 
 function drawConteudo(container) {
-  const { periodo, escaloesIRS } = DRAGAO_FISCAL_2021_2026;
+  const { periodo, escaloesIRS } = DEGRADACAO_MONETARIA_2021_2026;
 
   const inflacao = calcularInflacaoAcumulada(periodo.inicio, periodo.fim);
   const nominal = calcularCrescimentoNominalEscalao(periodo.inicio, inflacao.anoFimReal);
 
   const card = el("section", "card");
-  card.setAttribute("aria-labelledby", "dragao-fiscal-heading");
+  card.setAttribute("aria-labelledby", "degradacao-monetaria-heading");
 
-  const heading = el("h1", null, "Dragão Fiscal — a inflação e o IRS");
-  heading.id = "dragao-fiscal-heading";
+  const heading = el("h1", null, "Degradação Monetária — a inflação e o IRS");
+  heading.id = "degradacao-monetaria-heading";
   heading.tabIndex = -1;
 
   const desc = el(
@@ -69,13 +69,13 @@ function drawConteudo(container) {
 
   // --- Comparação principal: nominal vs. inflação acumulada ---
   const compCard = el("section", "card");
-  compCard.setAttribute("aria-labelledby", "dragao-fiscal-comparacao-heading");
+  compCard.setAttribute("aria-labelledby", "degradacao-monetaria-comparacao-heading");
   const compHeading = el(
     "h2",
     null,
     `${periodo.inicio}–${inflacao.anoFimReal}: crescimento nominal vs. inflação acumulada`
   );
-  compHeading.id = "dragao-fiscal-comparacao-heading";
+  compHeading.id = "degradacao-monetaria-comparacao-heading";
 
   const compWrapper = el("div", "benchmark-lista");
   const maiorValor = Math.max(nominal ? nominal.percent : 0, inflacao.percent);
@@ -122,9 +122,9 @@ function drawConteudo(container) {
 
   // --- Tabela ano a ano ---
   const tabelaCard = el("section", "card");
-  tabelaCard.setAttribute("aria-labelledby", "dragao-fiscal-tabela-heading");
+  tabelaCard.setAttribute("aria-labelledby", "degradacao-monetaria-tabela-heading");
   const tabelaHeading = el("h2", null, "Ano a ano");
-  tabelaHeading.id = "dragao-fiscal-tabela-heading";
+  tabelaHeading.id = "degradacao-monetaria-tabela-heading";
 
   const tabela = document.createElement("table");
   tabela.className = "taximetro-escaloes";
@@ -134,7 +134,7 @@ function drawConteudo(container) {
   const tbody = document.createElement("tbody");
 
   escaloesIRS.forEach((escalao) => {
-    const ipcEntrada = DRAGAO_FISCAL_2021_2026.inflacaoIPC.find((i) => i.ano === escalao.ano);
+    const ipcEntrada = DEGRADACAO_MONETARIA_2021_2026.inflacaoIPC.find((i) => i.ano === escalao.ano);
     const tr = document.createElement("tr");
     const ipcTexto =
       ipcEntrada && ipcEntrada.fechado
@@ -152,7 +152,7 @@ function drawConteudo(container) {
   const notaFonte = el(
     "p",
     "disclaimer",
-    `Fonte do limite de escalão e taxa: ${DRAGAO_FISCAL_2021_2026.fonteIRS}. Fonte da inflação: ${DRAGAO_FISCAL_2021_2026.fonteIPC}. ${DRAGAO_FISCAL_2021_2026.retrievedNote}`
+    `Fonte do limite de escalão e taxa: ${DEGRADACAO_MONETARIA_2021_2026.fonteIRS}. Fonte da inflação: ${DEGRADACAO_MONETARIA_2021_2026.fonteIPC}. ${DEGRADACAO_MONETARIA_2021_2026.retrievedNote}`
   );
   const notaTaxa2024 = escaloesIRS.find((e) => e.notaTaxa);
   tabelaCard.append(notaFonte);

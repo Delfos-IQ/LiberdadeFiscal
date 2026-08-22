@@ -1,5 +1,5 @@
-// Liberdade Fiscal — Teste de integração do módulo de UI "Dragão
-// Fiscal" (22/08/2026)
+// Liberdade Fiscal — Teste de integração do módulo de UI "Degradação
+// Monetária" (22/08/2026)
 // Executar: node --test tests/
 
 import { test, describe, before } from "node:test";
@@ -15,7 +15,7 @@ before(async () => {
   global.HTMLElement = dom.window.HTMLElement;
   global.Intl = Intl;
 
-  ({ render } = await import("../modules/dragao-fiscal.js"));
+  ({ render } = await import("../modules/degradacao-monetaria.js"));
 });
 
 function getContainer() {
@@ -24,14 +24,14 @@ function getContainer() {
   return container;
 }
 
-describe("modules/dragao-fiscal.js — render", () => {
+describe("modules/degradacao-monetaria.js — render", () => {
   test("desenha o heading principal e o texto explicativo", () => {
     const container = getContainer();
     render(container);
 
-    const heading = container.querySelector("#dragao-fiscal-heading");
+    const heading = container.querySelector("#degradacao-monetaria-heading");
     assert.ok(heading, "heading principal em falta");
-    assert.match(heading.textContent, /Dragão Fiscal/);
+    assert.match(heading.textContent, /Degradação Monetária/);
   });
 
   test("mostra a comparação nominal vs. inflação acumulada, com duas barras", () => {

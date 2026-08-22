@@ -819,9 +819,9 @@ percentagem e data. Decisões explícitas de metodologia:
 
 ---
 
-## 6c. Dragão Fiscal — degradação monetária / fiscal drag (22/08/2026)
+## 6c. Degradação Monetária — degradação monetária / fiscal drag (22/08/2026)
 
-**✅ Verificado.** Secção secundária (rota `dragao-fiscal`, acedida a
+**✅ Verificado.** Secção secundária (rota `degradacao-monetaria`, acedida a
 partir de um link no ecrã do Dia da Liberdade Fiscal), a pedido do
 autor. Não faz parte do fluxo principal nem do cálculo do Dia da
 Liberdade Fiscal — é conteúdo educativo à parte, no mesmo espírito do
@@ -846,10 +846,10 @@ fenómeno é conhecido como "fiscal drag" ou "progressividade fria".
   política).
 - 2026 fica de fora da inflação acumulada até o INE fechar o ano — o
   cálculo para automaticamente no último ano com `fechado: true` em
-  `data/dragao-fiscal-2026.js`.
+  `data/degradacao-monetaria-2026.js`.
 
 **Dados e fontes** (ver cabeçalho completo de
-`data/dragao-fiscal-2026.js` para URLs exatas):
+`data/degradacao-monetaria-2026.js` para URLs exatas):
 
 | Ano | Limite 1.º escalão | Taxa normal | Lei | Inflação (IPC, INE) |
 |---|---|---|---|---|

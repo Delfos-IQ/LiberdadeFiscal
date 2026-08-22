@@ -381,11 +381,11 @@ export function render(container) {
     compararLink.textContent = "Comparar com a OCDE →";
     acoes.append(compararLink);
 
-    const dragaoFiscalLink = document.createElement("a");
-    dragaoFiscalLink.href = "#dragao-fiscal";
-    dragaoFiscalLink.className = "btn btn--secondary";
-    dragaoFiscalLink.textContent = "Dragão Fiscal: IRS vs. inflação →";
-    acoes.append(dragaoFiscalLink);
+    const degradacaoMonetariaLink = document.createElement("a");
+    degradacaoMonetariaLink.href = "#degradacao-monetaria";
+    degradacaoMonetariaLink.className = "btn btn--secondary";
+    degradacaoMonetariaLink.textContent = "Degradação Monetária: IRS vs. inflação →";
+    acoes.append(degradacaoMonetariaLink);
 
     const notaPartilha = el(
       "p",

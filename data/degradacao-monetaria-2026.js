@@ -1,4 +1,4 @@
-// Liberdade Fiscal — "Dragão Fiscal" (degradação monetária / fiscal drag)
+// Liberdade Fiscal — "Degradação Monetária" (fiscal drag / progressividade fria)
 //
 // Ideia (conversa com o autor, 22/08/2026): comparar a evolução NOMINAL
 // do limite do 1.º escalão de IRS (Art. 68.º CIRS) com a inflação
@@ -6,7 +6,7 @@
 // uma pessoa cujo salário só acompanhou a inflação passa a pagar, em
 // termos reais, mais IRS do que pagava antes — mesmo sem nenhuma
 // alteração de taxa. É o fenómeno conhecido como "fiscal drag" /
-// "progressividade fria" / "dragão fiscal": um aumento de carga fiscal
+// "progressividade fria" / "degradação monetária": um aumento de carga fiscal
 // que não resulta de nenhuma lei nova a subir taxas, só da inflação a
 // não ser (ou ser insuficientemente) refletida nos escalões.
 //
@@ -65,7 +65,7 @@
 // evolução nominal do limiar e a inflação acumulada no mesmo período,
 // que já é suficiente para ilustrar o fenómeno.
 
-export const DRAGAO_FISCAL_2021_2026 = {
+export const DEGRADACAO_MONETARIA_2021_2026 = {
   periodo: { inicio: 2021, fim: 2026 },
   fonteIRS: "Art. 68.º, n.º1 CIRS — Portal das Finanças (AT), redações sucessivas por ano",
   fonteIPC: "INE — Índice de Preços no Consumidor, taxa de variação média anual",
@@ -139,7 +139,7 @@ export const DRAGAO_FISCAL_2021_2026 = {
 /**
  * Calcula a inflação acumulada (encadeada) entre o INÍCIO do ano
  * `anoInicio` e o FIM do ano `anoFim` (ambos inclusive), a partir das
- * taxas de variação média anual do IPC em DRAGAO_FISCAL_2021_2026 —
+ * taxas de variação média anual do IPC em DEGRADACAO_MONETARIA_2021_2026 —
  * cada taxa anual representa a variação de preços ocorrida durante
  * esse próprio ano, por isso o ano `anoInicio` também entra na
  * acumulação (é o primeiro ano cuja inflação já aconteceu dentro do
@@ -155,7 +155,7 @@ export function calcularInflacaoAcumulada(anoInicio, anoFim) {
   let anoFimReal = anoInicio;
   let incompleto = false;
 
-  for (const { ano, taxaVariacaoMediaAnualPercent, fechado } of DRAGAO_FISCAL_2021_2026.inflacaoIPC) {
+  for (const { ano, taxaVariacaoMediaAnualPercent, fechado } of DEGRADACAO_MONETARIA_2021_2026.inflacaoIPC) {
     if (ano < anoInicio || ano > anoFim) continue;
     if (!fechado || taxaVariacaoMediaAnualPercent === null) {
       incompleto = true;
@@ -182,8 +182,8 @@ export function calcularInflacaoAcumulada(anoInicio, anoFim) {
  * @returns {{ percent: number, valorInicio: number, valorFim: number } | null}
  */
 export function calcularCrescimentoNominalEscalao(anoInicio, anoFim) {
-  const inicio = DRAGAO_FISCAL_2021_2026.escaloesIRS.find((e) => e.ano === anoInicio);
-  const fim = DRAGAO_FISCAL_2021_2026.escaloesIRS.find((e) => e.ano === anoFim);
+  const inicio = DEGRADACAO_MONETARIA_2021_2026.escaloesIRS.find((e) => e.ano === anoInicio);
+  const fim = DEGRADACAO_MONETARIA_2021_2026.escaloesIRS.find((e) => e.ano === anoFim);
   if (!inicio || !fim) return null;
 
   return {

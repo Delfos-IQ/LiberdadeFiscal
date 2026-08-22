@@ -1,29 +1,29 @@
 // Liberdade Fiscal — Testes de integridade dos dados e das funções de
-// cálculo do "Dragão Fiscal" (22/08/2026)
+// cálculo do "Degradação Monetária" (22/08/2026)
 // Executar: node --test tests/
 
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  DRAGAO_FISCAL_2021_2026,
+  DEGRADACAO_MONETARIA_2021_2026,
   calcularInflacaoAcumulada,
   calcularCrescimentoNominalEscalao,
-} from "../data/dragao-fiscal-2026.js";
+} from "../data/degradacao-monetaria-2026.js";
 
-describe("data/dragao-fiscal-2026.js — integridade dos dados", () => {
+describe("data/degradacao-monetaria-2026.js — integridade dos dados", () => {
   test("escaloesIRS cobre 2021-2026 sem lacunas", () => {
-    const anos = DRAGAO_FISCAL_2021_2026.escaloesIRS.map((e) => e.ano);
+    const anos = DEGRADACAO_MONETARIA_2021_2026.escaloesIRS.map((e) => e.ano);
     assert.deepEqual(anos, [2021, 2022, 2023, 2024, 2025, 2026]);
   });
 
   test("inflacaoIPC cobre 2021-2026 sem lacunas", () => {
-    const anos = DRAGAO_FISCAL_2021_2026.inflacaoIPC.map((i) => i.ano);
+    const anos = DEGRADACAO_MONETARIA_2021_2026.inflacaoIPC.map((i) => i.ano);
     assert.deepEqual(anos, [2021, 2022, 2023, 2024, 2025, 2026]);
   });
 
   test("todos os anos de escaloesIRS têm limite, taxa, lei e sourceUrl válidos", () => {
-    for (const escalao of DRAGAO_FISCAL_2021_2026.escaloesIRS) {
+    for (const escalao of DEGRADACAO_MONETARIA_2021_2026.escaloesIRS) {
       assert.ok(escalao.limite1Escalao > 0, `limite inválido em ${escalao.ano}`);
       assert.ok(escalao.taxaNormalPercent > 0, `taxa inválida em ${escalao.ano}`);
       assert.ok(typeof escalao.lei === "string" && escalao.lei.length > 0, `lei em falta em ${escalao.ano}`);
@@ -32,7 +32,7 @@ describe("data/dragao-fiscal-2026.js — integridade dos dados", () => {
   });
 
   test("o limite do 1.º escalão nunca desce de um ano para o outro (2021-2026)", () => {
-    const escaloes = DRAGAO_FISCAL_2021_2026.escaloesIRS;
+    const escaloes = DEGRADACAO_MONETARIA_2021_2026.escaloesIRS;
     for (let i = 1; i < escaloes.length; i++) {
       assert.ok(
         escaloes[i].limite1Escalao >= escaloes[i - 1].limite1Escalao,
@@ -42,13 +42,13 @@ describe("data/dragao-fiscal-2026.js — integridade dos dados", () => {
   });
 
   test("2026 está marcado como ano não fechado na inflação (nunca inventar o valor)", () => {
-    const entrada2026 = DRAGAO_FISCAL_2021_2026.inflacaoIPC.find((i) => i.ano === 2026);
+    const entrada2026 = DEGRADACAO_MONETARIA_2021_2026.inflacaoIPC.find((i) => i.ano === 2026);
     assert.equal(entrada2026.fechado, false);
     assert.equal(entrada2026.taxaVariacaoMediaAnualPercent, null);
   });
 
   test("todos os anos fechados (2021-2025) têm uma taxa de inflação numérica", () => {
-    for (const entrada of DRAGAO_FISCAL_2021_2026.inflacaoIPC) {
+    for (const entrada of DEGRADACAO_MONETARIA_2021_2026.inflacaoIPC) {
       if (entrada.ano === 2026) continue;
       assert.equal(entrada.fechado, true);
       assert.equal(typeof entrada.taxaVariacaoMediaAnualPercent, "number");
@@ -99,7 +99,7 @@ describe("calcularCrescimentoNominalEscalao", () => {
     assert.equal(calcularCrescimentoNominalEscalao(2019, 2025), null);
   });
 
-  test("crescimento nominal ficou abaixo da inflação acumulada 2021-2025 (o próprio fenómeno do dragão fiscal)", () => {
+  test("crescimento nominal ficou abaixo da inflação acumulada 2021-2025 (o próprio fenómeno do degradação monetária)", () => {
     const nominal = calcularCrescimentoNominalEscalao(2021, 2025);
     const inflacao = calcularInflacaoAcumulada(2021, 2026);
     assert.ok(

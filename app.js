@@ -111,7 +111,7 @@ const ROUTE_MODULES = {
   // evolução nominal do 1.º escalão de IRS com a inflação acumulada
   // (INE) — mesmo padrão de acesso que benchmark-ocde, link a partir
   // do ecrã do Dia da Liberdade Fiscal.
-  "dragao-fiscal": () => import("./modules/dragao-fiscal.js"),
+  "degradacao-monetaria": () => import("./modules/degradacao-monetaria.js"),
   // Rota secundária (Auditoria 2026-08, hallazgo B-1: exportação de
   // dados) — acede-se a partir do link "Os teus dados" no footer, que
   // sobrevive a todas as trocas de rota. Fora do nav principal pelo
