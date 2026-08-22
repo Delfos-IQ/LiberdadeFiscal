@@ -49,13 +49,19 @@ function drawConteudo(container) {
   const desc = el(
     "p",
     null,
-    `O limite do 1.º escalão de IRS (Art. 68.º CIRS) define até que valor de rendimento coletável se paga a taxa mais baixa. Quando este limite sobe menos do que os preços, quem só viu o seu salário acompanhar a inflação passa a pagar, em termos reais, mais IRS — sem nenhuma lei nova a subir taxas. É o efeito conhecido como "fiscal drag" ou "progressividade fria".`
+    "100€ de 2021 já não compram o mesmo que compravam nesse ano — os preços subiram. O IRS também tem um valor de referência que devia subir ao mesmo ritmo: o limite do 1.º escalão, que define até quanto se paga a taxa mais baixa de IRS. Se esse limite sobe menos do que os preços, uma pessoa cujo salário só acompanhou a inflação acaba a pagar um pouco mais de IRS do que antes — sem que nenhuma lei tenha subido nenhuma taxa."
+  );
+
+  const notaTermo = el(
+    "p",
+    "disclaimer",
+    'Este efeito tem um nome técnico, caso queiras pesquisar mais sobre ele: "fiscal drag" ou "progressividade fria".'
   );
 
   const nota = el(
     "p",
     "disclaimer",
-    "Esta secção compara a evolução nominal do limite do 1.º escalão com a inflação acumulada no mesmo período. Não recalcula o IRS de nenhum rendimento específico, nem afirma que a atualização dos escalões foi insuficiente ou excessiva — mostra os números; a leitura é tua."
+    "Esta secção compara a evolução do limite do 1.º escalão com a subida acumulada dos preços no mesmo período. Não recalcula o IRS de nenhum rendimento específico, nem diz se a atualização dos escalões foi insuficiente ou excessiva — mostra os números; a leitura é tua."
   );
 
   const voltarBtn = el("button", "btn btn--secondary", "← Voltar ao Dia da Liberdade");
@@ -64,17 +70,13 @@ function drawConteudo(container) {
     window.location.hash = "dia-liberdade";
   });
 
-  card.append(heading, desc, nota, voltarBtn);
+  card.append(heading, desc, notaTermo, nota, voltarBtn);
   container.append(card);
 
   // --- Comparação principal: nominal vs. inflação acumulada ---
   const compCard = el("section", "card");
   compCard.setAttribute("aria-labelledby", "degradacao-monetaria-comparacao-heading");
-  const compHeading = el(
-    "h2",
-    null,
-    `${periodo.inicio}–${inflacao.anoFimReal}: crescimento nominal vs. inflação acumulada`
-  );
+  const compHeading = el("h2", null, `${periodo.inicio}–${inflacao.anoFimReal}: o limite subiu tanto como os preços?`);
   compHeading.id = "degradacao-monetaria-comparacao-heading";
 
   const compWrapper = el("div", "benchmark-lista");
@@ -94,18 +96,18 @@ function drawConteudo(container) {
   const gap = Math.round((nominal.percent - inflacao.percent) * 10) / 10;
   const leituraTexto =
     gap < 0
-      ? `Entre ${periodo.inicio} e ${inflacao.anoFimReal}, o limite do 1.º escalão cresceu ${formatPercent(
+      ? `Entre ${periodo.inicio} e ${inflacao.anoFimReal}, o limite subiu ${formatPercent(
           nominal.percent
-        )}, menos do que os ${formatPercent(inflacao.percent)} de inflação acumulada no mesmo período — uma diferença de ${formatPercent(
+        )} — mas os preços subiram mais, ${formatPercent(inflacao.percent)}. O limite ficou ${formatPercent(
           Math.abs(gap)
-        )}.`
+        )} atrás dos preços.`
       : gap > 0
-      ? `Entre ${periodo.inicio} e ${inflacao.anoFimReal}, o limite do 1.º escalão cresceu ${formatPercent(
+      ? `Entre ${periodo.inicio} e ${inflacao.anoFimReal}, o limite subiu ${formatPercent(
           nominal.percent
-        )}, mais do que os ${formatPercent(inflacao.percent)} de inflação acumulada no mesmo período — uma diferença de ${formatPercent(
+        )} — mais do que os preços, que subiram ${formatPercent(inflacao.percent)}. O limite ficou ${formatPercent(
           gap
-        )}.`
-      : `Entre ${periodo.inicio} e ${inflacao.anoFimReal}, o limite do 1.º escalão acompanhou exatamente a inflação acumulada (${formatPercent(
+        )} à frente dos preços.`
+      : `Entre ${periodo.inicio} e ${inflacao.anoFimReal}, o limite subiu exatamente ao mesmo ritmo dos preços (${formatPercent(
           inflacao.percent
         )}).`;
 
