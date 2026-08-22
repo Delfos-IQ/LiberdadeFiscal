@@ -112,6 +112,11 @@ const ROUTE_MODULES = {
   // (INE) — mesmo padrão de acesso que benchmark-ocde, link a partir
   // do ecrã do Dia da Liberdade Fiscal.
   "degradacao-monetaria": () => import("./modules/degradacao-monetaria.js"),
+  // Rota secundária (22/08/2026, a pedido do autor): grandes rúbricas
+  // do gasto público (juros da dívida, pensões, saúde, educação) em
+  // valores absolutos — mesmo padrão de acesso que degradacao-monetaria,
+  // link a partir do ecrã do Dia da Liberdade Fiscal.
+  "gasto-publico": () => import("./modules/gasto-publico.js"),
   // Rota secundária (Auditoria 2026-08, hallazgo B-1: exportação de
   // dados) — acede-se a partir do link "Os teus dados" no footer, que
   // sobrevive a todas as trocas de rota. Fora do nav principal pelo

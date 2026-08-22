@@ -424,6 +424,12 @@ export function render(container) {
     degradacaoMonetariaLink.textContent = "Degradação Monetária: IRS vs. inflação →";
     explorarAcoes.append(degradacaoMonetariaLink);
 
+    const gastoPublicoLink = document.createElement("a");
+    gastoPublicoLink.href = "#gasto-publico";
+    gastoPublicoLink.className = "btn btn--gold";
+    gastoPublicoLink.textContent = "Para onde vão os impostos →";
+    explorarAcoes.append(gastoPublicoLink);
+
     const separador = document.createElement("hr");
     separador.className = "dia-liberdade-separador no-print";
 

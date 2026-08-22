@@ -877,6 +877,70 @@ confirmada por pesquisa web a partir de comunicados do INE (2021: 1,3%;
 
 ---
 
+## 6d. Para onde vão os impostos — grandes rúbricas do gasto público (22/08/2026)
+
+**✅/🟡 Misto — ver estado por rúbrica abaixo.** Secção secundária (rota
+`gasto-publico`, acedida a partir de um link no ecrã do Dia da
+Liberdade Fiscal), a pedido do autor. Não faz parte do fluxo principal
+nem do cálculo do Dia da Liberdade Fiscal — é conteúdo educativo à
+parte, no mesmo espírito da Degradação Monetária e do benchmark OCDE.
+
+**O que mede**: mostra, em valores absolutos (milhões de euros), quatro
+grandes rúbricas do gasto público português em 2025 — juros da dívida
+pública, pensões, saúde e educação — sem opinar sobre se o valor é
+alto, baixo, justo ou injusto (CLAUDE.md §1, neutralidade política).
+
+**Decisão de formato — só valores absolutos, sem percentagem do total**
+(22/08/2026, a pedido explícito do autor, depois de duas iterações de
+pesquisa): o denominador correto para uma percentagem seria a despesa
+efetiva consolidada de TODAS as administrações públicas (Central +
+Regional + Local + Segurança Social) em 2025. Esse número exato está
+disperso pela Conta Geral do Estado 2025 (395 páginas) e não foi
+possível confirmá-lo com rigor suficiente dentro desta investigação —
+a navegação para as páginas exatas das tabelas-anexo relevantes falhou
+repetidamente nas ferramentas disponíveis. Em vez de calcular uma
+percentagem sobre um denominador aproximado — o que violaria a
+disciplina de "nunca apresentar uma estimativa como se fosse precisa"
+— optámos por mostrar cada rúbrica em euros, que já é um número
+"impossível de ignorar" por si só, e deixar a percentagem para uma
+futura iteração, se/quando se conseguir o denominador exato.
+
+**Rúbricas incluídas e fontes** (ver cabeçalho completo de
+`data/gasto-publico-2025.js` para URLs exatas):
+
+| Rúbrica | Valor (2025) | Estado | Fonte |
+|---|---|---|---|
+| Juros da dívida pública | 6 998,2 M€ | ✅ Execução real | CGE 2025, Ministério das Finanças, Quadro 3.53 |
+| Pensões (SS + CGA) | 37 589 M€ | ✅ Execução real | CFP, Relatório n.º 04/2026 |
+| Saúde (SNS) | 16 962 M€ | ✅ Execução real | CFP, Relatório n.º 05/2025 |
+| Educação | 7 470,6 M€ | 🟡 Orçamentado (não execução final) | OE2025, imprensa especializada |
+
+**O que fica de fora, deliberadamente**: Defesa Nacional. Os valores
+disponíveis para 2025 são contraditórios consoante a fonte — estimativa
+do Governo: 3 284,9 M€; execução apurada pelo INE em contabilidade
+nacional: 2 515,6 M€, uma diferença de mais de 850 milhões € que estava
+a ser publicamente questionada à data desta investigação (agosto de
+2026). Em vez de escolher arbitrariamente um dos dois valores,
+seguimos a mesma disciplina de "o que não se consegue confirmar com
+rigor vai para o glossário, não entra no simulador" (CLAUDE.md §1) —
+esta rúbrica fica de fora até a discrepância se resolver contra fonte
+primária.
+
+**O que NÃO faz** (limitações conscientes da v1):
+- Não mostra percentagem do total da despesa pública (ver decisão de
+  formato acima).
+- Não inclui todas as rúbricas de despesa pública — só as quatro
+  grandes rúbricas mais frequentemente citadas no debate público
+  (dívida, pensões, saúde, educação), escolhidas por relevância e
+  disponibilidade de fonte fiável.
+- Não distingue despesa corrente de despesa de investimento dentro de
+  cada rúbrica.
+- Não atualiza automaticamente ano a ano — é um valor estático anual
+  (`data/gasto-publico-2025.js`), tal como o benchmark OCDE, a
+  atualizar manualmente quando a CGE do ano seguinte for publicada.
+
+---
+
 ## 7. Processo de atualização recomendado
 
 | Parâmetro | Cadência de revisão |

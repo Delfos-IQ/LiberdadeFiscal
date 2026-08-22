@@ -369,6 +369,36 @@ p {
   color: var(--color-text-muted);
 }
 
+/* Variante mais pequena do stat-hero, para números grandes repetidos
+   várias vezes num só ecrã (ex.: "Para onde vão os impostos", uma
+   rúbrica a seguir à outra) — o stat-hero completo é pensado para
+   aparecer uma única vez por ecrã. */
+.stat-hero-small {
+  font-size: var(--font-size-xl, 1.75rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  margin: var(--space-1) 0;
+}
+
+/* "Para onde vão os impostos" (22/08/2026) — cada rúbrica com um
+   pequeno espaçamento e separador entre si dentro do bloco de
+   detalhe. */
+.gasto-publico-rubrica {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gasto-publico-rubrica:last-child {
+  border-bottom: none;
+}
+
+.gasto-publico-rubrica h3 {
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--font-size-base);
+}
+
 /* -----------------------------
    5. Layout base
    ----------------------------- */
