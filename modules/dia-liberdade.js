@@ -381,6 +381,12 @@ export function render(container) {
     compararLink.textContent = "Comparar com a OCDE →";
     acoes.append(compararLink);
 
+    const dragaoFiscalLink = document.createElement("a");
+    dragaoFiscalLink.href = "#dragao-fiscal";
+    dragaoFiscalLink.className = "btn btn--secondary";
+    dragaoFiscalLink.textContent = "Dragão Fiscal: IRS vs. inflação →";
+    acoes.append(dragaoFiscalLink);
+
     const notaPartilha = el(
       "p",
       "stat-label no-print",

@@ -107,6 +107,11 @@ const ROUTE_MODULES = {
   // a partir do link "Comparar com a OCDE" no ecrã de resultado do Dia
   // da Liberdade Fiscal (Fase 8, spec §6.6).
   "benchmark-ocde": () => import("./modules/benchmark-ocde.js"),
+  // Rota secundária (22/08/2026, a pedido do autor): compara a
+  // evolução nominal do 1.º escalão de IRS com a inflação acumulada
+  // (INE) — mesmo padrão de acesso que benchmark-ocde, link a partir
+  // do ecrã do Dia da Liberdade Fiscal.
+  "dragao-fiscal": () => import("./modules/dragao-fiscal.js"),
   // Rota secundária (Auditoria 2026-08, hallazgo B-1: exportação de
   // dados) — acede-se a partir do link "Os teus dados" no footer, que
   // sobrevive a todas as trocas de rota. Fora do nav principal pelo

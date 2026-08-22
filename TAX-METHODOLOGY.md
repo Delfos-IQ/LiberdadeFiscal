@@ -819,6 +819,64 @@ percentagem e data. Decisões explícitas de metodologia:
 
 ---
 
+## 6c. Dragão Fiscal — degradação monetária / fiscal drag (22/08/2026)
+
+**✅ Verificado.** Secção secundária (rota `dragao-fiscal`, acedida a
+partir de um link no ecrã do Dia da Liberdade Fiscal), a pedido do
+autor. Não faz parte do fluxo principal nem do cálculo do Dia da
+Liberdade Fiscal — é conteúdo educativo à parte, no mesmo espírito do
+Glossário e do benchmark OCDE.
+
+**O que mede**: compara a evolução NOMINAL do limite do 1.º escalão de
+IRS (Art. 68.º, n.º1 CIRS) com a inflação acumulada (IPC, INE) no
+mesmo período, 2021-2026. Quando o limite sobe menos do que os preços,
+uma pessoa cujo salário só acompanhou a inflação passa a pagar, em
+termos reais, mais IRS — sem nenhuma lei nova a subir taxas. Este
+fenómeno é conhecido como "fiscal drag" ou "progressividade fria".
+
+**O que NÃO faz** (limitações conscientes da v1):
+- Não recalcula o IRS de nenhum rendimento específico ano a ano — só
+  compara o crescimento percentual do limite do 1.º escalão com a
+  inflação acumulada.
+- Não modela os restantes escalões (2.º a 8.º/9.º) — o 1.º foi
+  escolhido por ser o ponto de comparação mais simples e estável ao
+  longo do período (mesma definição em todos os anos).
+- Não julga se a atualização foi "suficiente" ou "insuficiente" — só
+  mostra os dois números lado a lado (CLAUDE.md §1, neutralidade
+  política).
+- 2026 fica de fora da inflação acumulada até o INE fechar o ano — o
+  cálculo para automaticamente no último ano com `fechado: true` em
+  `data/dragao-fiscal-2026.js`.
+
+**Dados e fontes** (ver cabeçalho completo de
+`data/dragao-fiscal-2026.js` para URLs exatas):
+
+| Ano | Limite 1.º escalão | Taxa normal | Lei | Inflação (IPC, INE) |
+|---|---|---|---|---|
+| 2021 | 7 112 € | 14,50% | Lei n.º 2/2020, 31/03 | 1,3% |
+| 2022 | 7 116 € | 14,50% | Lei n.º 12/2022, 27/06 | 7,8% |
+| 2023 | 7 479 € | 14,50% | Lei n.º 24-D/2022, 30/12 | 4,3% |
+| 2024 | 7 703 € | 13%¹ | Lei n.º 82/2023, 29/12 | 2,4% |
+| 2025 | 8 059 € | 12,50% | Lei n.º 55-A/2025, 22/07 | 2,3% |
+| 2026 | 8 342 € | 12,50% | Lei n.º 73-A/2025, 30/12 | ano em curso |
+
+¹ O limite de 2024 (7 703 €) está confirmado em texto no site do
+Portal das Finanças; a tabela completa do artigo para esse ano está
+publicada pela AT como imagem, não como texto — a taxa de 13% vem por
+isso de fonte secundária (imprensa especializada), não do texto
+literal do AT. Único ponto não 100% fonte-primária desta secção.
+
+Todos os limites de escalão foram lidos diretamente nas redações
+sucessivas do Art. 68.º CIRS publicadas pelo Portal das Finanças (AT),
+usando o mecanismo "Redações anteriores, em vigor até: [data]" que o
+próprio site disponibiliza — a mesma técnica já usada para o Art. 31.º
+CIRS (coeficientes do regime simplificado, 19/08/2026). A inflação foi
+confirmada por pesquisa web a partir de comunicados do INE (2021: 1,3%;
+2022: 7,8%; 2023: 4,3%; 2024: 2,4%; 2025: 2,3%, confirmado pelo INE em
+13/01/2026).
+
+---
+
 ## 7. Processo de atualização recomendado
 
 | Parâmetro | Cadência de revisão |
