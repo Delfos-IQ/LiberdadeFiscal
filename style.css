@@ -600,6 +600,15 @@ p {
   transform: translateY(-1px);
 }
 
+/* Separador visual entre blocos de ações do ecrã de resultado do Dia
+   da Liberdade Fiscal (22/08/2026) — só uma linha subtil, sem peso
+   visual a mais. */
+.dia-liberdade-separador {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-4) 0;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

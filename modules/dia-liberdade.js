@@ -327,11 +327,28 @@ export function render(container) {
     });
     acoes.append(voltarBtn);
 
+    // Ecrã de resultado simplificado (22/08/2026, a pedido do autor —
+    // a versão anterior tinha 8 botões visíveis de uma vez). Só dois
+    // botões de partilha ficam sempre visíveis: partilhar (nativo, cobre
+    // WhatsApp/Instagram/etc.) e exportar PDF. Os restantes formatos de
+    // cartão continuam a existir, só que escondidos atrás de "Mais
+    // formatos de partilha" — ninguém perde a funcionalidade, só deixa
+    // de estar sempre à vista.
+    let maisFormatosDetails = null;
+
     if (typeof document !== "undefined" && "createElement" in document) {
       const partilharBtn = el("button", "btn btn--primary", "Partilhar resultado");
       partilharBtn.type = "button";
       partilharBtn.addEventListener("click", () => partilharResultado(r));
       acoes.append(partilharBtn);
+
+      maisFormatosDetails = document.createElement("details");
+      maisFormatosDetails.className = "no-print";
+      const maisFormatosSummary = document.createElement("summary");
+      maisFormatosSummary.textContent = "Mais formatos de partilha";
+      maisFormatosDetails.append(maisFormatosSummary);
+
+      const maisFormatosAcoes = el("div", "faturas-actions");
 
       // Via manual sempre disponível: em alguns Android/Chrome o menu
       // de partilha nativo abre mas o WhatsApp não aparece na lista
@@ -342,7 +359,7 @@ export function render(container) {
       const descarregarBtn = el("button", "btn btn--secondary", "Descarregar imagem");
       descarregarBtn.type = "button";
       descarregarBtn.addEventListener("click", () => descarregarCartao(r));
-      acoes.append(descarregarBtn);
+      maisFormatosAcoes.append(descarregarBtn);
 
       // Duas variantes adicionais do cartão (19/08/2026, pedido do
       // autor: "algo que eu possa fazer sozinho para melhorar a tarjeta
@@ -353,12 +370,14 @@ export function render(container) {
       const quadradoBtn = el("button", "btn btn--secondary", "Cartão quadrado (feed)");
       quadradoBtn.type = "button";
       quadradoBtn.addEventListener("click", () => descarregarCartaoFormato(r, "quadrado"));
-      acoes.append(quadradoBtn);
+      maisFormatosAcoes.append(quadradoBtn);
 
       const comparacaoBtn = el("button", "btn btn--secondary", "Cartão comparação OCDE");
       comparacaoBtn.type = "button";
       comparacaoBtn.addEventListener("click", () => descarregarCartaoFormato(r, "comparacao-ocde"));
-      acoes.append(comparacaoBtn);
+      maisFormatosAcoes.append(comparacaoBtn);
+
+      maisFormatosDetails.append(maisFormatosAcoes);
     }
 
     // Informe PDF exportável (roadmap P3-16): sem nenhuma dependência
@@ -380,23 +399,33 @@ export function render(container) {
       acoes.append(exportarBtn);
     }
 
-    const compararLink = document.createElement("a");
-    compararLink.href = "#benchmark-ocde";
-    compararLink.className = "btn btn--secondary";
-    compararLink.textContent = "Comparar com a OCDE →";
-    acoes.append(compararLink);
-
-    const degradacaoMonetariaLink = document.createElement("a");
-    degradacaoMonetariaLink.href = "#degradacao-monetaria";
-    degradacaoMonetariaLink.className = "btn btn--secondary";
-    degradacaoMonetariaLink.textContent = "Degradação Monetária: IRS vs. inflação →";
-    acoes.append(degradacaoMonetariaLink);
-
     const notaPartilha = el(
       "p",
       "stat-label no-print",
-      "Se o WhatsApp não aparecer no menu de partilha do teu telemóvel, usa \"Descarregar imagem\" e anexa-a manualmente numa conversa."
+      "Se o WhatsApp não aparecer no menu de partilha do teu telemóvel, abre \"Mais formatos de partilha\" acima e usa \"Descarregar imagem\" para anexar manualmente numa conversa."
     );
+
+    // Ligações para explorar mais (Comparar com a OCDE, Degradação
+    // Monetária) — cor gold (atenção/dinheiro no design system, ver
+    // CLAUDE.md §4), de propósito diferente do verde/branco das ações
+    // de partilha, para ficar claro que são conteúdo à parte, não passos
+    // do fluxo principal.
+    const explorarAcoes = el("div", "faturas-actions no-print");
+
+    const compararLink = document.createElement("a");
+    compararLink.href = "#benchmark-ocde";
+    compararLink.className = "btn btn--gold";
+    compararLink.textContent = "Comparar com a OCDE →";
+    explorarAcoes.append(compararLink);
+
+    const degradacaoMonetariaLink = document.createElement("a");
+    degradacaoMonetariaLink.href = "#degradacao-monetaria";
+    degradacaoMonetariaLink.className = "btn btn--gold";
+    degradacaoMonetariaLink.textContent = "Degradação Monetária: IRS vs. inflação →";
+    explorarAcoes.append(degradacaoMonetariaLink);
+
+    const separador = document.createElement("hr");
+    separador.className = "dia-liberdade-separador no-print";
 
     const fecharBtn = el("button", "btn btn--secondary no-print", "Fechar este período e começar um novo");
     fecharBtn.type = "button";
@@ -413,7 +442,9 @@ export function render(container) {
     card.append(heading, dataHero, percentagemLabel, framing, pensarCritico, breakdown);
     if (avisoFaltantes) card.append(avisoFaltantes);
     if (avisoGastosVsRendimento) card.append(avisoGastosVsRendimento);
-    card.append(detalhes, privacidade, acoes, notaPartilha, fecharBtn);
+    card.append(detalhes, privacidade, acoes);
+    if (maisFormatosDetails) card.append(maisFormatosDetails);
+    card.append(notaPartilha, explorarAcoes, separador, fecharBtn);
     if (comparativa) card.append(comparativa);
     card.append(disclaimer);
     container.append(card);
