@@ -402,7 +402,7 @@ export function render(container) {
     const notaPartilha = el(
       "p",
       "stat-label no-print",
-      "Se o WhatsApp não aparecer no menu de partilha do teu telemóvel, abre \"Mais formatos de partilha\" acima e usa \"Descarregar imagem\" para anexar manualmente numa conversa."
+      "Se o WhatsApp não aparecer no menu de partilha, ou mostrar erro ao tentar enviar, abre \"Mais formatos de partilha\" acima e usa \"Descarregar imagem\" para anexar manualmente numa conversa."
     );
 
     // Ligações para explorar mais (Comparar com a OCDE, Degradação
@@ -595,15 +595,18 @@ export function render(container) {
     const blob = await gerarCartaoBlob(resultado);
     const temShareNativo = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
-    // Tentamos partilhar com a imagem diretamente, sem usar
-    // navigator.canShare() como filtro prévio: em vários Android/Chrome
-    // esse método dá falsos negativos (recusa uma partilha que o
-    // próprio share() depois aceita sem problema) — é mais fiável
-    // deixar o share() decidir e só cair para texto simples se ele
-    // recusar por um motivo real.
+    // Partilhamos SÓ a imagem primeiro, sem texto (23/08/2026, corrigido
+    // depois de reportado pelo autor: WhatsApp em Android recusa com
+    // "Não é possível partilhar. Tenta novamente" quando se envia texto
+    // + imagem em conjunto via Web Share API — o navigator.share()
+    // resolve sem erro do nosso lado, é o WhatsApp que rejeita a meio,
+    // por isso o nosso catch() nunca chega a acontecer nesse caso. Só
+    // a imagem, sem texto, é o caminho fiável documentado para apps de
+    // chat — o utilizador pode sempre escrever a legenda à mão depois
+    // de a imagem chegar à conversa.
     if (temShareNativo && blob) {
       try {
-        await navigator.share({ text: texto, files: [ficheiroDe(blob)] });
+        await navigator.share({ files: [ficheiroDe(blob)] });
         return;
       } catch (err) {
         if (err && err.name === "AbortError") return; // utilizador cancelou — não insistir com mais nada
@@ -650,12 +653,25 @@ export function render(container) {
 
   async function descarregarECopiar(blob, texto, nomeFicheiro = "liberdade-fiscal.png") {
     if (blob) {
+      // 23/08/2026, corrigido depois de reportado pelo autor: "Descarregar
+      // imagem"/variantes não faziam nada em Android. Causa provável: o
+      // <a> nunca estava no DOM e o URL.revokeObjectURL() corria logo a
+      // seguir ao click(), antes de o Android ter começado a ler o blob
+      // — em vários Chrome/Android isso invalida o download a meio,
+      // silenciosamente, sem erro nenhum em JS. Agora o link fica
+      // anexado ao DOM e o revoke só acontece um pouco depois, dando
+      // tempo ao browser para começar a gravar o ficheiro.
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = nomeFicheiro;
+      link.style.display = "none";
+      document.body.append(link);
       link.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(url);
+      }, 4000);
     }
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       try {
