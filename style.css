@@ -481,6 +481,15 @@ p {
   display: none;
 }
 
+/* Aviso de copyright (23/08/2026, a pedido do autor) — mesma
+   discrição visual que a nota de revisão de dados acima; é
+   informação de rodapé, não algo que compita com o disclaimer legal. */
+.app-footer__copyright {
+  margin: var(--space-2) 0 var(--space-4);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
 .app-nav {
   display: flex;
   justify-content: space-around;
