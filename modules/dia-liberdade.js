@@ -228,7 +228,7 @@ export function render(container) {
     const dataHero = el("p", "stat-hero", dataFormatada);
     const percentagemLabel = el(
       "p",
-      "stat-label",
+      "stat-caption",
       `${formatPercentagem(r.percentage)} do ano (${r.dayOfYear} de ${isAnoBissexto(r.ano) ? 366 : 365} dias) — segundo as hipóteses desta simulação`
     );
 
@@ -307,7 +307,7 @@ export function render(container) {
 
     const privacidade = el(
       "p",
-      "stat-label",
+      "info-note",
       "🔒 Todo este cálculo aconteceu só neste dispositivo — nada foi enviado para nenhum servidor."
     );
 
@@ -401,7 +401,7 @@ export function render(container) {
 
     const notaPartilha = el(
       "p",
-      "stat-label no-print",
+      "info-note no-print",
       "Se o WhatsApp não aparecer no menu de partilha, ou mostrar erro ao tentar enviar, abre \"Mais formatos de partilha\" acima e usa \"Descarregar imagem\" para anexar manualmente numa conversa."
     );
 

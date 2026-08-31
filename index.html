@@ -45,27 +45,31 @@
        domínio de produção (https://delfos-iq.github.io) — ajustar
        og:url/og:image se o GitHub Pages final for uma página de
        projeto com subpasta (ex.: .../liberdade-fiscal/) em vez de
-       página de organização na raiz. og:image aponta para o ícone
-       512x512 existente como placeholder: não é o formato 1200x630
-       recomendado para pré-visualizações, mas evita não ter nenhuma
-       imagem — trocar por um banner dedicado quando existir (ver
-       icons/README.md, mesmo padrão dos restantes placeholders
-       visuais). Sem imagens/vídeos de terceiros: cumpre a mesma
-       política de zero dependências externas do resto da app. -->
+       página de organização na raiz. og:image aponta agora para um
+       banner dedicado 1200x630 (icons/og-banner.jpg, gerado na
+       auditoria de marca 23/08/2026, H-5) em vez do ícone 512x512
+       usado como placeholder anteriormente. Sem imagens/vídeos de
+       terceiros: cumpre a mesma política de zero dependências
+       externas do resto da app. -->
+  <!-- SEO básico (auditoria de marca 23/08/2026, H-6): canonical +
+       robots.txt/sitemap.xml na raiz do repo, gratuitos e sem
+       nenhuma dependência externa. -->
+  <link rel="canonical" href="https://delfos-iq.github.io/" />
+
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Liberdade Fiscal" />
   <meta property="og:title" content="Liberdade Fiscal — Descobre quanto do teu trabalho fica realmente contigo" />
   <meta property="og:description" content="Simulador educativo da carga fiscal real em Portugal: IRS, Segurança Social, IVA, impostos especiais e patrimoniais — até ao teu Dia da Liberdade Fiscal." />
   <meta property="og:url" content="https://delfos-iq.github.io/" />
-  <meta property="og:image" content="https://delfos-iq.github.io/icons/icon-512.png" />
-  <meta property="og:image:width" content="512" />
-  <meta property="og:image:height" content="512" />
+  <meta property="og:image" content="https://delfos-iq.github.io/icons/og-banner.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:locale" content="pt_PT" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Liberdade Fiscal — Descobre quanto do teu trabalho fica realmente contigo" />
   <meta name="twitter:description" content="Simulador educativo da carga fiscal real em Portugal: IRS, Segurança Social, IVA, impostos especiais e patrimoniais — até ao teu Dia da Liberdade Fiscal." />
-  <meta name="twitter:image" content="https://delfos-iq.github.io/icons/icon-512.png" />
+  <meta name="twitter:image" content="https://delfos-iq.github.io/icons/og-banner.jpg" />
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json" />
@@ -118,8 +122,18 @@
          renderRoute). O disclaimer tem de sobreviver a essa troca —
          é uma das três presenças obrigatórias exigidas pelo spec
          (secção 9): onboarding, ecrã do Dia da Liberdade Fiscal, e
-         aqui, no footer/Acerca de, sempre visível. -->
+         aqui, no footer/Acerca de, sempre visível.
+
+         Auditoria de marca 23/08/2026 (hallazgo H-2): em onboarding.js
+         e dia-liberdade.js este mesmo texto já aparece dentro do
+         cartão, mesmo em cima deste footer, sem nada de permeio — lia-se
+         como a app a repetir-se ("gaguejar"). Não removemos nenhuma das
+         duas presenças (ambas exigidas pelo spec), mas demos ao footer
+         uma separação visual clara (linha divisória + rótulo "Aviso
+         legal") para nunca parecer um eco literal do texto que acabou
+         de aparecer no ecrã. -->
     <footer class="app-footer">
+      <p class="stat-caption app-footer__aviso-label">Aviso legal</p>
       <p class="disclaimer">
         Esta aplicação fornece estimativas para fins informativos e
         educativos. Não constitui aconselhamento fiscal, financeiro ou

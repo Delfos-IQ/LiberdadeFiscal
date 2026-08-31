@@ -193,7 +193,7 @@ export function render(container) {
       opt.textContent = t.label;
       tipoSelect.append(opt);
     });
-    const tipoAjuda = el("span", "stat-label", TIPOS_IMPOSTO[0].ajuda);
+    const tipoAjuda = el("span", "info-note", TIPOS_IMPOSTO[0].ajuda);
     tipoField.append(tipoLabel, tipoSelect, tipoAjuda);
 
     // IMI: a taxa varia por concelho (0,3%-0,45% do VPT) — pedir a
@@ -207,7 +207,7 @@ export function render(container) {
     concelhoInput.type = "text";
     concelhoInput.id = "concelho-imi";
     concelhoInput.autocomplete = "off";
-    const concelhoTaxaInfo = el("span", "stat-label", "");
+    const concelhoTaxaInfo = el("span", "info-note", "");
     concelhoField.append(concelhoLabel, concelhoInput, concelhoTaxaInfo);
     concelhoField.hidden = true;
 
@@ -275,7 +275,7 @@ export function render(container) {
     });
     const cavAjuda = el(
       "span",
-      "stat-label",
+      "info-note",
       `🟡 Valor sugerido a partir de fonte secundária — confirma sempre na tua fatura de eletricidade. Fonte: ${cav.source}.`
     );
     cavField.append(cavLabel, cavSelect, cavAjuda);
@@ -299,7 +299,7 @@ export function render(container) {
     const turisticaField = el("div", "taximetro-field");
     const turisticaAjuda = el(
       "span",
-      "stat-label",
+      "info-note",
       `Exemplos 2026: Lisboa ${formatEUR(OUTRAS_TAXAS_2026.taxaTuristica.exemplos[0].valorPorNoite)}/noite, Porto ${formatEUR(OUTRAS_TAXAS_2026.taxaTuristica.exemplos[1].valorPorNoite)}/noite (normalmente só as primeiras 7 noites). Cada município decide se cobra e quanto — confirma no teu.`
     );
     const noitesLabel = document.createElement("label");

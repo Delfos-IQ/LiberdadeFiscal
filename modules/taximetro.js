@@ -266,7 +266,7 @@ export function render(container) {
       form.append(
         el(
           "p",
-          "stat-label",
+          "info-note",
           "Se preencheres este campo, somamos os dois rendimentos coletáveis antes de aplicar o quociente familiar (Art. 69.º CIRS) — mais rigoroso do que assumir que só há um rendimento no agregado. A Segurança Social continua a ser calculada em separado para cada pessoa."
         )
       );
@@ -280,7 +280,7 @@ export function render(container) {
       );
       const nota = el(
         "p",
-        "stat-label",
+        "info-note",
         "Modo Rápido: assume que cada dependente tem mais de 3 anos. Para um valor mais preciso, usa o Modo Avançado."
       );
       form.append(nota);
@@ -489,7 +489,7 @@ export function render(container) {
 
     const privacidade = el(
       "p",
-      "stat-label",
+      "info-note",
       "🔒 Este cálculo acontece só neste dispositivo. Nada do que introduzires é enviado para nenhum servidor."
     );
 
@@ -498,7 +498,7 @@ export function render(container) {
       card.append(
         el(
           "p",
-          "stat-label",
+          "stat-caption",
           "Por pessoa (a Segurança Social é sempre individual — só o IRS é calculado em conjunto):"
         ),
         porPessoa

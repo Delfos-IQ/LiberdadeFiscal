@@ -165,7 +165,7 @@ function renderGastosApp(container, regiao) {
 
     const privacidade = el(
       "p",
-      "stat-label",
+      "info-note",
       "🔒 Estes valores ficam só neste dispositivo. Nada é enviado para nenhum servidor."
     );
     elementos.push(privacidade);
