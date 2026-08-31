@@ -89,13 +89,28 @@ export function render(container) {
       const dados = await exportarTodosDados();
       const json = JSON.stringify(dados, null, 2);
       const blob = new Blob([json], { type: "application/json" });
+      // Auditoria 23/08/2026 (equipa iOS/Android): o mesmo bug já
+      // encontrado e corrigido em modules/dia-liberdade.js — o <a>
+      // nunca ficava no DOM e o URL.revokeObjectURL() corria logo a
+      // seguir ao click(), antes de o Android começar a ler o blob, o
+      // que em vários Chrome/Android invalida o download a meio,
+      // silenciosamente. Esta é a função de exportação/backup — a
+      // funcionalidade mais crítica de robustez do B-1 original — por
+      // isso o mesmo fix aplica-se aqui: link anexado ao DOM
+      // (display:none) e revoke atrasado, dando tempo ao browser para
+      // gravar o ficheiro.
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       const dataFicheiro = new Date().toISOString().slice(0, 10);
       link.download = `liberdade-fiscal-${dataFicheiro}.json`;
+      link.style.display = "none";
+      document.body.append(link);
       link.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(url);
+      }, 4000);
       state.fase = "exportado";
     } catch (err) {
       state.fase = "erro-exportar";

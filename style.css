@@ -413,6 +413,13 @@ p {
   background-color: var(--color-navy);
   color: var(--color-text-on-navy);
   padding: var(--space-4) var(--space-5);
+  /* Auditoria 23/08/2026 (equipa iOS/Android): viewport-fit=cover +
+     apple-mobile-web-app-status-bar-style=black-translucent (ambos em
+     index.html) fazem o conteúdo desenhar por baixo da status bar/notch
+     em iPhones com Face ID quando a app está instalada em modo
+     standalone — sem isto, o logo e o nome da app ficam parcialmente
+     tapados. env() com fallback 0px para browsers sem suporte. */
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
 }
 
 .app-header__brand-row {
@@ -498,6 +505,10 @@ p {
   background-color: var(--color-white);
   border-top: 1px solid var(--color-border);
   padding: var(--space-2) var(--space-2);
+  /* Mesmo motivo do .app-header acima: sem isto, o home indicator dos
+     iPhones sem botão físico (X em diante) fica sobreposto aos itens
+     de navegação em modo standalone. */
+  padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
   position: sticky;
   bottom: 0;
   z-index: 10;
