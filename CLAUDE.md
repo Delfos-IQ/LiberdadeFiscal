@@ -32,6 +32,19 @@ fiscal, con captura real de datos del usuario (no solo estimaciones).
 - **Alcance geográfico v1**: Portugal únicamente — Continente, Açores y
   Madeira, con sus tres columnas de tipos de IVA diferenciadas. España u
   otros países quedan fuera de v1 por completo.
+- **Sin vinculación comercial visible** (regla explícita del autor,
+  01/09/2026, tras evaluar la relación con Antecipa — simulador de IRS
+  de pago del mismo autor): Liberdade Fiscal no enlaza, menciona ni
+  recomienda ningún producto de pago, propio o ajeno, bajo ninguna
+  circunstancia — ni banner, ni CTA, ni mención editorial, aunque
+  parezca útil para el usuario en el momento. La única excepción
+  permitida es un enlace de donación voluntaria (ko-fi.com/pedicode),
+  porque no vende nada ni compite por la atención del usuario con
+  ningún producto de pago del ecosistema del autor. Esta regla existe
+  precisamente porque Liberdade Fiscal y cualquier producto "pro" del
+  mismo autor comparten metodología y público objetivo — el vínculo
+  sería tentador y parecería útil, que es justo el motivo por el que
+  tiene que ser una regla dura, no una decisión caso a caso.
 - **Lo que no encaja en el simulador va al glosario, no se descarta**
   (regla explícita del autor, 19/08/2026): cuando un parámetro fiscal
   real no cabe en el flujo de <60s del simulador — porque depende de

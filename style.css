@@ -534,6 +534,26 @@ p {
   color: var(--color-text-muted);
 }
 
+/* Doação voluntária (01/09/2026) — a única exceção à regra de "sem
+   vinculação comercial visível" (CLAUDE.md secção 1). Deliberadamente
+   discreta: mesmo tamanho/peso que os outros links de rodapé, não um
+   botão destacado — não é um CTA a competir pela atenção, é só uma
+   porta aberta para quem já decidiu que quer apoiar. */
+.app-footer__support {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.footer-support-link {
+  color: var(--color-green-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-support-link:hover {
+  color: var(--color-text);
+}
+
 .app-nav {
   display: flex;
   justify-content: space-around;
