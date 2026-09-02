@@ -38,7 +38,7 @@ fiscal, con captura real de datos del usuario (no solo estimaciones).
   recomienda ningún producto de pago, propio o ajeno, bajo ninguna
   circunstancia — ni banner, ni CTA, ni mención editorial, aunque
   parezca útil para el usuario en el momento. La única excepción
-  permitida es un enlace de donación voluntaria (ko-fi.com/pedicode),
+  permitida es un enlace de donación voluntaria (ko-fi.com/liberdadefiscal),
   porque no vende nada ni compite por la atención del usuario con
   ningún producto de pago del ecosistema del autor. Esta regla existe
   precisamente porque Liberdade Fiscal y cualquier producto "pro" del
