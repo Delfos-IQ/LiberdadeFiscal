@@ -430,6 +430,19 @@ export function render(container) {
     gastoPublicoLink.textContent = "Para onde vão os impostos →";
     explorarAcoes.append(gastoPublicoLink);
 
+    // Segunda presença do link de apoio (01/09/2026, ver CLAUDE.md §1
+    // "sem vinculação comercial visível" — a doação é a única exceção).
+    // Este é o momento de maior satisfação do fluxo (o utilizador acaba
+    // de ver o seu resultado), por isso faz sentido ter aqui uma
+    // segunda oportunidade discreta, sem competir com as ações reais
+    // do ecrã (fica depois delas, em formato de pastilha, não de botão).
+    const apoiarLink = document.createElement("a");
+    apoiarLink.href = "https://ko-fi.com/liberdadefiscal";
+    apoiarLink.target = "_blank";
+    apoiarLink.rel = "noopener noreferrer";
+    apoiarLink.className = "support-pill no-print";
+    apoiarLink.textContent = "☕ Apoiar o projeto";
+
     const separador = document.createElement("hr");
     separador.className = "dia-liberdade-separador no-print";
 
@@ -450,7 +463,7 @@ export function render(container) {
     if (avisoGastosVsRendimento) card.append(avisoGastosVsRendimento);
     card.append(detalhes, privacidade, acoes);
     if (maisFormatosDetails) card.append(maisFormatosDetails);
-    card.append(notaPartilha, explorarAcoes, separador, fecharBtn);
+    card.append(notaPartilha, explorarAcoes, apoiarLink, separador, fecharBtn);
     if (comparativa) card.append(comparativa);
     card.append(disclaimer);
     container.append(card);

@@ -541,7 +541,10 @@ p {
    porta aberta para quem já decidiu que quer apoiar. */
 .app-footer__support {
   margin-top: var(--space-2);
-  font-size: var(--font-size-xs);
+  /* Um pouco maior que o resto do rodapé (--font-size-sm em vez de
+     --font-size-xs) a pedido do autor, 01/09/2026 — ainda discreto,
+     mas deixa de se confundir visualmente com a nota de copyright. */
+  font-size: var(--font-size-sm);
 }
 
 .footer-support-link {
@@ -552,6 +555,34 @@ p {
 
 .footer-support-link:hover {
   color: var(--color-text);
+}
+
+/* Segunda presença do link de apoio (01/09/2026, a pedido do autor:
+   "podríamos ponerlo en otros sitios, discreto") — formato de pastilha
+   com contorno, para os momentos de maior satisfação do utilizador
+   (depois de ver o resultado do Dia da Liberdade Fiscal, depois de
+   terminar o quiz). Deliberadamente não preenchido/sólido — um badge
+   sólido competiria visualmente com os CTAs reais do ecrã (Partilhar,
+   Repetir o quiz); o contorno fica presente sem se disfarçar de botão
+   principal. */
+.support-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  border: 1px solid var(--color-mint);
+  color: var(--color-green-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  background: transparent;
+}
+
+.support-pill:hover {
+  background-color: var(--color-mint);
+  color: var(--color-navy);
 }
 
 .app-nav {

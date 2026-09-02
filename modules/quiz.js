@@ -198,7 +198,17 @@ export function render(container) {
     restartBtn.type = "button";
     restartBtn.addEventListener("click", startSession);
 
-    card.append(heading, scoreEl, percentEl, message, restartBtn);
+    // Segunda presença do link de apoio (01/09/2026, ver CLAUDE.md §1
+    // "sem vinculação comercial visível" — a doação é a única exceção).
+    // Fim do quiz é outro momento de satisfação natural do fluxo.
+    const apoiarLink = document.createElement("a");
+    apoiarLink.href = "https://ko-fi.com/liberdadefiscal";
+    apoiarLink.target = "_blank";
+    apoiarLink.rel = "noopener noreferrer";
+    apoiarLink.className = "support-pill";
+    apoiarLink.textContent = "☕ Apoiar o projeto";
+
+    card.append(heading, scoreEl, percentEl, message, restartBtn, apoiarLink);
     container.append(card);
     focusHeading(heading);
   }
