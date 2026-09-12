@@ -10,35 +10,37 @@
        princípio de privacidade do CLAUDE.md §1. -->
   <meta name="google-site-verification" content="mQbQIaq0jbZFlRvWVbfEAij2I3VOoBYnWvFZwnjOCqc" />
 
-  <!-- Content-Security-Policy (Auditoria 2026-08, hallazgo M-2).
+  <!-- Content-Security-Policy (Auditoria 2026-08, hallazgo M-2;
+       exceção GoatCounter adicionada 01/09/2026, ver SECURITY.md §3).
        GitHub Pages não permite configurar cabeçalhos HTTP próprios, por
        isso esta meta tag é a única via possível para uma CSP aqui.
-       Restritiva ao máximo — esta app não carrega NADA de origem
-       externa (zero scripts/fontes/imagens de terceiros):
-         - script-src 'self': nenhum script externo, nenhum inline,
-           nenhum eval — a diretiva que mais protege na prática.
+       Restritiva ao máximo — só duas exceções a "zero origens externas",
+       ambas para a mesma finalidade (analítica agregada sem cookies):
+         - script-src 'self' https://gc.zgo.at: nenhum script externo
+           além do contador do GoatCounter — nenhum inline, nenhum eval.
          - style-src inclui 'unsafe-inline' porque uma barra de
            progresso (benchmark-ocde.js) define a sua largura via JS
            (percentagem calculada em tempo real); não há outro inline
            style na app (os restantes foram movidos para a classe
            .form-error). Risco aceite e documentado — muito menor do
            que permitir scripts inline.
-         - connect-src 'self', sem exceções (19/08/2026): o
-           `*.workers.dev` que aqui estava era preparação para o
-           fallback de foto+IA, ELIMINADO nesta ronda a pedido do
-           autor. Sem essa exceção, esta app não faz mesmo NENHUM
-           pedido de rede a outra origem além da própria.
+         - connect-src 'self' https://liberdadefiscalpt.goatcounter.com:
+           única origem de rede externa permitida, para o próprio
+           GoatCounter reportar a página vista. Sem mais nenhuma
+           exceção (19/08/2026): o `*.workers.dev` que aqui estava era
+           preparação para o fallback de foto+IA, ELIMINADO nesta ronda
+           a pedido do autor.
          - object-src/base-uri 'none', frame-ancestors 'none': esta app
            nunca precisa de plugins, de mudar a <base>, nem de correr
            dentro de uma <iframe> de outro site. -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src 'self';
+    script-src 'self' https://gc.zgo.at;
     style-src 'self' 'unsafe-inline';
     img-src 'self' data:;
     font-src 'self';
     manifest-src 'self';
-    connect-src 'self';
+    connect-src 'self' https://liberdadefiscalpt.goatcounter.com;
     object-src 'none';
     base-uri 'none';
     frame-ancestors 'none';
@@ -239,5 +241,13 @@
   </noscript>
 
   <script type="module" src="./app.js"></script>
+
+  <!-- Analítica agregada, sem cookies (01/09/2026, ver SECURITY.md §3):
+       GoatCounter conta só páginas vistas agregadas — nunca dados
+       fiscais, nunca IP completo, nunca fingerprinting. É a única
+       exceção à política de zero-scripts-de-terceiros, e está limitada
+       na CSP acima só a este domínio. -->
+  <script data-goatcounter="https://liberdadefiscalpt.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

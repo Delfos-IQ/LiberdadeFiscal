@@ -67,7 +67,47 @@ ou vender um dispositivo.
   custo/benefício. Não há evidência disso à data desta decisão
   (18/08/2026).
 
-## 2. Ver também
+## 2. Analítica agregada (GoatCounter) — não é "analítica invasiva"
+
+**Decisão (01/09/2026): adicionar GoatCounter**, um contador de
+páginas vistas open source, alojado em `liberdadefiscalpt.goatcounter.com`.
+É a primeira e única origem externa que esta app carrega — até agora,
+CLAUDE.md §2 e a CSP garantiam zero dependências de terceiros sem
+exceção nenhuma.
+
+### Porque é que isto não contradiz "sem analítica invasiva" (CLAUDE.md §1)
+
+- **Mede só páginas vistas agregadas, nunca comportamento individual.**
+  GoatCounter não usa cookies, não faz fingerprinting, não guarda o IP
+  completo (trunca-o antes de o gravar), e não permite identificar uma
+  pessoa concreta entre duas visitas — só um total de visualizações e
+  a origem (referrer, país, tipo de dispositivo).
+- **Não tem acesso a nenhum dado fiscal.** O contador dispara ao
+  carregar a página (`index.html`), antes de qualquer interação com o
+  simulador — nunca vê salário, gastos, ou qualquer valor introduzido
+  pelo utilizador. Esses dados continuam exclusivamente no IndexedDB
+  do dispositivo, exatamente como descrito em CLAUDE.md §9.
+- **É a exceção mínima possível, não uma porta aberta.** A CSP só
+  permite este domínio concreto para `script-src` (o próprio contador)
+  e `connect-src` (o endpoint que recebe a visualização) — nenhum
+  outro script de terceiros passa a estar autorizado.
+- **A diferença com "analítica invasiva"** (Google Analytics e
+  equivalentes) é o modelo de negócio subjacente: o GoatCounter não
+  vende dados a terceiros, não faz perfilamento publicitário, e o
+  próprio serviço é open source e auditável — ao contrário de um SDK
+  fechado que agrega dados entre milhares de sites para construir
+  perfis de utilizador.
+
+### Quando reconsiderar esta decisão
+
+- Se o GoatCounter alguma vez mudar o seu modelo de dados para incluir
+  algo mais granular que visualizações agregadas (ex.: sessões
+  individuais rastreáveis), esta decisão deve ser revista.
+- Se surgir um motivo para medir algo além de "quantas visualizações,
+  de onde vêm" — nesse caso, qualquer adição nova exige o mesmo
+  escrutínio documentado aqui, não uma extensão silenciosa do escopo.
+
+## 3. Ver também
 
 - `AUDITORIA-2026-08.md` secção 2.3 (achado M-1) — análise original
   que motivou este documento.
