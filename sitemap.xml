@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Liberdade Fiscal — sitemap.xml (auditoria de marca 23/08/2026, H-6)
+  Liberdade Fiscal — sitemap.xml (auditoria de marca 23/08/2026, H-6;
+  caminho corrigido 01/09/2026)
 
   A app é uma SPA de página única com routing por hash (#quiz,
   #rendimentos, etc.) — os motores de busca não indexam fragmentos de
   URL como páginas distintas, por isso só faz sentido listar aqui a
-  única URL real e rastreável: a raiz do site. <lastmod> deve
-  atualizar-se sempre que o conteúdo do shell (index.html) mudar de
-  forma relevante para SEO (título, descrição, meta tags) — não é
-  preciso atualizar em cada commit de dados fiscais internos.
+  única URL real e rastreável. Corrigido 01/09/2026: apontava para
+  https://delfos-iq.github.io/ (raiz da organização), que não serve
+  nenhum conteúdo — confirmado que este é um GitHub Pages de projeto,
+  servido em /LiberdadeFiscal/. <lastmod> deve atualizar-se sempre que
+  o conteúdo do shell (index.html) mudar de forma relevante para SEO
+  (título, descrição, meta tags) — não é preciso atualizar em cada
+  commit de dados fiscais internos.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://delfos-iq.github.io/</loc>
-    <lastmod>2026-08-23</lastmod>
+    <loc>https://delfos-iq.github.io/LiberdadeFiscal/</loc>
+    <lastmod>2026-09-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
