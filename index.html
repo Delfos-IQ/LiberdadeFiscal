@@ -81,6 +81,38 @@
   <meta name="twitter:description" content="Simulador educativo da carga fiscal real em Portugal: IRS, Segurança Social, IVA, impostos especiais e patrimoniais — até ao teu Dia da Liberdade Fiscal." />
   <meta name="twitter:image" content="https://delfos-iq.github.io/LiberdadeFiscal/icons/og-banner.jpg" />
 
+  <!-- Dados estruturados JSON-LD (14/09/2026, roadmap SEO). Schema.org
+       WebApplication: ajuda o Google a perceber o que é a app (tipo,
+       preço, plataforma) e pode gerar rich snippets na pesquisa. Não é
+       um script de terceiros — é dados estáticos inline, não conflita
+       com a CSP nem com a política de privacidade (CLAUDE.md §1/§9).
+       "isAccessibleForFree" e "offers" com price 0 refletem que a app
+       é 100% gratuita, sem exceção — ver CLAUDE.md §1 "Sin vinculación
+       comercial visible". -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Liberdade Fiscal",
+    "description": "Simulador educativo da carga fiscal real em Portugal: IRS, Segurança Social, IVA, impostos especiais e patrimoniais — até ao teu Dia da Liberdade Fiscal.",
+    "url": "https://delfos-iq.github.io/LiberdadeFiscal/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (Progressive Web App)",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    },
+    "inLanguage": "pt-PT",
+    "author": {
+      "@type": "Organization",
+      "name": "Delfos IQ",
+      "url": "https://github.com/delfos-iq"
+    }
+  }
+  </script>
+
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0D1321" />
